@@ -5,7 +5,9 @@
     "@beolink"
   ],
   "config_flow": true,
-  "dependencies": [],
+  "dependencies": [
+    "network"
+  ],
   "dhcp": [
     {
       "hostname": "nibe-*"
