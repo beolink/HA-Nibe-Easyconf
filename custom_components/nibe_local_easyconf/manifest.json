@@ -1,14 +1,18 @@
 {
   "domain": "nibe_local_easyconf",
   "name": "Nibe Local Easyconf",
-  "version": "1.0.0",
-  "documentation": "https://github.com/beolink/HA-Nibe-Easyconf",
-  "issue_tracker": "https://github.com/beolink/HA-Nibe-Easyconf/issues",
-  "codeowners": ["@beolink"],
+  "codeowners": [
+    "@beolink"
+  ],
   "config_flow": true,
   "dependencies": [],
+  "documentation": "https://github.com/beolink/HA-Nibe-Easyconf",
   "integration_type": "device",
   "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/beolink/HA-Nibe-Easyconf/issues",
   "quality_scale": "silver",
-  "requirements": ["nibe>=2.24.0"]
+  "requirements": [
+    "nibe>=2.24.0"
+  ],
+  "version": "1.0.0"
 }
