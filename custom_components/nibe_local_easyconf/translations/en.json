@@ -1,7 +1,27 @@
 {
   "config": {
+    "flow_title": "{name}",
     "step": {
       "user": {
+        "title": "Add heat pump",
+        "description": "Enable networking (menu 5.2) and Modbus TCP (menu 7.5.9) on the pump before continuing.",
+        "menu_options": {
+          "search": "Search the network for the pump",
+          "manual": "Enter the IP address manually"
+        }
+      },
+      "pick": {
+        "title": "Found {count} pump(s)",
+        "description": "Choose which one to add. The outdoor temperature is shown as confirmation that it really is a NIBE.",
+        "data": {
+          "host": "Heat pump"
+        }
+      },
+      "discovery_confirm": {
+        "title": "Found a NIBE heat pump",
+        "description": "A heat pump at {host} is answering Modbus. Do you want to add it?"
+      },
+      "manual": {
         "title": "Connect to the heat pump",
         "description": "Enable Modbus TCP in the pump's menu {menu} before continuing. The default port is 502 and the unit ID is normally 1.",
         "data": {
@@ -12,7 +32,7 @@
       },
       "confirm": {
         "title": "What the pump looks like",
-        "description": "Found: {traits}.\n\nOf the documented registers, {present} exist on this pump and {reporting} are reporting a value right now. {absent} are not implemented and will not be created.\n\nPick the model so the device gets the right name.",
+        "description": "Pump at {host}. Found: {traits}.\n\nOf the documented registers, {present} exist on this pump and {reporting} are reporting a value right now. {absent} are not implemented and will not be created.\n\nPick the model so the device gets the right name.",
         "data": {
           "model": "Model",
           "name": "Name (optional)",
@@ -21,16 +41,20 @@
       }
     },
     "progress": {
+      "searching": "Searching the network for heat pumps answering Modbus.",
       "discovering": "Scanning the pump's registers. This takes about a minute and is only done once."
     },
     "error": {
       "cannot_connect": "No response. Check the IP address and that Modbus TCP is enabled in menu 7.5.9.",
       "not_nibe": "The device answers Modbus but does not look like a NIBE S-series. Check the unit ID.",
+      "no_pumps_found": "No heat pump found on the network. Check that Modbus TCP is enabled in menu 7.5.9, or enter the address manually below.",
       "unknown": "Unexpected error. See the log for details."
     },
     "abort": {
       "already_configured": "This pump is already set up.",
       "cannot_connect": "Lost contact with the pump during the register scan.",
+      "modbus_disabled": "Found a NIBE heat pump, but it is not answering Modbus. Enable Modbus TCP in menu 7.5.9 and try again.",
+      "not_nibe": "The device does not look like a NIBE S-series.",
       "unknown": "Unexpected error during the register scan."
     }
   },

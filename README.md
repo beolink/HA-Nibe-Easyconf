@@ -54,12 +54,31 @@ as an Integration → install → restart Home Assistant.
 
 ## Set up
 
-1. On the pump: enable network (menu **5.2**) and **Modbus TCP** (menu **7.5.9**).
-2. In Home Assistant: **Settings → Devices & services → Add integration →
-   Nibe Local Easyconf**.
-3. Enter the pump's IP. Port 502 and unit ID 1 are the defaults.
-4. It scans the registers — about a minute, once — then shows what it found and
-   asks which model to name the device after.
+On the pump: enable network (menu **5.2**) and **Modbus TCP** (menu **7.5.9**).
+
+You should not need to know the pump's IP address. There are three ways in:
+
+**It finds you.** NIBE names its pumps `NIBE-<serial>` on the network, so the
+integration matches that hostname over DHCP and Home Assistant offers the pump
+as a discovered device on its own. The serial is used as the identity, so the
+pump is still recognised after its DHCP lease hands it a different address.
+
+> Matching on MAC address was considered and dropped. NIBE holds no IEEE OUI —
+> the pump's MAC belongs to whichever network chipset is fitted, so an OUI rule
+> would match unrelated hardware.
+
+**You search.** A DHCP lease may not renew for hours, so
+**Settings → Devices & services → Add integration → Nibe Local Easyconf →
+"Search the network"** sweeps Home Assistant's own subnet. Port 502 alone proves
+nothing — inverters and PLCs sit there too — so every hit is confirmed by reading
+the outdoor-temperature register, and the reading is shown next to the address.
+A /24 takes a couple of seconds.
+
+**You type it in.** Always available, and offered automatically if the search
+comes up empty.
+
+Whichever route, it then scans the registers — about a minute, once — and shows
+what it found before asking which model to name the device after.
 
 The scan result is cached, so restarts are instant. After a firmware update or
 fitting an accessory, call the **`nibe_local_easyconf.rescan_registers`** service.

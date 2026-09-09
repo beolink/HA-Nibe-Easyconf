@@ -1,7 +1,27 @@
 {
   "config": {
+    "flow_title": "{name}",
     "step": {
       "user": {
+        "title": "Lägg till värmepump",
+        "description": "Aktivera nätverk (meny 5.2) och Modbus TCP (meny 7.5.9) i pumpen innan du fortsätter.",
+        "menu_options": {
+          "search": "Sök efter pumpen på nätverket",
+          "manual": "Ange IP-adress manuellt"
+        }
+      },
+      "pick": {
+        "title": "Hittade {count} pump(ar)",
+        "description": "Välj vilken du vill lägga till. Utetemperaturen visas som bekräftelse på att det verkligen är en NIBE.",
+        "data": {
+          "host": "Värmepump"
+        }
+      },
+      "discovery_confirm": {
+        "title": "Hittade en NIBE-värmepump",
+        "description": "En värmepump på {host} svarar på Modbus. Vill du lägga till den?"
+      },
+      "manual": {
         "title": "Anslut till värmepumpen",
         "description": "Aktivera Modbus TCP i pumpens meny {menu} innan du fortsätter. Standardporten är 502 och enhets-ID är normalt 1.",
         "data": {
@@ -12,7 +32,7 @@
       },
       "confirm": {
         "title": "Så här ser pumpen ut",
-        "description": "Hittade: {traits}.\n\nAv de dokumenterade registren finns {present} i den här pumpen, varav {reporting} rapporterar ett värde just nu. {absent} register saknas helt och skapas inte.\n\nVälj modell så att enheten får rätt namn.",
+        "description": "Pump på {host}. Hittade: {traits}.\n\nAv de dokumenterade registren finns {present} i den här pumpen, varav {reporting} rapporterar ett värde just nu. {absent} register saknas helt och skapas inte.\n\nVälj modell så att enheten får rätt namn.",
         "data": {
           "model": "Modell",
           "name": "Namn (valfritt)",
@@ -21,16 +41,20 @@
       }
     },
     "progress": {
+      "searching": "Söker igenom nätverket efter värmepumpar som svarar på Modbus.",
       "discovering": "Söker igenom registren i värmepumpen. Det tar ungefär en minut och görs bara en gång."
     },
     "error": {
       "cannot_connect": "Ingen kontakt. Kontrollera IP-adressen och att Modbus TCP är påslaget i meny 7.5.9.",
       "not_nibe": "Enheten svarar på Modbus men ser inte ut som en NIBE S-serie. Kontrollera enhets-ID.",
+      "no_pumps_found": "Hittade ingen värmepump på nätverket. Kontrollera att Modbus TCP är påslaget i meny 7.5.9, eller ange adressen manuellt nedan.",
       "unknown": "Oväntat fel. Se loggen för detaljer."
     },
     "abort": {
       "already_configured": "Den här pumpen är redan tillagd.",
       "cannot_connect": "Tappade kontakten med pumpen under registersökningen.",
+      "modbus_disabled": "Hittade en NIBE-värmepump, men den svarar inte på Modbus. Slå på Modbus TCP i meny 7.5.9 och försök igen.",
+      "not_nibe": "Enheten ser inte ut som en NIBE S-serie.",
       "unknown": "Oväntat fel under registersökningen."
     }
   },

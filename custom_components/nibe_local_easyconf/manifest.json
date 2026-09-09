@@ -6,6 +6,11 @@
   ],
   "config_flow": true,
   "dependencies": [],
+  "dhcp": [
+    {
+      "hostname": "nibe-*"
+    }
+  ],
   "documentation": "https://github.com/beolink/HA-Nibe-Easyconf",
   "integration_type": "device",
   "iot_class": "local_polling",
@@ -14,5 +19,5 @@
   "requirements": [
     "nibe>=2.24.0"
   ],
-  "version": "1.0.0"
+  "version": "1.1.0"
 }
