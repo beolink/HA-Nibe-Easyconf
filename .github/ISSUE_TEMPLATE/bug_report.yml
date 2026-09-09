@@ -1,0 +1,25 @@
+name: Bug report
+description: Something is wrong with an entity, a value or the setup
+body:
+  - type: input
+    id: model
+    attributes:
+      label: Heat pump model
+      placeholder: e.g. S1255, S320, SMO S40
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: >-
+        Settings -> Devices & services -> Nibe Local Easyconf -> the three dots ->
+        Download diagnostics. It lists every register that was discovered and its
+        current value, which is usually enough to identify the problem.
+      render: json

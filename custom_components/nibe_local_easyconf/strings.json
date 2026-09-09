@@ -1,0 +1,60 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Anslut till värmepumpen",
+        "description": "Aktivera Modbus TCP i pumpens meny {menu} innan du fortsätter. Standardporten är 502 och enhets-ID är normalt 1.",
+        "data": {
+          "host": "IP-adress",
+          "port": "Port",
+          "unit_id": "Enhets-ID (slave ID)"
+        }
+      },
+      "confirm": {
+        "title": "Så här ser pumpen ut",
+        "description": "Hittade: {traits}.\n\nAv de dokumenterade registren finns {present} i den här pumpen, varav {reporting} rapporterar ett värde just nu. {absent} register saknas helt och skapas inte.\n\nVälj modell så att enheten får rätt namn.",
+        "data": {
+          "model": "Modell",
+          "name": "Namn (valfritt)",
+          "scan_interval": "Uppdateringsintervall"
+        }
+      }
+    },
+    "progress": {
+      "discovering": "Söker igenom registren i värmepumpen. Det tar ungefär en minut och görs bara en gång."
+    },
+    "error": {
+      "cannot_connect": "Ingen kontakt. Kontrollera IP-adressen och att Modbus TCP är påslaget i meny 7.5.9.",
+      "not_nibe": "Enheten svarar på Modbus men ser inte ut som en NIBE S-serie. Kontrollera enhets-ID.",
+      "unknown": "Oväntat fel. Se loggen för detaljer."
+    },
+    "abort": {
+      "already_configured": "Den här pumpen är redan tillagd.",
+      "cannot_connect": "Tappade kontakten med pumpen under registersökningen.",
+      "unknown": "Oväntat fel under registersökningen."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Inställningar",
+        "data": {
+          "scan_interval": "Uppdateringsintervall"
+        },
+        "description": "Hur ofta registren läses. Bara register som backar en aktiverad entitet läses, så fler entiteter gör varje varv längre."
+      }
+    }
+  },
+  "services": {
+    "rescan_registers": {
+      "name": "Sök om register",
+      "description": "Probar värmepumpen igen och uppdaterar vilka register som finns.",
+      "fields": {
+        "entry_id": {
+          "name": "Enhet",
+          "description": "Vilken pump som ska sökas om. Utelämna för att söka om alla."
+        }
+      }
+    }
+  }
+}

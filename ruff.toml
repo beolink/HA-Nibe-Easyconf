@@ -1,0 +1,13 @@
+target-version = "py312"
+line-length = 100
+
+[lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+ignore = [
+    # Home Assistant entity classes set attributes rather than properties.
+    "RUF012",
+]
+
+[lint.isort]
+force-sort-within-sections = true
+combine-as-imports = true

@@ -1,0 +1,14 @@
+rescan_registers:
+  name: Sök om register
+  description: >-
+    Probar värmepumpen igen och uppdaterar vilka register som finns och
+    rapporterar data. Kör efter en firmwareuppdatering eller när du monterat
+    ett tillbehör. Tar ungefär en minut.
+  fields:
+    entry_id:
+      name: Enhet
+      description: Vilken pump som ska sökas om. Utelämna för att söka om alla.
+      required: false
+      selector:
+        config_entry:
+          integration: nibe_local_easyconf

@@ -1,0 +1,60 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to the heat pump",
+        "description": "Enable Modbus TCP in the pump's menu {menu} before continuing. The default port is 502 and the unit ID is normally 1.",
+        "data": {
+          "host": "IP address",
+          "port": "Port",
+          "unit_id": "Unit ID (slave ID)"
+        }
+      },
+      "confirm": {
+        "title": "What the pump looks like",
+        "description": "Found: {traits}.\n\nOf the documented registers, {present} exist on this pump and {reporting} are reporting a value right now. {absent} are not implemented and will not be created.\n\nPick the model so the device gets the right name.",
+        "data": {
+          "model": "Model",
+          "name": "Name (optional)",
+          "scan_interval": "Update interval"
+        }
+      }
+    },
+    "progress": {
+      "discovering": "Scanning the pump's registers. This takes about a minute and is only done once."
+    },
+    "error": {
+      "cannot_connect": "No response. Check the IP address and that Modbus TCP is enabled in menu 7.5.9.",
+      "not_nibe": "The device answers Modbus but does not look like a NIBE S-series. Check the unit ID.",
+      "unknown": "Unexpected error. See the log for details."
+    },
+    "abort": {
+      "already_configured": "This pump is already set up.",
+      "cannot_connect": "Lost contact with the pump during the register scan.",
+      "unknown": "Unexpected error during the register scan."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Settings",
+        "data": {
+          "scan_interval": "Update interval"
+        },
+        "description": "How often registers are read. Only registers backing an enabled entity are read, so more entities make each cycle longer."
+      }
+    }
+  },
+  "services": {
+    "rescan_registers": {
+      "name": "Rescan registers",
+      "description": "Probes the heat pump again and refreshes which registers exist.",
+      "fields": {
+        "entry_id": {
+          "name": "Device",
+          "description": "Which pump to rescan. Leave empty to rescan all."
+        }
+      }
+    }
+  }
+}
