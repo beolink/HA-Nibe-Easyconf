@@ -63,9 +63,13 @@
       "init": {
         "title": "Settings",
         "data": {
-          "scan_interval": "Update interval"
+          "scan_interval": "Update interval",
+          "send_statistics": "Send anonymous usage statistics"
         },
-        "description": "How often registers are read. Only registers backing an enabled entity are read, so more entities make each cycle longer."
+        "data_description": {
+          "scan_interval": "How often registers are read. Only registers backing an enabled entity are read, so more entities make each cycle longer.",
+          "send_statistics": "One report per day to {endpoint}: the integration's version, your Home Assistant version and installation type, the country you set in Home Assistant, an approximate position rounded to about 11 km, the number of entities and devices, which model you chose, what kind of machine it is (ground source, exhaust air, hot water, cooling), how many registers were found and how many report a value, how many block reads each poll cycle costs, the update interval, the control board's software version and the number of failed poll cycles. Never a name, an address, an exact position, a serial number, an entity name, which registers were found, or any reading from the house; never anything finer than one day, and your IP address is not stored. Switching this off also erases what has already been sent. The full list: {privacy_url}"
+        }
       }
     }
   },

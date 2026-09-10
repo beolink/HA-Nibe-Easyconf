@@ -10,6 +10,16 @@ DOMAIN: Final = "nibe_local_easyconf"
 CONF_MODEL: Final = "model"
 CONF_UNIT_ID: Final = "unit_id"
 CONF_SCAN_UNKNOWN: Final = "scan_unknown"
+CONF_SEND_STATISTICS: Final = "send_statistics"
+CONF_TRAITS: Final = "traits"
+
+#: Shown in the options text so the user can read what is sent before deciding.
+STATS_ENDPOINT: Final = "stats.rnet.se"
+STATS_PRIVACY_URL: Final = "https://stats.rnet.se/integritet"
+
+#: Software version of the main control board (EB100). A plain number on the
+#: S-series, and the only firmware the pump exposes over Modbus.
+FIRMWARE_REGISTER: Final = 31497
 
 DEFAULT_PORT: Final = 502
 DEFAULT_UNIT_ID: Final = 1

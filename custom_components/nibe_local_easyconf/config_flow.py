@@ -31,11 +31,15 @@ import voluptuous as vol
 
 from .const import (
     CONF_MODEL,
+    CONF_SEND_STATISTICS,
+    CONF_TRAITS,
     CONF_UNIT_ID,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_UNIT_ID,
     DOMAIN,
+    STATS_ENDPOINT,
+    STATS_PRIVACY_URL,
 )
 from .discovery import DiscoveryResult, RegisterDiscovery
 from .modbus import ModbusTransportError, NibeModbusClient
@@ -328,6 +332,9 @@ class NibeConfigFlow(ConfigFlow, domain=DOMAIN):
             self._input["model_label"] = MODEL_LABELS.get(model, "S-series")
             self._input[CONF_SCAN_INTERVAL] = int(user_input[CONF_SCAN_INTERVAL])
             self._input["language"] = self.hass.config.language or "sv"
+            # Kept so the daily report can say what kind of machine this is
+            # without re-probing. A closed set of slugs, never free text.
+            self._input[CONF_TRAITS] = sorted(self._traits)
             self._input["discovery"] = {
                 "present": sorted(self._discovery.present),
                 "reporting": sorted(self._discovery.reporting),
@@ -375,19 +382,33 @@ class NibeConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class NibeOptionsFlow(OptionsFlow):
-    """Polling interval, adjustable without re-adding the pump."""
+    """Polling interval and the daily report, without re-adding the pump."""
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
+        entry = self.config_entry
+
         if user_input is not None:
+            was_on = self._statistics_enabled()
+            now_on = bool(user_input.get(CONF_SEND_STATISTICS, True))
+            if was_on and not now_on:
+                # Switching it off erases what has already been sent, rather
+                # than merely going quiet. Imported here rather than at the
+                # top so the module stays importable without the reporter.
+                from .stats import async_forget_install
+
+                await async_forget_install(self.hass, entry, DOMAIN)
             return self.async_create_entry(
-                data={CONF_SCAN_INTERVAL: int(user_input[CONF_SCAN_INTERVAL])}
+                data={
+                    **entry.options,
+                    CONF_SCAN_INTERVAL: int(user_input[CONF_SCAN_INTERVAL]),
+                    CONF_SEND_STATISTICS: now_on,
+                }
             )
 
-        current = self.config_entry.options.get(
-            CONF_SCAN_INTERVAL,
-            self.config_entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+        current = entry.options.get(
+            CONF_SCAN_INTERVAL, entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
         )
         return self.async_show_form(
             step_id="init",
@@ -399,7 +420,21 @@ class NibeOptionsFlow(OptionsFlow):
                         selector.NumberSelectorConfig(
                             min=15, max=600, step=5, unit_of_measurement="s", mode="slider"
                         )
-                    )
+                    ),
+                    vol.Optional(
+                        CONF_SEND_STATISTICS, default=self._statistics_enabled()
+                    ): selector.BooleanSelector(),
                 }
             ),
+            description_placeholders={
+                "endpoint": STATS_ENDPOINT,
+                "privacy_url": STATS_PRIVACY_URL,
+            },
         )
+
+    def _statistics_enabled(self) -> bool:
+        """On unless the user has turned it off. Options win over data."""
+        entry = self.config_entry
+        if CONF_SEND_STATISTICS in entry.options:
+            return bool(entry.options[CONF_SEND_STATISTICS])
+        return bool(entry.data.get(CONF_SEND_STATISTICS, True))

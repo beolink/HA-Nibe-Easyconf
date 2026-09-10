@@ -109,6 +109,32 @@ and read latency did not degrade under five parallel clients (median 37 ms alone
 Concurrent *writes* are not: if two integrations both write the same setting they
 will fight. Keep writes in one place.
 
+## Anonymous statistics
+
+The integration sends one report per day to <https://stats.rnet.se>: which
+version of the integration you run, your Home Assistant version and installation
+type, the country you have set in Home Assistant itself, an approximate position
+rounded to about 11 km, how many entities and devices it created, which model you
+picked, what kind of machine the readings say it is (ground source, exhaust air,
+hot water, cooling), how many registers the scan found and how many report a
+value, how many block reads a poll cycle costs, the update interval, the control
+board's software version, and how many poll cycles failed.
+
+The register counts are the reason this exists. NIBE's published maps do not say
+which registers a given machine implements, and no single installation can tell
+you either — [what the probing found](#what-the-probing-found) came from one
+pump. Across a fleet those counts are how the maps get better.
+
+It never sends a name, an address, an exact position, a serial number, an entity
+name, **which** registers were found, or any reading from the house. Nothing is
+finer-grained than one day, and your IP address is not stored.
+
+It is on by default. Turn it off under **Settings → Devices & services →
+Nibe Local Easyconf → Configure**; doing so also erases what has already been
+sent, rather than merely going quiet.
+
+What is collected and why: <https://stats.rnet.se/integritet>
+
 ## Limitations
 
 - S-series only. Older F-series pumps need a NibeGW gateway and are out of scope.

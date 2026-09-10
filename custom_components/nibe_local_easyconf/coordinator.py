@@ -59,9 +59,23 @@ class NibeCoordinator(DataUpdateCoordinator[dict[int, float | int | None]]):
         # back to the cached sync call is safe once that has happened.
         self.registers = registers if registers is not None else union_map()
         self._subscribed: set[int] = set()
+        #: Cumulative failed poll cycles, for the daily report. Reset by a
+        #: reload, which ErrorCounter in stats_extra allows for.
+        self.read_failures = 0
         self._spans: list[Span] = []
         self._spans_stale = True
         self._write_lock = asyncio.Lock()
+        #: Set by the setup path when the daily report is enabled.
+        self.stats = None
+
+    @property
+    def block_reads(self) -> int:
+        """How many Modbus requests one poll cycle currently costs."""
+        return len(self._spans)
+
+    @property
+    def subscribed_count(self) -> int:
+        return len(self._subscribed)
 
     # -- entity subscriptions -------------------------------------------
 
@@ -103,8 +117,10 @@ class NibeCoordinator(DataUpdateCoordinator[dict[int, float | int | None]]):
                 for offset, value in enumerate(values):
                     words[(span.fc, span.start + offset)] = value
         except ModbusTransportError as err:
+            self.read_failures += 1
             raise UpdateFailed(f"Lost connection to the heat pump: {err}") from err
         except ModbusError as err:
+            self.read_failures += 1
             # A span went stale, most likely after a firmware or accessory
             # change. Force a re-plan so the next cycle skips the bad range.
             self._spans_stale = True

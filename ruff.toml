@@ -11,3 +11,10 @@ ignore = [
 [lint.isort]
 force-sort-within-sections = true
 combine-as-imports = true
+
+[lint.per-file-ignores]
+# stats.py is a shared file, copied verbatim between these integrations so the
+# reporting behaviour stays identical across all of them and a fix in one is a
+# straight copy into the others. Linting it here would fork it for cosmetic
+# reasons, so its own style is left alone.
+"custom_components/*/stats.py" = ["I001", "UP035", "SIM105", "RUF100"]

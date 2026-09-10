@@ -9,21 +9,32 @@ from homeassistant.const import CONF_HOST, CONF_PORT, CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
+from homeassistant.loader import async_get_integration
 import voluptuous as vol
 
+from .codec import decode, word_count
 from .const import (
+    CONF_TRAITS,
     CONF_UNIT_ID,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_UNIT_ID,
     DOMAIN,
+    FIRMWARE_REGISTER,
     PLATFORMS,
     SERVICE_RESCAN,
 )
 from .coordinator import NibeCoordinator
-from .discovery import DiscoveryResult, RegisterDiscovery
+from .discovery import (
+    DiscoveryResult,
+    RegisterDiscovery,
+    function_code,
+    modbus_address,
+)
 from .modbus import ModbusTransportError, NibeModbusClient
 from .registry import async_union_map
+from .stats import async_setup_stats
+from .stats_extra import ErrorCounter, build_extra
 from .storage import async_load, async_remove, async_save
 
 _LOGGER = logging.getLogger(__name__)
@@ -79,13 +90,64 @@ async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_reload_on_options))
     _register_services(hass)
+
+    # Anonymous daily report. On unless the user switches it off in the
+    # options, and it never opens a Modbus connection of its own: everything
+    # in it is either a count the coordinator already has or a fixed slug.
+    # See stats_extra.py for exactly what is sent.
+    firmware = await _async_read_firmware(client, registers, discovery)
+    integration = await async_get_integration(hass, DOMAIN)
+    failures = ErrorCounter()
+
+    def _stats_extra() -> dict:
+        return build_extra(
+            entry.data.get("model"),
+            traits=set(entry.data.get(CONF_TRAITS) or []),
+            registers_present=len(coordinator.discovery.present),
+            registers_reporting=len(coordinator.discovery.reporting),
+            registers_absent=len(coordinator.discovery.absent),
+            entities_enabled=coordinator.subscribed_count,
+            block_reads=coordinator.block_reads,
+            scan_interval_s=scan_interval,
+            read_failures=failures.delta(coordinator.read_failures),
+            firmware=firmware,
+        )
+
+    coordinator.stats = await async_setup_stats(
+        hass, entry, DOMAIN, str(integration.version), extra=_stats_extra
+    )
     return True
+
+
+async def _async_read_firmware(client, registers, discovery) -> int | None:
+    """Read the control board's software version once, at setup.
+
+    Read here rather than polled: it changes only when the pump is updated, and
+    keeping it out of the poll plan costs one fewer request every cycle.
+    """
+    if FIRMWARE_REGISTER not in discovery.present:
+        return None
+    meta = registers.get(FIRMWARE_REGISTER)
+    if meta is None:
+        return None
+    try:
+        words = await client.probe(
+            function_code(FIRMWARE_REGISTER),
+            modbus_address(FIRMWARE_REGISTER),
+            word_count(meta.get("size", "s16")),
+        )
+    except ModbusTransportError:
+        return None
+    return None if words is None else decode(meta, words)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool:
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:
-        await entry.runtime_data.client.close()
+        coordinator = entry.runtime_data
+        if getattr(coordinator, "stats", None):
+            await coordinator.stats.async_stop()
+        await coordinator.client.close()
     return unloaded
 
 
