@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 import logging
 import socket
 
@@ -10,6 +11,8 @@ from homeassistant.const import CONF_HOST, CONF_PORT, CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv, entity_registry as er
+from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.storage import Store
 from homeassistant.loader import async_get_integration
 import voluptuous as vol
 
@@ -22,12 +25,16 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_UNIT_ID,
     DOMAIN,
+    ENERGY_IN_REGISTER,
+    ENERGY_OUT_REGISTER,
     FIRMWARE_REGISTER,
     PLATFORMS,
     SERVICE_RESCAN,
+    is_core_register,
     platform_for,
 )
 from .coordinator import NibeCoordinator
+from .cop import STORAGE_VERSION as COP_STORAGE_VERSION, CopTracker, cop_for_report
 from .descriptions import friendly_name
 from .discovery import (
     DiscoveryResult,
@@ -45,6 +52,11 @@ from .stats_extra import ErrorCounter, build_extra
 from .storage import async_load, async_remove, async_save
 
 _LOGGER = logging.getLogger(__name__)
+
+#: How often the COP tracker takes a sample of the energy counters. As in the
+#: CTC integration: frequent enough that "yesterday" always has a sample 20-30
+#: hours old, while the yearly figure keeps only one sample per day.
+COP_SAMPLE_INTERVAL = timedelta(hours=6)
 
 type NibeConfigEntry = ConfigEntry[NibeCoordinator]
 
@@ -106,6 +118,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool
 
     await coordinator.async_config_entry_first_refresh()
 
+    # The coefficient of performance, from the pump's two lifetime energy
+    # counters. Set up before the platforms so the COP sensors have it.
+    if {ENERGY_OUT_REGISTER, ENERGY_IN_REGISTER} <= discovery.present:
+        coordinator.cop = CopTracker(
+            Store(hass, COP_STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}.cop")
+        )
+        await coordinator.cop.async_load()
+
+        async def _record_cop(_now=None) -> None:
+            await coordinator.cop.async_record(coordinator.energy_out, coordinator.energy_in)
+
+        await _record_cop()
+        entry.async_on_unload(
+            async_track_time_interval(hass, _record_cop, COP_SAMPLE_INTERVAL)
+        )
+
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_reload_on_options))
@@ -119,6 +147,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool
     failures = ErrorCounter()
 
     def _stats_extra() -> dict:
+        cop_day, cop_year, cop_lifetime = cop_for_report(
+            coordinator.cop, coordinator.energy_out, coordinator.energy_in
+        )
         return build_extra(
             entry.data.get("model"),
             traits=set(entry.data.get(CONF_TRAITS) or []),
@@ -131,6 +162,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool
             read_failures=failures.delta(coordinator.read_failures),
             firmware=coordinator.firmware,
             serial=coordinator.serial.serial if coordinator.serial else None,
+            cop_day=cop_day,
+            cop_year=cop_year,
+            cop_lifetime=cop_lifetime,
         )
 
     coordinator.stats = await async_setup_stats(
@@ -147,7 +181,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool
 def _async_remove_moved_entities(
     hass: HomeAssistant, entry: ConfigEntry, registers: dict, present: set[int]
 ) -> None:
-    """Drop registry entries left behind when a register changes platform.
+    """Keep the entity registry in step with the current register policy.
+
+    Drops entries left behind when a register changes platform, and enables
+    entities that have since joined the default set.
 
     A register that gains a value table moves from number to select (NIBE's own
     tables did that to five settings). The registry keys an entity on its
@@ -167,6 +204,19 @@ def _async_remove_moved_entities(
             if entity_id := registry.async_get_entity_id(platform, DOMAIN, unique_id):
                 _LOGGER.debug("Register %s moved to %s; removing %s", register, current, entity_id)
                 registry.async_remove(entity_id)
+
+        # Home Assistant applies "enabled by default" only when an entity is
+        # first created, so a register that joins the default set later - the
+        # two energy counters did - would stay switched off on every existing
+        # installation. Re-enable it, but only where this integration was the
+        # one that disabled it: anything the user switched off stays off.
+        if not is_core_register(meta.get("title", ""), meta):
+            continue
+        entity_id = registry.async_get_entity_id(current, DOMAIN, unique_id)
+        entity = registry.async_get(entity_id) if entity_id else None
+        if entity is not None and entity.disabled_by is er.RegistryEntryDisabler.INTEGRATION:
+            _LOGGER.debug("Register %s is now enabled by default; enabling %s", register, entity_id)
+            registry.async_update_entity(entity_id, disabled_by=None)
 
 
 async def _async_serial_by_reverse_dns(hass: HomeAssistant, host: str) -> str | None:
@@ -225,6 +275,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> boo
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     await async_remove(hass, entry.entry_id)
+    await Store(hass, COP_STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}.cop").async_remove()
 
 
 async def _async_reload_on_options(hass: HomeAssistant, entry: NibeConfigEntry) -> None:

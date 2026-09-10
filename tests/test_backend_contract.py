@@ -39,6 +39,9 @@ METRICS = {
     "built_year": {"max": 2100, "min": 1990, "dec": 0},
     "built_week": {"max": 53, "min": 1, "dec": 0},
     "product_code": {"max": 9999, "min": 1000, "dec": 0},
+    "cop_day": {"max": 10, "min": 0.5, "dec": 2},
+    "cop_year": {"max": 10, "min": 0.5, "dec": 2},
+    "cop_lifetime": {"max": 10, "min": 0.5, "dec": 2},
 }
 
 RE_MODEL = re.compile(r"^[a-z0-9][a-z0-9._-]{0,31}$")
@@ -70,6 +73,9 @@ def _full_report():
         read_failures=2,
         firmware=1036,
         serial="06544322034003",
+        cop_day=3.91,
+        cop_year=3.98,
+        cop_lifetime=4.18,
     )
 
 
@@ -116,3 +122,10 @@ def test_firmware_survives():
     firmware = _full_report()["firmware"]
     assert isinstance(firmware, str)
     assert RE_VERSION.match(firmware)
+
+
+def test_every_cop_figure_survives():
+    metrics = _full_report()["metrics"]
+    assert metrics["cop_day"] == 3.91
+    assert metrics["cop_year"] == 3.98
+    assert metrics["cop_lifetime"] == 4.18

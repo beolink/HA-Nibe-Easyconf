@@ -107,6 +107,8 @@ SHORT_NAMES: dict[str, tuple[str, str]] = {
     "Current power": ("Aktuell effekt", "Current power"),
     "Current power (EME 20)": ("Aktuell effekt", "Current power"),
     "Total energy": ("Total energi", "Total energy"),
+    "Tot. production": ("Total produktion", "Total production"),
+    "Tot. consumption": ("Total förbrukning", "Total consumption"),
     "Total energy (EME 20)": ("Total energi", "Total energy"),
     "Hot water, including int. add. heat": ("Varmvatten inkl. el", "Hot water incl. elec."),
     "Heating, including int. add. heat": ("Värme inkl. el", "Heating incl. elec."),

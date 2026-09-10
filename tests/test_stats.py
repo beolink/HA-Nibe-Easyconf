@@ -145,3 +145,22 @@ def test_error_counter_survives_a_reload():
     counter = stats_extra.ErrorCounter()
     counter.delta(12)
     assert counter.delta(2) == 2
+
+
+# --------------------------------------------------------------------- COP
+
+
+def test_cop_figures_reach_the_report():
+    extra = _extra(cop_day=3.9, cop_year=3.98, cop_lifetime=4.18)
+    assert extra["metrics"] == {"cop_day": 3.9, "cop_year": 3.98, "cop_lifetime": 4.18}
+
+
+def test_an_impossible_cop_is_not_sent():
+    """A counter reset, or a day with almost no consumption, divides to nonsense."""
+    extra = _extra(cop_day=0.1, cop_year=42.0, cop_lifetime=4.18)
+    assert extra["metrics"] == {"cop_lifetime": 4.18}
+
+
+def test_a_missing_cop_is_left_out():
+    extra = _extra(cop_lifetime=4.18)
+    assert set(extra["metrics"]) == {"cop_lifetime"}

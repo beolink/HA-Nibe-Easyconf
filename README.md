@@ -176,6 +176,26 @@ more complete and more precise than the library's: it labels the diverter valve
 pump's *intermittent / continuous / 10 days continuous*, which the library
 leaves as a bare number. See [docs/nibe-references.md](docs/nibe-references.md).
 
+### Coefficient of performance
+
+The pump keeps two lifetime energy counters on Modbus — register 33822, heat
+delivered, and 33824, electricity consumed — and they become the *Total
+produktion* and *Total förbrukning* sensors, ready for Home Assistant's Energy
+dashboard. On the development unit they read the same figures myUplink's cloud
+reports for the pump, to the tenth of a kWh.
+
+Their ratio is the coefficient of performance, computed the same way as in the
+CTC integration so the two are comparable:
+
+- **COP, dygn** — over the last day, from a sample 20–30 hours old. Appears
+  about a day after setup.
+- **COP, år** — over a rolling year. Until a year of samples exists it shows the
+  lifetime figure, and its `basis` attribute says so.
+
+The anonymous report is stricter than the sensor: it sends a yearly figure only
+once it really covers a year, since the lifetime figure under the yearly name
+would be a different number wearing the wrong label.
+
 ## The NIBE page
 
 Setting the integration up adds a **NIBE** entry to the sidebar on its own —

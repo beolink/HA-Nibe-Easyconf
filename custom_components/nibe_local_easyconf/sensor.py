@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
@@ -23,6 +23,8 @@ async def async_setup_entry(
     coordinator: NibeCoordinator = entry.runtime_data
     if coordinator.serial is not None and coordinator.serial.manufactured:
         async_add_entities([NibeManufacturedSensor(coordinator)])
+    if coordinator.cop is not None:
+        async_add_entities([NibeCopSensor(coordinator, span) for span in ("day", "year")])
 
 
 class NibeSensor(NibeRegisterEntity, SensorEntity):
@@ -106,3 +108,45 @@ class NibeManufacturedSensor(CoordinatorEntity[NibeCoordinator], SensorEntity):
             "iso_week": serial.iso_week,
             "day_of_year": serial.day_of_year,
         }
+
+
+class NibeCopSensor(CoordinatorEntity[NibeCoordinator], SensorEntity):
+    """Coefficient of performance over the last day, or over a rolling year.
+
+    The yearly sensor shows the lifetime figure until a year of samples exists,
+    and says so in its `basis` attribute - the same behaviour as the CTC
+    integration's. The daily report is stricter and sends a yearly figure only
+    once it truly covers a year.
+    """
+
+    _attr_has_entity_name = True
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 2
+    _attr_icon = "mdi:heat-pump-outline"
+
+    def __init__(self, coordinator: NibeCoordinator, span: str) -> None:
+        super().__init__(coordinator)
+        self._span = span
+        self._language = coordinator.config_entry.data.get("language", "sv")
+        sv = self._language.startswith("sv")
+        self._attr_name = {
+            "day": "COP, dygn" if sv else "COP, day",
+            "year": "COP, år" if sv else "COP, year",
+        }[span]
+        self._attr_unique_id = f"{coordinator.config_entry.entry_id}-cop-{span}"
+        self._attr_device_info = device_info(coordinator)
+
+    def _result(self):
+        tracker = self.coordinator.cop
+        out, consumed = self.coordinator.energy_out, self.coordinator.energy_in
+        if self._span == "day":
+            return tracker.result_day(out, consumed)
+        return tracker.result(out, consumed)
+
+    @property
+    def native_value(self):
+        return self._result().value
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        return self._result().as_attributes(self._language)

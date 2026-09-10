@@ -13,7 +13,13 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .codec import decode, encode_raw, unscale, word_count
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SLOW_POLL_WARNING
+from .const import (
+    DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
+    ENERGY_IN_REGISTER,
+    ENERGY_OUT_REGISTER,
+    SLOW_POLL_WARNING,
+)
 from .discovery import (
     DiscoveryResult,
     RegisterDiscovery,
@@ -59,6 +65,10 @@ class NibeCoordinator(DataUpdateCoordinator[dict[int, float | int | None]]):
         # back to the cached sync call is safe once that has happened.
         self.registers = registers if registers is not None else union_map()
         self._subscribed: set[int] = set()
+        #: Registers read every cycle whether or not an entity shows them: the
+        #: energy counters behind the COP. Two adjacent 32-bit words, so one
+        #: more block read at most.
+        self._internal: set[int] = {ENERGY_OUT_REGISTER, ENERGY_IN_REGISTER}
         #: Cumulative failed poll cycles, for the daily report. Reset by a
         #: reload, which ErrorCounter in stats_extra allows for.
         self.read_failures = 0
@@ -67,6 +77,8 @@ class NibeCoordinator(DataUpdateCoordinator[dict[int, float | int | None]]):
         self._write_lock = asyncio.Lock()
         #: Set by the setup path when the daily report is enabled.
         self.stats = None
+        #: cop.CopTracker, set by the setup path when the counters exist.
+        self.cop = None
         #: Decoded serial (serial.NibeSerial) when the network name gave it away.
         self.serial = None
         #: Control board software version, read once at setup.
@@ -82,6 +94,26 @@ class NibeCoordinator(DataUpdateCoordinator[dict[int, float | int | None]]):
     @property
     def subscribed_count(self) -> int:
         return len(self._subscribed)
+
+    @property
+    def _polled(self) -> set[int]:
+        return self._subscribed | self._internal
+
+    def _value(self, register: int) -> float | None:
+        if self.data is None:
+            return None
+        value = self.data.get(register)
+        return None if value is None else float(value)
+
+    @property
+    def energy_out(self) -> float | None:
+        """Heat delivered over the pump's lifetime, kWh."""
+        return self._value(ENERGY_OUT_REGISTER)
+
+    @property
+    def energy_in(self) -> float | None:
+        """Electricity consumed over the pump's lifetime, kWh."""
+        return self._value(ENERGY_IN_REGISTER)
 
     # -- entity subscriptions -------------------------------------------
 
@@ -100,7 +132,7 @@ class NibeCoordinator(DataUpdateCoordinator[dict[int, float | int | None]]):
             return
         self._spans = plan_spans(
             self.registers,
-            self._subscribed & self.discovery.present,
+            self._polled & self.discovery.present,
             present=self.discovery.present,
         )
         self._spans_stale = False
@@ -142,7 +174,7 @@ class NibeCoordinator(DataUpdateCoordinator[dict[int, float | int | None]]):
             )
 
         data: dict[int, float | int | None] = {}
-        for register in self._subscribed:
+        for register in self._polled:
             meta = self.registers.get(register)
             if meta is None:
                 continue

@@ -67,6 +67,21 @@ def firmware_value(raw: Any) -> int | None:
     return number if 0 < number < 100000 else None
 
 
+def cop_value(raw: Any) -> float | None:
+    """A coefficient of performance, rejected unless it is physically sane.
+
+    The same bounds as the CTC integration and the backend (0.5-10): a heat
+    pump outside them is a counter reset or a division by almost nothing.
+    """
+    if raw is None:
+        return None
+    try:
+        value = round(float(raw), 2)
+    except (TypeError, ValueError):
+        return None
+    return value if 0.5 <= value <= 10.0 else None
+
+
 def _count(value: Any) -> int:
     """A non-negative whole number, whatever the caller passed."""
     try:
@@ -107,6 +122,9 @@ def build_extra(
     read_failures: int = 0,
     firmware: Any = None,
     serial: Any = None,
+    cop_day: Any = None,
+    cop_year: Any = None,
+    cop_lifetime: Any = None,
 ) -> dict[str, Any]:
     """Build the integration specific part of the daily report.
 
@@ -152,8 +170,19 @@ def build_extra(
     # sends, in the same shape. A week is shared by a whole production run, so
     # it does not point at a machine. The exact day stays local, and the
     # sequence number, the one part that identifies a unit, is never read here.
+    metrics: dict[str, Any] = {}
     if parsed is not None:
-        payload["metrics"] = {"built_year": parsed.year, "built_week": parsed.iso_week}
+        metrics["built_year"] = parsed.year
+        metrics["built_week"] = parsed.iso_week
+
+    # How well it performs: the same three figures, in the same shape, as the
+    # CTC integration sends. Each only when it stands on its own span.
+    for key, raw in (("cop_day", cop_day), ("cop_year", cop_year), ("cop_lifetime", cop_lifetime)):
+        value = cop_value(raw)
+        if value is not None:
+            metrics[key] = value
+    if metrics:
+        payload["metrics"] = metrics
 
     # A single string under "firmware". The shared stats.py passes only that
     # key through, so a "firmwares" object never left the house.

@@ -20,6 +20,11 @@ CONF_SERIAL: Final = "serial"
 STATS_ENDPOINT: Final = "stats.rnet.se"
 STATS_PRIVACY_URL: Final = "https://stats.rnet.se/integritet"
 
+#: The pump's own lifetime energy counters, in tenths of a kWh: heat delivered
+#: and electricity consumed. Their ratio is the coefficient of performance.
+ENERGY_OUT_REGISTER: Final = 33822
+ENERGY_IN_REGISTER: Final = 33824
+
 #: Software version of the main control board (EB100). A plain number on the
 #: S-series, and the only firmware the pump exposes over Modbus.
 FIRMWARE_REGISTER: Final = 31497
@@ -73,6 +78,9 @@ CORE_TITLE_PATTERNS: Final = tuple(
         r"\bdiverter valve hot water\b",
         r"\bmax\.? internal additional heat$",
         r"\bpermit additional heat, heating\b",
+        # The two lifetime counters behind the COP, and what the Energy
+        # dashboard wants: heat delivered and electricity consumed.
+        r"^tot\. (production|consumption)$",
     )
 )
 
