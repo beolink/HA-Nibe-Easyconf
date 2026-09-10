@@ -282,12 +282,38 @@ What is collected and why: <https://stats.rnet.se/integritet>
 
 ## Limitations
 
-- S-series only. Older F-series pumps need a NibeGW gateway and are out of scope.
+- S-series only for now. F-series pumps and SMO 40 have no Modbus TCP; support
+  through NIBE's MODBUS 40 accessory is on the [roadmap](#roadmap).
 - Register names come from NIBE's published maps, which are in English. Titles
   are translated to Swedish only where the whole phrase is recognised —
   a partial translation reads worse than the original.
 - Descriptions decode component designations that could be pinned down from
   NIBE's own data. Unknown codes get a structural description rather than a guess.
+
+## Roadmap
+
+- **F-series through NIBE's MODBUS 40 accessory.** The F-series and SMO 40
+  have no Modbus TCP, and MODBUS 40 is NIBE's own way in. Its FAQ (linked from
+  [docs/nibe-references.md](docs/nibe-references.md)) sets the terms:
+  - RS-485 Modbus RTU at a fixed 9600 baud, 8N1, address 1 (changeable from
+    MODBUS 40 version 10): a serial adapter on the Home Assistant host, or a
+    Modbus TCP-to-RTU gateway in front of the existing client;
+  - holding registers only, addressed by their full number (40004 is 0x9C44),
+    offset addressing only from version 10, and PLC-style masters one higher;
+  - writes as Write Multiple Registers only;
+  - 2.1 s per register, unless it is one of up to 20 in a LOG.SET file loaded
+    from a USB stick. With 650 to 1,580 registers per map, a full scan takes
+    20 to 55 minutes, so it has to run in the background with progress, and
+    the poll interval has to grow with the number of enabled entities.
+
+  The register maps are already in the `nibe` library (F1145/F1245,
+  F1155/F1255, F1345, F1355, F370/F470, F730, F750, SMO 20/40, VVM); the alarm
+  texts would come from NIBE's F-series alarm list.
+- **Hold stats.py's own keys to the backend as well.** The contract test checks
+  what `stats_extra` builds, but not the keys `stats.py` adds itself (`ha_id`,
+  `log_errors` and `log_warnings` since 1.7.2). The backend rejects a whole
+  report over one unknown top-level key, so a key it does not know yet would
+  silence every report without an error on this side.
 
 ## Licence
 
