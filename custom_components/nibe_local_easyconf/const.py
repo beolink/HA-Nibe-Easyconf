@@ -12,6 +12,9 @@ CONF_UNIT_ID: Final = "unit_id"
 CONF_SCAN_UNKNOWN: Final = "scan_unknown"
 CONF_SEND_STATISTICS: Final = "send_statistics"
 CONF_TRAITS: Final = "traits"
+#: The 14-digit NIBE serial, when the pump's network name gave it away. Kept on
+#: the device; only the article number and build date go into the report.
+CONF_SERIAL: Final = "serial"
 
 #: Shown in the options text so the user can read what is sent before deciding.
 STATS_ENDPOINT: Final = "stats.rnet.se"

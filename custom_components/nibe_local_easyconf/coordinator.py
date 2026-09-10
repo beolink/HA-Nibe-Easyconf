@@ -67,6 +67,12 @@ class NibeCoordinator(DataUpdateCoordinator[dict[int, float | int | None]]):
         self._write_lock = asyncio.Lock()
         #: Set by the setup path when the daily report is enabled.
         self.stats = None
+        #: Decoded serial (serial.NibeSerial) when the network name gave it away.
+        self.serial = None
+        #: Control board software version, read once at setup.
+        self.firmware: int | None = None
+        #: register -> the distinct display name chosen for it.
+        self.entity_names: dict[int, str] = {}
 
     @property
     def block_reads(self) -> int:

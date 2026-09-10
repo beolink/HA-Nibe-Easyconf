@@ -83,6 +83,38 @@ what it found before asking which model to name the device after.
 The scan result is cached, so restarts are instant. After a firmware update or
 fitting an accessory, call the **`nibe_local_easyconf.rescan_registers`** service.
 
+## Which model is it?
+
+Not something the pump will tell you over Modbus. Every one of the 919 registers
+the development unit implements was checked for its serial number — 16-bit and
+32-bit, both word orders — and none carries it. A `Heat pump type` register
+exists in every S-series map, but no published map says what its values mean.
+Home Assistant's own `nibe_heatpump` resolves this by asking you in a dropdown.
+
+The pump does announce its serial, though: it calls itself `NIBE-<serial>` on
+the network. That reaches Home Assistant through DHCP, and a reverse DNS lookup
+recovers it for pumps added by hand. NIBE
+[documents the format](https://www.nibe.eu/sv-se/support/vanliga-fragor/faq-items/vad-betyder-siffrorna-i-serienumret-pa-en-nibe-produkt):
+
+| Digits | Meaning | Development unit |
+|---|---|---|
+| 1–6 | Article number: model, size and variant | `065443` — S1155-16 |
+| 7–8 | Year of manufacture | `22` — 2022 |
+| 9–11 | Day of that year (not a week number) | `034` — 3 February |
+| 12–14 | Internal sequence number | kept on the device only |
+
+The article number pre-selects the model in setup, and the device page shows the
+exact model with its size, the article number, the serial, the control board's
+software version, and a *Manufactured* date. The dates check out against the
+machine: built 3 February 2022, 25,025 compressor hours at 4.6 years old is a
+62 % average duty cycle, which is what a ground-source pump in Sweden does.
+
+The article table covers what could be corroborated. Retailer listings turned
+out to mix NIBE's real six-digit `06xxxx` numbers with their own SKUs and
+Swedish RSK numbers, so only the former were kept. An unlisted article still
+decodes its date, and the anonymous report carries it, so the table can grow
+from the fleet.
+
 ## Entities
 
 Every register the pump implements becomes an entity, but only about a hundred
@@ -99,6 +131,35 @@ Each entity carries three attributes:
 - `description` — the generated explanation
 - `modbus_register` — the NIBE register number
 - `nibe_title` — NIBE's original title, unmodified
+
+### Names
+
+NIBE's titles run to 78 characters ("Energy log - Used energy by additional heater
+for hot water over the past hour"), and the device page cuts a name off at around
+25. The default set therefore gets hand-written short names of at most 24
+characters — that one becomes *Elpatron, VV, 1 h*. The full title and the
+explanation stay on the entity as attributes, one click away.
+
+NIBE also reuses titles: on the development unit 308 of the 919 registers shared
+just 57 names, 21 of them titled only "Permit". Every name is made distinct —
+by the component designation that tells them apart where there is one (EP14 and
+EP15 are the two refrigerant circuits), by marking the setting when a value
+exists both to read and to set, and by the register number when nothing else is
+known.
+
+The explanation is in the entity's details rather than a hover tooltip, because
+the device page has nowhere to put one: the card that draws its entity rows
+binds no `title` and uses no tooltip component, and the only place the frontend
+renders a `description` attribute at all is the legacy configurator dialog.
+Checked against `home-assistant-frontend==20260826.6`, the version Home
+Assistant 2026.9.1 ships.
+
+The number of columns is not the integration's to set either. The page computes
+it as `⌊(width + 16) / 336⌋` — each column at least 320 px — from the width of
+its own content area, so it follows the browser window. Below about 990 px of
+content width you get two columns: narrow the window, keep Home Assistant's
+sidebar expanded (it takes its width from the content area), or zoom the
+browser in.
 
 ## Running alongside another Modbus integration
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import socket
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT, CONF_SCAN_INTERVAL
@@ -14,6 +15,7 @@ import voluptuous as vol
 
 from .codec import decode, word_count
 from .const import (
+    CONF_SERIAL,
     CONF_TRAITS,
     CONF_UNIT_ID,
     DEFAULT_PORT,
@@ -25,6 +27,7 @@ from .const import (
     SERVICE_RESCAN,
 )
 from .coordinator import NibeCoordinator
+from .descriptions import friendly_name
 from .discovery import (
     DiscoveryResult,
     RegisterDiscovery,
@@ -32,7 +35,9 @@ from .discovery import (
     modbus_address,
 )
 from .modbus import ModbusTransportError, NibeModbusClient
+from .names import assign_names
 from .registry import async_union_map
+from .serial import parse_serial, serial_from_hostname
 from .stats import async_setup_stats
 from .stats_extra import ErrorCounter, build_extra
 from .storage import async_load, async_remove, async_save
@@ -84,6 +89,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool
     coordinator = NibeCoordinator(
         hass, entry, client, discovery, scan_interval, registers=registers
     )
+    # Everything the entities read at construction time has to be in place
+    # before the platforms are forwarded: names, and the device identity.
+    language = entry.data.get("language", "sv")
+    coordinator.entity_names = assign_names(
+        registers, discovery.present, language, friendly_name
+    )
+    coordinator.serial = parse_serial(
+        entry.data.get(CONF_SERIAL) or await _async_serial_by_reverse_dns(hass, client.host)
+    )
+    coordinator.firmware = await _async_read_firmware(client, registers, discovery)
+
     await coordinator.async_config_entry_first_refresh()
 
     entry.runtime_data = coordinator
@@ -95,7 +111,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool
     # options, and it never opens a Modbus connection of its own: everything
     # in it is either a count the coordinator already has or a fixed slug.
     # See stats_extra.py for exactly what is sent.
-    firmware = await _async_read_firmware(client, registers, discovery)
     integration = await async_get_integration(hass, DOMAIN)
     failures = ErrorCounter()
 
@@ -110,13 +125,29 @@ async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool
             block_reads=coordinator.block_reads,
             scan_interval_s=scan_interval,
             read_failures=failures.delta(coordinator.read_failures),
-            firmware=firmware,
+            firmware=coordinator.firmware,
+            serial=coordinator.serial.serial if coordinator.serial else None,
         )
 
     coordinator.stats = await async_setup_stats(
         hass, entry, DOMAIN, str(integration.version), extra=_stats_extra
     )
     return True
+
+
+async def _async_serial_by_reverse_dns(hass: HomeAssistant, host: str) -> str | None:
+    """The pump's serial from its network name, for entries made by hand.
+
+    Entries created through DHCP discovery already carry the serial; this
+    covers the scan and manual paths, and entries from before it was stored.
+    """
+    try:
+        name, _aliases, _addrs = await hass.async_add_executor_job(
+            socket.gethostbyaddr, host
+        )
+    except (OSError, UnicodeError):
+        return None
+    return serial_from_hostname(name)
 
 
 async def _async_read_firmware(client, registers, discovery) -> int | None:

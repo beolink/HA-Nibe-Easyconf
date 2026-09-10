@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import re
+import socket
 from typing import Any
 
 from homeassistant.config_entries import (
@@ -32,6 +32,7 @@ import voluptuous as vol
 from .const import (
     CONF_MODEL,
     CONF_SEND_STATISTICS,
+    CONF_SERIAL,
     CONF_TRAITS,
     CONF_UNIT_ID,
     DEFAULT_PORT,
@@ -50,11 +51,9 @@ from .registry import (
     detect_traits,
 )
 from .scanner import FoundPump, async_find_pumps, async_identify
+from .serial import parse_serial, serial_from_hostname
 
 _LOGGER = logging.getLogger(__name__)
-
-#: NIBE's network hostname is "NIBE-" followed by the serial number.
-_SERIAL_RE = re.compile(r"^nibe-(\w+)", re.I)
 
 
 class NibeConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -64,6 +63,7 @@ class NibeConfigFlow(ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         self._registers: dict[int, dict] | None = None
+        self._serial: str | None = None
         self._client: NibeModbusClient | None = None
         self._input: dict[str, Any] = {}
         self._traits: set[str] = set()
@@ -83,9 +83,8 @@ class NibeConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_dhcp(self, discovery_info: DhcpServiceInfo) -> ConfigFlowResult:
         """A device calling itself NIBE-<serial> appeared on the network."""
         host = discovery_info.ip
-        serial = None
-        if match := _SERIAL_RE.match(discovery_info.hostname or ""):
-            serial = match.group(1)
+        serial = serial_from_hostname(discovery_info.hostname)
+        self._serial = serial
 
         # An entry already pointing at this address needs nothing from us.
         for entry in self._async_current_entries():
@@ -94,7 +93,7 @@ class NibeConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if serial:
             # The serial survives a DHCP lease change, so it is the stable id.
-            await self.async_set_unique_id(f"nibe-{serial.lower()}")
+            await self.async_set_unique_id(f"nibe-{serial}")
             self._abort_if_unique_id_configured(updates={CONF_HOST: host})
 
         self._registers = await async_union_map(self.hass)
@@ -276,14 +275,35 @@ class NibeConfigFlow(ConfigFlow, domain=DOMAIN):
             self._error = failure
             return self.async_abort(reason=failure)
 
+        if self._serial is None:
+            self._serial = await self._async_serial_by_reverse_dns(config[CONF_HOST])
         if self.unique_id is None:
+            # The serial is the same identity DHCP discovery uses, so a pump
+            # added by hand is recognised when DHCP later sees it too.
             await self.async_set_unique_id(
-                f"{config[CONF_HOST]}:{config[CONF_PORT]}:{config[CONF_UNIT_ID]}"
+                f"nibe-{self._serial}"
+                if self._serial
+                else f"{config[CONF_HOST]}:{config[CONF_PORT]}:{config[CONF_UNIT_ID]}"
             )
         self._abort_if_unique_id_configured()
         self._client = client
         self._input = dict(config)
         return await self.async_step_discover()
+
+    async def _async_serial_by_reverse_dns(self, host: str) -> str | None:
+        """Recover the serial from the pump's network name, if DNS knows it.
+
+        The serial is not readable over Modbus, but the pump registers itself
+        as NIBE-<serial>, and most home routers answer a reverse lookup for
+        their DHCP clients. Best effort: no answer simply means no serial.
+        """
+        try:
+            name, _aliases, _addrs = await self.hass.async_add_executor_job(
+                socket.gethostbyaddr, host
+            )
+        except (OSError, UnicodeError):
+            return None
+        return serial_from_hostname(name)
 
     async def async_step_discover(
         self, user_input: dict[str, Any] | None = None
@@ -335,6 +355,8 @@ class NibeConfigFlow(ConfigFlow, domain=DOMAIN):
             # Kept so the daily report can say what kind of machine this is
             # without re-probing. A closed set of slugs, never free text.
             self._input[CONF_TRAITS] = sorted(self._traits)
+            if self._serial:
+                self._input[CONF_SERIAL] = self._serial
             self._input["discovery"] = {
                 "present": sorted(self._discovery.present),
                 "reporting": sorted(self._discovery.reporting),
@@ -343,11 +365,15 @@ class NibeConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_create_entry(title=title, data=self._input)
 
         language = self.hass.config.language or "sv"
+        # The serial's article number names the exact model, so it becomes the
+        # default. The user can still override it - the table is not complete.
+        parsed = parse_serial(self._serial)
+        suggested = parsed.model_key if parsed and parsed.model_key in MODEL_LABELS else "other"
         return self.async_show_form(
             step_id="confirm",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_MODEL, default="other"): selector.SelectSelector(
+                    vol.Required(CONF_MODEL, default=suggested): selector.SelectSelector(
                         selector.SelectSelectorConfig(
                             options=[
                                 selector.SelectOptionDict(value=key, label=label)

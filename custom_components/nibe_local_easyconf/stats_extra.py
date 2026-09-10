@@ -18,6 +18,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from .serial import parse_serial
+
 #: The model the user picked in the config flow, mapped to a short slug. The
 #: key set is closed, so a value typed by hand or added by a future release
 #: reports as "other" rather than as itself.
@@ -104,6 +106,7 @@ def build_extra(
     scan_interval_s: int = 0,
     read_failures: int = 0,
     firmware: Any = None,
+    serial: Any = None,
 ) -> dict[str, Any]:
     """Build the integration specific part of the daily report.
 
@@ -135,6 +138,18 @@ def build_extra(
         "block_reads": _count(block_reads) or None,
         "scan_interval_s": _count(scan_interval_s) or None,
     }
+
+    # From the serial, the same three fields the CTC integration sends, in the
+    # same shape. The article number is shared by every unit of one model,
+    # size and material, and a build week by a whole production run, so
+    # neither points at a machine. The exact day is kept locally only - a week
+    # is as fine as anything in this report gets - and the sequence number,
+    # the one part that does identify a unit, is never read here at all.
+    parsed = parse_serial(serial)
+    if parsed is not None:
+        metrics["product_code"] = int(parsed.article)
+        metrics["built_year"] = parsed.year
+        metrics["built_week"] = parsed.iso_week
     metrics = {k: v for k, v in metrics.items() if v is not None}
     if metrics:
         payload["metrics"] = metrics

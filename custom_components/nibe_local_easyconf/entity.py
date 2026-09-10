@@ -34,7 +34,9 @@ class NibeRegisterEntity(CoordinatorEntity[NibeCoordinator]):
         self._language = language
 
         title = meta.get("title", str(register))
-        self._attr_name = friendly_name(title, language)
+        self._attr_name = coordinator.entity_names.get(register) or friendly_name(
+            title, language
+        )
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}-{register}"
         self._description = describe(title, register, meta, language)
 
@@ -42,13 +44,7 @@ class NibeRegisterEntity(CoordinatorEntity[NibeCoordinator]):
         # default; the rest exist but stay dormant until switched on.
         self._attr_entity_registry_enabled_default = is_core_register(title, meta)
 
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, coordinator.config_entry.entry_id)},
-            manufacturer="NIBE",
-            model=coordinator.config_entry.data.get("model_label", "S-series"),
-            name=coordinator.config_entry.title,
-            configuration_url=f"http://{coordinator.client.host}",
-        )
+        self._attr_device_info = device_info(coordinator)
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
@@ -105,4 +101,24 @@ def async_add_register_entities(entry, platform: str, factory, async_add_entitie
         for register in sorted(coordinator.discovery.present)
         if register in coordinator.registers
         and platform_for(coordinator.registers[register]) == platform
+    )
+
+
+def device_info(coordinator: NibeCoordinator) -> DeviceInfo:
+    """The device card: exact model and size when the serial named them."""
+    entry = coordinator.config_entry
+    model = entry.data.get("model_label", "S-series")
+    serial = coordinator.serial
+    if serial is not None and serial.size:
+        model = f"{model}-{serial.size}"
+    return DeviceInfo(
+        identifiers={(DOMAIN, entry.entry_id)},
+        manufacturer="NIBE",
+        model=model,
+        # NIBE's article number: one per model, size and material variant.
+        model_id=serial.article if serial is not None else None,
+        serial_number=serial.serial if serial is not None else None,
+        sw_version=str(coordinator.firmware) if coordinator.firmware else None,
+        name=entry.title,
+        configuration_url=f"http://{coordinator.client.host}",
     )
