@@ -34,6 +34,7 @@ from .discovery import (
     function_code,
     modbus_address,
 )
+from .frontend import async_register_frontend, async_unregister_frontend
 from .modbus import ModbusTransportError, NibeModbusClient
 from .names import assign_names
 from .registry import async_union_map
@@ -132,6 +133,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool
     coordinator.stats = await async_setup_stats(
         hass, entry, DOMAIN, str(integration.version), extra=_stats_extra
     )
+
+    # The "NIBE" sidebar page and the dashboard card. Once per Home Assistant,
+    # however many pumps there are; see frontend.py for why a panel rather
+    # than a generated dashboard.
+    await async_register_frontend(hass, str(integration.version))
     return True
 
 
@@ -179,6 +185,13 @@ async def async_unload_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> boo
         if getattr(coordinator, "stats", None):
             await coordinator.stats.async_stop()
         await coordinator.client.close()
+        still_loaded = [
+            other
+            for other in hass.config_entries.async_loaded_entries(DOMAIN)
+            if other.entry_id != entry.entry_id
+        ]
+        if not still_loaded:
+            async_unregister_frontend(hass)
     return unloaded
 
 

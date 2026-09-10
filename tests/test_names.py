@@ -59,10 +59,10 @@ def test_a_setting_is_told_apart_from_its_reading():
         40096: _meta("Operating mode heating medium pump", write=True),
     }
     assigned = _assign(registers)
-    assert assigned[40096] == "VB-pump, driftläge, inställning"
+    assert assigned[40096] == "VB-pump, läge (ställ)"
     # Marking the setting is enough; the reading keeps its plain name rather
     # than also picking up a register number.
-    assert assigned[31097] == "VB-pump, driftläge"
+    assert assigned[31097] == "VB-pump, läge"
 
 
 def test_the_register_number_is_the_last_resort():

@@ -161,6 +161,34 @@ content width you get two columns: narrow the window, keep Home Assistant's
 sidebar expanded (it takes its width from the content area), or zoom the
 browser in.
 
+## The NIBE page
+
+Setting the integration up adds a **NIBE** entry to the sidebar on its own —
+nothing to configure. It lists the pump's enabled entities two to a row with
+room for the whole name, grouped the way the device page groups them, with a
+filter that searches names and explanations. Hover a row for its explanation;
+tap it and the explanation is written out underneath, along with NIBE's
+original title and the register number, because a hover text alone never
+reaches a phone or a screen reader.
+
+A sidebar panel rather than a generated dashboard, deliberately: Home Assistant
+keeps its dashboards collection in a local variable inside the Lovelace
+component and exposes it nowhere, so creating one from an integration means
+reaching into internals that move between releases. `panel_custom` is the
+public way to add a page, and it is how HACS itself gets into the sidebar.
+No existing dashboard is ever touched.
+
+The same view is available as a card for your own dashboards — the resource is
+registered automatically on storage-mode Lovelace:
+
+```yaml
+type: custom:nibe-easyconf-card
+device_id: <optional, when you have more than one pump>
+```
+
+In YAML mode, add `/nibe_local_easyconf/nibe-easyconf-card.js` as a `module`
+resource yourself.
+
 ## Running alongside another Modbus integration
 
 You can. The pump was measured accepting **14 simultaneous TCP connections**,
@@ -180,6 +208,16 @@ picked, what kind of machine the readings say it is (ground source, exhaust air,
 hot water, cooling), how many registers the scan found and how many report a
 value, how many block reads a poll cycle costs, the update interval, the control
 board's software version, and how many poll cycles failed.
+
+When the serial is known it also carries the article number, among the models,
+and the year and week of manufacture. The exact day stays local, and the
+serial's sequence number — the one part that identifies a single machine —
+never leaves the house.
+
+A contract test pins every field against the backend's own validation rules.
+Three fields in v1.3.0 were silently lost or mangled on arrival, among them the
+article number, which the backend's four-digit `product_code` range clamped to
+9999 without an error; the test now fails on exactly that class of mistake.
 
 The register counts are the reason this exists. NIBE's published maps do not say
 which registers a given machine implements, and no single installation can tell

@@ -64,4 +64,10 @@ def resolve(meta: dict) -> tuple[str | None, SensorDeviceClass | None, SensorSta
         state_class = MEASUREMENT
     if meta.get("write") and device_class is SensorDeviceClass.ENERGY:
         device_class = None
+    # Home Assistant rejects an energy sensor with state class "measurement":
+    # energy must be a total or nothing. "Energy used over the past hour" is a
+    # rolling window, not a running total, so long-term statistics summed from
+    # it would be wrong - it keeps its energy unit and icon, and no state class.
+    if device_class is SensorDeviceClass.ENERGY and state_class is MEASUREMENT:
+        state_class = None
     return ha_unit, device_class, state_class

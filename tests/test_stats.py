@@ -53,13 +53,12 @@ def test_unknown_model_never_leaks_its_name():
 
 def test_report_holds_only_the_agreed_keys():
     extra = _extra()
-    assert set(extra) == {"models", "features", "errors", "metrics"}
+    assert set(extra) == {"models", "features", "errors"}
     assert set(extra["features"]) == {
         "ground_source", "exhaust_air", "hot_water", "cooling",
         "registers_present", "registers_reporting", "registers_absent",
-        "entities_enabled",
+        "entities_enabled", "block_reads", "scan_interval_s",
     }
-    assert set(extra["metrics"]) == {"block_reads", "scan_interval_s"}
 
 
 def test_report_carries_no_free_text():
@@ -67,8 +66,6 @@ def test_report_carries_no_free_text():
     assert extra["models"] == ["s1155"]
     for value in extra["features"].values():
         assert isinstance(value, (bool, int))
-    for value in extra["metrics"].values():
-        assert isinstance(value, int)
 
 
 def test_which_registers_were_found_is_never_sent():
@@ -103,7 +100,7 @@ def test_negative_counts_can_not_appear():
 def test_payload_omits_what_is_not_known():
     extra = stats_extra.build_extra("s1155")
     assert "metrics" not in extra
-    assert "firmwares" not in extra
+    assert "firmware" not in extra
     assert extra["models"] == ["s1155"]
 
 
@@ -124,8 +121,11 @@ def test_firmware_rejects_anything_else():
 
 
 def test_firmware_reaches_the_report_when_known():
+    # A single string under "firmware": the shared stats.py passes only that
+    # key through, so a "firmwares" object never left the house.
     extra = _extra(firmware=1036)
-    assert extra["firmwares"] == {"control": "1036"}
+    assert extra["firmware"] == "1036"
+    assert "firmwares" not in extra
 
 
 # ----------------------------------------------------------- error counter

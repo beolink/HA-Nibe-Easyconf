@@ -119,7 +119,8 @@ SHORT_NAMES: dict[str, tuple[str, str]] = {
     "Operating. mode shunt controlled additional heat": ("Shuntad tillsats", "Shunted add. heat"),
     # --- pumps and valves -----------------------------------------------
     "Heating medium pump speed (GP1)": ("VB-pump, varvtal", "HM pump speed"),
-    "Operating mode heating medium pump": ("VB-pump, driftläge", "HM pump mode"),
+    "Operating mode heating medium pump": ("VB-pump, läge", "HM pump mode"),
+    "Operating mode brine pump": ("KB-pump, läge", "Brine pump mode"),
     "Manual heating medium pump speed": ("VB-pump, manuellt", "HM pump, manual"),
     "Minimum permitted speed (EB100 GP1)": ("VB-pump, min varvtal", "HM pump, min speed"),
     "Diverter valve hot water (QN10)": ("Växelventil VV", "Diverter valve HW"),
@@ -136,6 +137,23 @@ SHORT_NAMES: dict[str, tuple[str, str]] = {
     "Operating mode": ("Driftläge", "Operating mode"),
     "Operating mode PV panels": ("Solceller, driftläge", "PV mode"),
     "BT12 offset": ("Justering BT12", "BT12 offset"),
+    "Operating mode HW comfort": ("VV-komfort, läge", "HW comfort mode"),
+    "Operating mode HW comfort additional heat": ("VV-komfort, tillsats", "HW comfort, add. heat"),
+    "Set compressor frequency, cooling": ("Kompressorfrekv., kyla", "Compr. freq., cooling"),
+    "Exhaust air fan speed normal": ("Frånluftsfläkt, normal", "Exhaust fan, normal"),
+    "Exhaust air fan speed normal (ERS 1)": ("Frånluftsfläkt, normal", "Exhaust fan, normal"),
+    "Cooling degree minutes": ("Gradminuter, kyla", "Cooling degree min."),
+    # --- values supplied from outside the pump ---------------------------
+    # Settings that let another system feed the pump a reading in place of its
+    # own sensor. "Ext." keeps them apart from the real sensors of the same name.
+    "External sensor, Outdoor Temperature (BT1)": ("Ext. givare, ute", "Ext. sensor, outdoor"),
+    "External sensor, Hot water charging (BT6)": (
+        "Ext. givare, VV-laddning", "Ext. sensor, HW charge"),
+    "External sensor, Hot water top (BT7)": ("Ext. givare, VV topp", "Ext. sensor, HW top"),
+    "External sensors, External Supply Temperature BT25": (
+        "Ext. givare, framledning", "Ext. sensor, supply"),
+    "External sensors, External Return Temperature BT71": (
+        "Ext. givare, retur", "Ext. sensor, return"),
     # --- alarms ---------------------------------------------------------
     "Alarm number": ("Larmkod", "Alarm code"),
     "Alarm number (EB100-EP14)": ("Larmkod, krets 1", "Alarm code, circuit 1"),
@@ -180,7 +198,8 @@ def assign_names(
     import re
 
     code_re = re.compile(r"\b([A-Z]{2}\d{1,3})\b")
-    setting = "inställning" if language.startswith("sv") else "setting"
+    # Short on purpose: ", inställning" pushed pairs past the column width.
+    setting = "ställ" if language.startswith("sv") else "set"
 
     names: dict[int, str] = {}
     for register in present:
@@ -211,7 +230,7 @@ def assign_names(
             if distinct:
                 names[register] = f"{name} ({distinct[-1]})"
             elif one_setting and register in writable:
-                names[register] = f"{name}, {setting}"
+                names[register] = f"{name} ({setting})"
             elif not one_setting:
                 names[register] = f"{name} ({register})"
 

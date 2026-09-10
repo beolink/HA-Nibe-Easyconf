@@ -75,11 +75,11 @@ def _report(serial_number):
     return stats_extra.build_extra("s1155", serial=serial_number)
 
 
-def test_report_carries_product_and_build_week():
-    metrics = _report(REAL)["metrics"]
-    assert metrics["product_code"] == 65443
-    assert metrics["built_year"] == 2022
-    assert metrics["built_week"] == 5
+def test_report_carries_article_and_build_week():
+    report = _report(REAL)
+    # In the model list, where it is kept verbatim; see test_backend_contract.
+    assert report["models"] == ["s1155", "065443"]
+    assert report["metrics"] == {"built_year": 2022, "built_week": 5}
 
 
 def test_the_sequence_number_never_leaves():
@@ -99,6 +99,6 @@ def test_the_exact_day_never_leaves():
 
 
 def test_no_serial_means_no_serial_fields():
-    metrics = _report(None).get("metrics", {})
-    assert "product_code" not in metrics
-    assert "built_year" not in metrics
+    report = _report(None)
+    assert report["models"] == ["s1155"]
+    assert "metrics" not in report
