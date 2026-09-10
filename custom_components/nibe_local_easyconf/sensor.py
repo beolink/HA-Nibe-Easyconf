@@ -12,6 +12,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import PLATFORM_SENSOR
 from .coordinator import NibeCoordinator
 from .entity import NibeRegisterEntity, async_add_register_entities, device_info
+from .official import alarm_text, is_alarm_register, labels_for
 from .units import resolve
 
 
@@ -34,7 +35,20 @@ class NibeSensor(NibeRegisterEntity, SensorEntity):
         self._attr_device_class = device_class
         self._attr_state_class = state_class
 
-        self._mappings = meta.get("mappings") or {}
+        # An alarm register is a code into NIBE's alarm list. It reads as the
+        # alarm's text, and keeps the code as an attribute for automations.
+        self._alarm = is_alarm_register(meta.get("title", ""))
+        if self._alarm:
+            self._attr_native_unit_of_measurement = None
+            self._attr_state_class = None
+            self._attr_device_class = None
+            self._attr_icon = "mdi:alert-circle-outline"
+
+        self._mappings = (
+            {}
+            if self._alarm
+            else labels_for(register, language) or meta.get("mappings") or {}
+        )
         if self._mappings:
             # An enumerated register reports a label, not a number.
             self._attr_device_class = SensorDeviceClass.ENUM
@@ -47,9 +61,18 @@ class NibeSensor(NibeRegisterEntity, SensorEntity):
         value = self.native_value_raw
         if value is None:
             return None
+        if self._alarm:
+            return alarm_text(value, self._language)
         if self._mappings:
             return self._mappings.get(str(int(value)))
         return value
+
+    @property
+    def extra_state_attributes(self):
+        attributes = super().extra_state_attributes
+        if self._alarm and self.native_value_raw is not None:
+            attributes["alarm_code"] = int(self.native_value_raw)
+        return attributes
 
 
 class NibeManufacturedSensor(CoordinatorEntity[NibeCoordinator], SensorEntity):

@@ -31,6 +31,7 @@ import logging
 
 from .discovery import function_code, modbus_address
 from .modbus import ModbusTransportError, NibeModbusClient
+from .official import LABELS, labels_for
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -110,6 +111,14 @@ def union_map() -> dict[int, dict]:
                     entry["mappings"] = variant["mappings"]
                     break
         merged[register] = entry
+
+    # NIBE's own value tables win over the library's. They exist for registers
+    # the library leaves as bare numbers (so those become dropdowns), and where
+    # both exist NIBE's is the more meaningful one: 0/1 on the diverter valve is
+    # heating/hot water, not the library's off/on.
+    for register in LABELS:
+        if register in merged:
+            merged[register] = {**merged[register], "mappings": labels_for(register, "en")}
     return merged
 
 

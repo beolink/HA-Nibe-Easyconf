@@ -73,7 +73,9 @@ def test_value_mappings_are_spelled_out():
             "mappings": {"0": "Small", "1": "Medium", "2": "Large", "4": "Smart Control"},
         },
     )
-    assert "0 = Small" in text and "4 = Smart Control" in text
+    # NIBE's own table, in the viewer's language, rather than the library's
+    # English - and it documents value 3, which the library leaves out.
+    assert "0 = Litet" in text and "3 = Används inte" in text and "4 = Smart control" in text
 
 
 def test_concepts_get_an_explanation():

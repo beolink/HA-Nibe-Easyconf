@@ -11,6 +11,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import PLATFORM_SELECT
 from .entity import NibeRegisterEntity, async_add_register_entities
+from .official import labels_for
 
 
 async def async_setup_entry(
@@ -24,7 +25,7 @@ class NibeSelect(NibeRegisterEntity, SelectEntity):
 
     def __init__(self, coordinator, register, meta, language="sv") -> None:
         super().__init__(coordinator, register, meta, language)
-        mappings: dict[str, str] = meta.get("mappings") or {}
+        mappings: dict[str, str] = labels_for(register, language) or meta.get("mappings") or {}
         # NIBE's value tables are sparse (hot water mode is 0, 1, 2 and 4), so
         # the raw value is looked up rather than treated as an index.
         self._to_label = {int(key): label for key, label in mappings.items()}

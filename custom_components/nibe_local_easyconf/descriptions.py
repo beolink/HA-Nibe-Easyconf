@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import re
 
+from .official import labels_for
+
 Bilingual = tuple[str, str]  # (svenska, English)
 
 #: Designation prefix -> what kind of thing it is.
@@ -467,10 +469,9 @@ def describe(title: str, register: int, meta: dict, language: str = "sv") -> str
         else:
             sentences.append("Inställbar" if sv else "Writable")
 
-    if meta.get("mappings"):
-        pairs = ", ".join(
-            f"{k} = {v}" for k, v in sorted(meta["mappings"].items(), key=_numeric)
-        )
+    values = labels_for(register, language) or meta.get("mappings")
+    if values:
+        pairs = ", ".join(f"{k} = {v}" for k, v in sorted(values.items(), key=_numeric))
         sentences.append(f"Värden: {pairs}" if sv else f"Values: {pairs}")
 
     return _join(sentences)

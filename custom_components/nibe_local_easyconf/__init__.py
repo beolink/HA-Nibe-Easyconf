@@ -9,7 +9,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT, CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import config_validation as cv, entity_registry as er
 from homeassistant.loader import async_get_integration
 import voluptuous as vol
 
@@ -25,6 +25,7 @@ from .const import (
     FIRMWARE_REGISTER,
     PLATFORMS,
     SERVICE_RESCAN,
+    platform_for,
 )
 from .coordinator import NibeCoordinator
 from .descriptions import friendly_name
@@ -90,6 +91,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool
     coordinator = NibeCoordinator(
         hass, entry, client, discovery, scan_interval, registers=registers
     )
+    _async_remove_moved_entities(hass, entry, registers, discovery.present)
+
     # Everything the entities read at construction time has to be in place
     # before the platforms are forwarded: names, and the device identity.
     language = entry.data.get("language", "sv")
@@ -139,6 +142,31 @@ async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool
     # than a generated dashboard.
     await async_register_frontend(hass, str(integration.version))
     return True
+
+
+def _async_remove_moved_entities(
+    hass: HomeAssistant, entry: ConfigEntry, registers: dict, present: set[int]
+) -> None:
+    """Drop registry entries left behind when a register changes platform.
+
+    A register that gains a value table moves from number to select (NIBE's own
+    tables did that to five settings). The registry keys an entity on its
+    platform as well as its unique id, so the old number would otherwise stay
+    behind as a permanently unavailable duplicate the user has to delete.
+    """
+    registry = er.async_get(hass)
+    for register in present:
+        meta = registers.get(register)
+        if meta is None:
+            continue
+        unique_id = f"{entry.entry_id}-{register}"
+        current = platform_for(meta)
+        for platform in PLATFORMS:
+            if platform == current:
+                continue
+            if entity_id := registry.async_get_entity_id(platform, DOMAIN, unique_id):
+                _LOGGER.debug("Register %s moved to %s; removing %s", register, current, entity_id)
+                registry.async_remove(entity_id)
 
 
 async def _async_serial_by_reverse_dns(hass: HomeAssistant, host: str) -> str | None:

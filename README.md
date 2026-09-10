@@ -161,6 +161,21 @@ content width you get two columns: narrow the window, keep Home Assistant's
 sidebar expanded (it takes its width from the content area), or zoom the
 browser in.
 
+### Alarms and values in words
+
+Alarm registers read as the alarm's text — *Inget larm*, or *Fel fasföljd alt.
+saknad fas har uppmätts.* — from NIBE's published S-series alarm list, with the
+number kept as an `alarm_code` attribute for automations. NIBE reuses some codes
+for more than one alarm (237 is a short running time in hot water/heating, in
+the compressor or in cooling), so those carry every meaning the list gives.
+
+Registers with a value table read as words too, and settings with one become
+dropdowns. The tables come from NIBE's own register documentation, which is
+more complete and more precise than the library's: it labels the diverter valve
+*heating/hot water* where the library says *off/on*, and it documents the brine
+pump's *intermittent / continuous / 10 days continuous*, which the library
+leaves as a bare number. See [docs/nibe-references.md](docs/nibe-references.md).
+
 ## The NIBE page
 
 Setting the integration up adds a **NIBE** entry to the sidebar on its own —

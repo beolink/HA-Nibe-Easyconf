@@ -1,0 +1,1218 @@
+{
+ "101": [
+  "Givarfel –BT1 utegivare",
+  "Sens flt –BT1 outd temp sensor"
+ ],
+ "102": [
+  "Givarfel BT2",
+  "Sens flt BT2"
+ ],
+ "103": [
+  "Givarfel –BT3 returledningsgivare",
+  "Sens flt –BT3 return line sensor"
+ ],
+ "104": [
+  "Givarfel –BT6 varmvatten laddning",
+  "Sens flt –BT6 hot water charging"
+ ],
+ "106": [
+  "Givarfel –BT10 givare köldbärare in",
+  "Sens flt –BT10 sensor brine in"
+ ],
+ "107": [
+  "Givarfel –BT11 givare köldbärare ut",
+  "Sens flt –BT11 sensor brine out"
+ ],
+ "108": [
+  "Givarfel –BT12 kondensor ut",
+  "Sens flt –BT12 condenser out"
+ ],
+ "109": [
+  "Givarfel –BT14 hetgasgivare",
+  "Sens flt –BT14 disch sensor"
+ ],
+ "111": [
+  "Givarfel –BT17 kompressorgivare",
+  "Sens flt –BT17 compressor sensor"
+ ],
+ "113": [
+  "Givarfel –BT20 frånluftsgivare",
+  "Sens flt –BT20 exh air sensor (ERS1)"
+ ],
+ "114": [
+  "Givarfel –BT21 avluftsgivare",
+  "Sens flt –BT21 extr air sensor (ERS1)"
+ ],
+ "115": [
+  "Givarfel –AZ20-BT22 tilluftsgivare",
+  "Sens flt –AZ20-BT22 supp air sensor"
+ ],
+ "116": [
+  "Givarfel –EQ1-BT25 extern framledning",
+  "Sens flt BT25 ext supply temp sensor"
+ ],
+ "117": [
+  "Givarfel –AZ10-BT26 kollektor in",
+  "Sens flt –AZ10-BT26 collector in"
+ ],
+ "118": [
+  "Givarfel –BP8 lågtryckstransmitter",
+  "Sens flt –BP8 low press transmitter"
+ ],
+ "120": [
+  "Givarfel –BT29 Oljetemperaturgivare",
+  "Sens flt –BT29 oil temperature sensor"
+ ],
+ "122": [
+  "Givarfel –BT63 framledningsgivare efter tillsats",
+  "Sens flt –BT63 supp temp sensor after add heat"
+ ],
+ "124": [
+  "Givarfel –EP30-BT53 solfångartemperatur",
+  "Sens flt –EP30-BT53 solar panel temp"
+ ],
+ "125": [
+  "Givarfel –EP30-BT54 soltanktemp. botten",
+  "Sens flt –EP30-BT54 sol tank temp bott"
+ ],
+ "126": [
+  "Givarfel –BT52 panngivare",
+  "Sens flt –BT52 boiler sensor"
+ ],
+ "127": [
+  "Givarfel –EQ1-BT64 kylframledning",
+  "Sens flt –EQ1-BT64 cool supp temp"
+ ],
+ "132": [
+  "Givarfel –AZ20-BT69 returledningsgivare",
+  "Sensor fault –AZ20-BT69 return line sensor"
+ ],
+ "135": [
+  "Givarfel –AZ11-BT20 frånluftsgivare",
+  "Sens flt –AZ11-BT20 exh air sensor"
+ ],
+ "136": [
+  "Givarfel –AZ11-BT21 avluftsgivare",
+  "Sens flt –AZ11-BT21 extr air sensor"
+ ],
+ "137": [
+  "Givarfel –AZ11-BT26 kollektor in",
+  "Sens flt –AZ11-BT26 collector in"
+ ],
+ "138": [
+  "Givarfel –AZ12-BT20 frånluftsgivare",
+  "Sens flt –AZ12-BT20 exh air sensor"
+ ],
+ "139": [
+  "Givarfel –AZ12-BT21 avluftsgivare",
+  "Sens flt –AZ12-BT21 extr air sensor"
+ ],
+ "140": [
+  "Givarfel –AZ12-BT26 kollektor in",
+  "Sens flt –AZ12-BT26 collector in"
+ ],
+ "141": [
+  "Givarfel –AZ13-BT20 frånluftsgivare",
+  "Sens flt –AZ13-BT20 exh air sensor"
+ ],
+ "142": [
+  "Givarfel –AZ13-BT21 avluftsgivare",
+  "Sens flt –AZ13-BT21 extr air sensor"
+ ],
+ "143": [
+  "Givarfel –AZ13-BT26 kollektor in",
+  "Sens flt –AZ13-BT26 collector in"
+ ],
+ "144": [
+  "Givarfel –QZ1-BT70 varmvatten framledningstemp",
+  "Sens flt –QZ1-BT70 hot water supply temp"
+ ],
+ "145": [
+  "Givarfel –EQ1-BT57 kollektorgivare / Givarfel –EP12-BT57",
+  "Sens flt –EQ1-BT57 collector sensor / Sens flt –EP12-BT57"
+ ],
+ "146": [
+  "Givarfel –EQ1-BT75 värmedumpsgivare",
+  "Sens flt –EQ1-BT75 heat dump sensor"
+ ],
+ "147": [
+  "Givarfel från värmepump",
+  "Sens flt from heat pump (Exhange)"
+ ],
+ "148": [
+  "Givarfel från värmepump",
+  "Sens flt from heat pump (Ambient)"
+ ],
+ "149": [
+  "Givarfel från värmepump",
+  "Sens flt from heat pump (Discharge)"
+ ],
+ "150": [
+  "Givarfel från värmepump",
+  "Sens flt from heat pump (Suction)"
+ ],
+ "151": [
+  "Givarfel från värmepump",
+  "Sens flt from heat pump (Low pressure)"
+ ],
+ "152": [
+  "Givarfel –BT74 kyla-/värmegivare",
+  "Sens flt –BT74 cool/heat sensor"
+ ],
+ "158": [
+  "Kompressorfas 1 saknas",
+  "Compressor phase 1 missing"
+ ],
+ "159": [
+  "Kompressorfas 2 saknas",
+  "Compressor phase 2 missing"
+ ],
+ "160": [
+  "Kompressorfas 3 saknas",
+  "Compressor phase 3 missing"
+ ],
+ "161": [
+  "Mjukstartskortet har uppmätt fel fasföljd",
+  "Soft-start board has detected incorr. phase seq."
+ ],
+ "162": [
+  "Fel på mjukstartskortets säkringar",
+  "Fault in the soft-start fuses."
+ ],
+ "163": [
+  "Fel fasföljd alt. saknad fas har uppmätts.",
+  "Incorr. phase seq. or missing phase detected."
+ ],
+ "164": [
+  "Högtryckslarm",
+  "High pressure alarm"
+ ],
+ "165": [
+  "Lågtryckslarm / Best. larm p.g.a. lågtryck eller övertemperatur, kompr.",
+  "Low pressure alarm / Cont. alarm due to low pressure or excess temp. compr."
+ ],
+ "167": [
+  "Temperaturbegränsarlarm",
+  "Temperature limiter alarm"
+ ],
+ "168": [
+  "Nivåvakt KB",
+  "Level monitor brine"
+ ],
+ "169": [
+  "Motorskydd",
+  "Motor protection"
+ ],
+ "170": [
+  "Hetgaslarm",
+  "Discharge alarm"
+ ],
+ "171": [
+  "Produkten har ett felaktigt serienummer",
+  "The product has an incorrect serial number"
+ ],
+ "173": [
+  "Pressostatlarm",
+  "Pressure switch alarm"
+ ],
+ "175": [
+  "Låg köldbärare ut",
+  "Low brine out"
+ ],
+ "177": [
+  "Låg frånluftstemperatur",
+  "Low exhaust air temperature"
+ ],
+ "178": [
+  "Hög kondensvattennivå",
+  "High condensation water level, external"
+ ],
+ "179": [
+  "Hög kondensvattennivå",
+  "High condensation water level, internal"
+ ],
+ "182": [
+  "Kommunikationsfel mjukstartskort",
+  "Communication fault soft-start board"
+ ],
+ "183": [
+  "Kom.fel mot tillbehör klimatsystem 2",
+  "Comm flt to accessory climate sys 2"
+ ],
+ "184": [
+  "Kom.fel mot tillbehör klimatsystem 3",
+  "Comm flt to accessory climate sys 3"
+ ],
+ "185": [
+  "Kom.fel mot tillbehör klimatsystem 4",
+  "Comm flt to accessory climate sys 4"
+ ],
+ "186": [
+  "Kom.fel mot tillbehör shuntstyrd tillsats",
+  "Comm flt to accessory shut-contr add heat"
+ ],
+ "187": [
+  "Kommunikationsfel pool",
+  "Communication flt pool"
+ ],
+ "188": [
+  "Kommunikationsfel FLM",
+  "Communication flt FLM"
+ ],
+ "189": [
+  "Misslyckad avfrostning",
+  "Unsuccessful defrosting"
+ ],
+ "190": [
+  "Kommunikationsfel mot tillbehör OEK",
+  "Comm flt to accessory OEK"
+ ],
+ "191": [
+  "Kom.fel mot SAM",
+  "Com flt to SAM"
+ ],
+ "192": [
+  "Kom.fel mot tillbehör stegstyrd tillsats",
+  "Comm flt to accessory step-contr add heat"
+ ],
+ "193": [
+  "Kommunikationsfel mot tillbehör Solar",
+  "Comm flt to accessory Solar"
+ ],
+ "194": [
+  "Kommunikationsfel mot tillbehör HPAC",
+  "Comm flt to accessory HPAC"
+ ],
+ "195": [
+  "Kom.fel mot tillbehör grundvattenpump",
+  "Comm flt to accessory groundw pump"
+ ],
+ "196": [
+  "Kom.fel mot tillbehör varmvattencirkulation",
+  "Comm flt to accessory hot water circulation"
+ ],
+ "197": [
+  "Kommunikationsfel mot tillbehör DEW",
+  "Comm flt to accessory DEW"
+ ],
+ "198": [
+  "Kom.fel mot tillbehör kyla 2-rör",
+  "Comm flt to accessory cooling 2-pipe"
+ ],
+ "199": [
+  "Kom.fel mot tillbehör kyla 4-rör",
+  "Comm flt to accessory cooling 4-pipe"
+ ],
+ "205": [
+  "Kommunikationsfel mot inverter",
+  "Communication fault to inverter"
+ ],
+ "206": [
+  "Kom.fel mot tillbehör klimatsystem 5",
+  "Comm flt to accessory climate sys 5"
+ ],
+ "207": [
+  "Kom.fel mot tillbehör klimatsystem 6",
+  "Comm flt to accessory climate sys 6"
+ ],
+ "208": [
+  "Kom.fel mot tillbehör klimatsystem 7",
+  "Comm flt to accessory climate sys 7"
+ ],
+ "209": [
+  "Kom.fel mot tillbehör klimatsystem 8",
+  "Comm flt to accessory climate sys 8"
+ ],
+ "212": [
+  "Låg LP kyldrift / Lågtryckslarm kyldrift",
+  "Low LP cooling operation / Low pressure alarm, cooling operation"
+ ],
+ "223": [
+  "Frysskydd tilluft",
+  "Freeze protection supply air"
+ ],
+ "224": [
+  "Comm flt to accessory hot water comfort",
+  "Comm flt to accessory hot water comfort"
+ ],
+ "226": [
+  "Ej kompatibel inverter",
+  "Incompatible inverter"
+ ],
+ "227": [
+  "Säkringen i värmepumpen har löst ut",
+  "The fuse in the heat pump has tripped"
+ ],
+ "228": [
+  "Kompressorns rotor är blockerad",
+  "The compressor’s rotor is blocked"
+ ],
+ "229": [
+  "Högtryckslarm",
+  "High pressure alarm"
+ ],
+ "230": [
+  "Lågtryckslarm",
+  "Low pressure alarm"
+ ],
+ "231": [
+  "Motorskyddslarm",
+  "Motor protection alarm"
+ ],
+ "232": [
+  "Kom.fel mot uteluftsvärmepump",
+  "Comm flt to outd air heat pump"
+ ],
+ "233": [
+  "Fläktlarm i uteluftsvärmepump",
+  "Fan alarm in outd air heat pump"
+ ],
+ "234": [
+  "Flödesfel",
+  "Flow fault"
+ ],
+ "235": [
+  "Givarfel uteluftsvärmepump",
+  "Sensor flt outd air heat pump"
+ ],
+ "236": [
+  "Avfrostningsfel",
+  "Defrosting fault"
+ ],
+ "237": [
+  "Kort drifttid i vv/värme / Kort drifttid på kompressor / Kort drifttid i kyla",
+  "Short oper time HW/heat / Short compressor oper time / Short oper time cool"
+ ],
+ "238": [
+  "Hög hetgas",
+  "High discharge"
+ ],
+ "239": [
+  "Fel fasföljd alt. saknad fas har uppmätts.",
+  "Incorr. phase seq. or missing phase detected."
+ ],
+ "240": [
+  "Låg förångning",
+  "Low evaporation"
+ ],
+ "242": [
+  "Best. komm. fel FLM",
+  "Perm comm flt FLM4 / Perm comm flt FLM3 / Perm comm flt FLM2"
+ ],
+ "244": [
+  "Kommunikationsfel mot SMS-enhet",
+  "Comm fault to SMS unit"
+ ],
+ "249": [
+  "Comm flt to ACS",
+  "Comm flt to ACS"
+ ],
+ "251": [
+  "Hög VVX temp",
+  "High HWX temp"
+ ],
+ "252": [
+  "Power transistor för varm",
+  "Power transistor too hot"
+ ],
+ "253": [
+  "Spänningen från invertern utanför gränsvärden",
+  "Voltage from inverter outside the limit values"
+ ],
+ "254": [
+  "Kommunikationsfel mot inverter",
+  "Communication fault to inverter"
+ ],
+ "255": [
+  "Fläkt fel",
+  "Fan fault"
+ ],
+ "256": [
+  "Låg kylmediemängd",
+  "Low refrig volume"
+ ],
+ "257": [
+  "Misslyckad start av kompressor",
+  "Failed compressor start"
+ ],
+ "258": [
+  "Överström",
+  "Overcurrent"
+ ],
+ "265": [
+  "Kommunikationsfel mot shuntstyrd köldbärare",
+  "Communication fault to shunt-controlled brine"
+ ],
+ "267": [
+  "Låg avluftningstemperatur",
+  "Low extract air temp."
+ ],
+ "269": [
+  "Icke kompatibel uteluftsvärmepump",
+  "Non-compatible outd air heat pump"
+ ],
+ "270": [
+  "Best. komm. fel ERS1",
+  "Perm. com. error ERS1 / Perm. com. error ERS S40 1"
+ ],
+ "271": [
+  "Best. komm. mot värmepump 1 –EB101",
+  "Perm. comm. to heat pump 1 –EB101"
+ ],
+ "272": [
+  "Best. komm. mot värmepump 2 –EB102",
+  "Perm. comm. to heat pump 2 –EB102"
+ ],
+ "273": [
+  "Best. komm. mot värmepump 3 –EB103",
+  "Perm. comm. to heat pump 3 –EB103"
+ ],
+ "274": [
+  "Best. komm. mot värmepump 4 –EB104",
+  "Perm. comm. to heat pump 4 –EB104"
+ ],
+ "275": [
+  "Best. komm. mot värmepump 5 –EB105",
+  "Perm. comm. to heat pump 5 –EB105"
+ ],
+ "276": [
+  "Best. komm. mot värmepump 6 –EB106",
+  "Perm. comm. to heat pump 6 –EB106"
+ ],
+ "277": [
+  "Best. komm. mot värmepump 7 –EB107",
+  "Perm. comm. to heat pump 7 –EB107"
+ ],
+ "278": [
+  "Best. komm. mot värmepump 8 –EB108",
+  "Perm. comm. to heat pump 8 –EB108"
+ ],
+ "279": [
+  "Kommunikationsfel mot AXC för –EB103/4-GP12",
+  "Communication flt to AXC for –EB103/4-GP12"
+ ],
+ "280": [
+  "Kommunikationsfel mot AXC för –EB105/6-GP12",
+  "Communication flt to AXC for –EB105/6-GP12"
+ ],
+ "281": [
+  "Kommunikationsfel mot AXC för –EB107/8-GP12",
+  "Communication flt to AXC for –EB107/8-GP12"
+ ],
+ "283": [
+  "Best. komm. fel fuktgivaren",
+  "Perm comm flt hum sensor BM2"
+ ],
+ "288": [
+  "Maxtemp ut från värmepump överskridd",
+  "Max temp out from heat pump exceeded"
+ ],
+ "291": [
+  "Återkommande säkerhetsavfrostningar",
+  "Recurring safety defrosts"
+ ],
+ "294": [
+  "Återkommande lågtryck",
+  "Recurring low pressure"
+ ],
+ "295": [
+  "Återkommande högtryck",
+  "Recurring high pressure"
+ ],
+ "296": [
+  "Sensorkalibrering har misslyckats",
+  "Sensor calibration has failed BT10-BT11"
+ ],
+ "297": [
+  "Sensorkalibrering har misslyckats",
+  "Sensor calibration has failed BT2-BT3"
+ ],
+ "298": [
+  "Sensorkalibrering har misslyckats",
+  "Sensor calibration has failed"
+ ],
+ "299": [
+  "Sensorkalibrering har misslyckats",
+  "Sensor calibration has failed EB101 (BT12-BT3)"
+ ],
+ "300": [
+  "Sensorkalibrering har misslyckats",
+  "Sensor calibration has failed"
+ ],
+ "301": [
+  "Osäker givarnoggrannhet BT3 eller BT63",
+  "Sensor calibration error, BT3/BT63"
+ ],
+ "302": [
+  "Kommunikationsfel mot tillbehör OPT",
+  "Comm fault to accessory OPT"
+ ],
+ "305": [
+  "Kommunikationsfel pool 2",
+  "Comm fault pool 2"
+ ],
+ "306": [
+  "Alarm linbus com GP1",
+  "Alarm linbus com GP1"
+ ],
+ "307": [
+  "Flöde blockerat (GP1)",
+  "Flow blocked (GP1)"
+ ],
+ "308": [
+  "Underspänning pump (GP1)",
+  "Undervoltage pump (GP1)"
+ ],
+ "309": [
+  "El-fel pump (GP1)",
+  "El flt pump (GP1)"
+ ],
+ "311": [
+  "Alarm linbus com GP2",
+  "Alarm linbus com GP2"
+ ],
+ "313": [
+  "Torrkörning (GP1)",
+  "Dry running (GP1)"
+ ],
+ "314": [
+  "Odefinierat fel",
+  "Undefined fault"
+ ],
+ "315": [
+  "Givarfel på –EB10x, BT3",
+  "Sensor flt on –EB10x, BT3"
+ ],
+ "316": [
+  "Givarfel på –EB10x, BP4",
+  "Sensor flt on –EB10x, BP4"
+ ],
+ "317": [
+  "Givarfel på –EB10x-BT12",
+  "Sensor flt on –EB10x-BT12"
+ ],
+ "318": [
+  "Givarfel på EB10x-BT15",
+  "Sensor flt on –EB10x-BT15"
+ ],
+ "320": [
+  "Inverter komfel",
+  "Inverter comm flt"
+ ],
+ "322": [
+  "Pressostat- eller temperaturlarm",
+  "Press. switch or temp. alarm"
+ ],
+ "323": [
+  "Skyddsstopp inverter",
+  "Safety stop, inverter"
+ ],
+ "324": [
+  "Skyddsstopp inverter",
+  "Safety stop, inverter"
+ ],
+ "325": [
+  "Hög nätspänning",
+  "High mains voltage"
+ ],
+ "326": [
+  "Inverter underspänning",
+  "Inverter, under-voltage"
+ ],
+ "327": [
+  "Inverter fasfel",
+  "Inverter, phase fault"
+ ],
+ "328": [
+  "Nätstörning",
+  "Mains disturbance"
+ ],
+ "329": [
+  "Överhettad inverter",
+  "Overheated inverter"
+ ],
+ "330": [
+  "Skyddsstopp inverter",
+  "Safety stop, inverter"
+ ],
+ "331": [
+  "Överhettad inverter",
+  "Overheated inverter"
+ ],
+ "332": [
+  "Inverterskydd",
+  "Inverter protection"
+ ],
+ "333": [
+  "Phase drop",
+  "Phase drop"
+ ],
+ "334": [
+  "Misslyckad kompressorstart",
+  "Failed compressor start (Inverter alarm Motor 1 zero speed fault)"
+ ],
+ "335": [
+  "Inverter kod",
+  "Inverter code"
+ ],
+ "336": [
+  "Hög strömlast kompressor",
+  "High current load, compr."
+ ],
+ "337": [
+  "Hög effektlast kompressor",
+  "High power load, compr."
+ ],
+ "338": [
+  "Inverter skyddsläge",
+  "Inverter prot. mode"
+ ],
+ "340": [
+  "Inverter skyddsläge",
+  "Inverter prot. mode (I2t Fault M2)"
+ ],
+ "341": [
+  "Inverter skyddsläge",
+  "Inverter prot. mode (Output Current overload M2)"
+ ],
+ "342": [
+  "Inverter skyddsläge",
+  "Inverter prot. mode (Motor 2 module overtemperature)"
+ ],
+ "343": [
+  "Inverter skyddsläge",
+  "Inverter prot. mode (Motor 2 module overtemperature)"
+ ],
+ "344": [
+  "Inverter skyddsläge",
+  "Inverter prot. mode (Motor 2 gate kill)"
+ ],
+ "345": [
+  "Inverter skyddsläge",
+  "Inverter prot. mode (Motor 2 phase loss)"
+ ],
+ "346": [
+  "Inverter skyddsläge",
+  "Inverter prot. mode (Motor 2 zero speed fault)"
+ ],
+ "349": [
+  "Torrkörning (GP2)",
+  "Dry running (GP2)"
+ ],
+ "353": [
+  "Misslyckad start, ej tryckdiff.",
+  "Failed start, no press. diff"
+ ],
+ "354": [
+  "Kompressor hastighet för låg",
+  "Compressor speed too low"
+ ],
+ "356": [
+  "Kommunikationsfel tillbehör. –AZ10",
+  "Communication fault, accessory. –AZ10"
+ ],
+ "357": [
+  "Missl. avfr. –AZ10",
+  "Failed defr –AZ10"
+ ],
+ "358": [
+  "Låg avfr. temp –AZ10",
+  "Low defr. temp –AZ10"
+ ],
+ "359": [
+  "Hög förångning –AZ10",
+  "High evaporation –AZ10"
+ ],
+ "360": [
+  "Fläktlarm –AZ10",
+  "Fan alarm –AZ10"
+ ],
+ "361": [
+  "Laddpump –AZ10",
+  "Charge pump –AZ10"
+ ],
+ "367": [
+  "Elpatronsdrift",
+  "Imm heater operation"
+ ],
+ "368": [
+  "Kommunikationsfel mot MCB kortet",
+  "Comm fault to the MCB card"
+ ],
+ "369": [
+  "Kommunikationsfel mot ASB1 kortet",
+  "Comm fault to the ASB1 card"
+ ],
+ "370": [
+  "El-fel pump (GP2)",
+  "Electric fault pump (GP2)"
+ ],
+ "371": [
+  "Kommunikationsfel tillbehör EME20",
+  "Communication fault, accessory EME20"
+ ],
+ "373": [
+  "Sol inv. - Jordningsfel.",
+  "Sun inv. - Ground failure."
+ ],
+ "378": [
+  "Sol inv. - Hög DC spänning",
+  "Sun inv. - DC bus high."
+ ],
+ "379": [
+  "Kommunikationsfel mot AXC för –EB103/4-GP12",
+  "Communication flt to AXC for –EB103/4-GP12"
+ ],
+ "382": [
+  "Begränsad inverter",
+  "Limited inverter"
+ ],
+ "383": [
+  "Underspänning pump (BP2)",
+  "Undervoltage pump (GP2)"
+ ],
+ "384": [
+  "Best. komm. fel HTS, BM2",
+  "Perm. comm flt HTS, BM2"
+ ],
+ "385": [
+  "Best. komm. fel HTS, BM3",
+  "Perm. comm flt HTS, BM3"
+ ],
+ "386": [
+  "Best. komm. fel HTS, BM4",
+  "Perm. comm flt HTS, BM4"
+ ],
+ "387": [
+  "Flöde blockerat (GP2)",
+  "Flow blocked (GP2)"
+ ],
+ "388": [
+  "Värmeväxlare för ventilation blockerad",
+  "Ventilation heat exchanger blocked (ERS1)"
+ ],
+ "389": [
+  "Värmeväxlare för ventilation blockerad",
+  "Ventilation heat exchanger blocked (ERS2)"
+ ],
+ "390": [
+  "Värmeväxlare för ventilation blockerad",
+  "Ventilation heat exchanger blocked (ERS3)"
+ ],
+ "391": [
+  "Värmeväxlare för ventilation blockerad",
+  "Ventilation heat exchanger blocked (ERS4)"
+ ],
+ "392": [
+  "Kom.fel mot TSS20",
+  "Comm fault TSS20"
+ ],
+ "393": [
+  "Torrkörning (GP12)",
+  "Dry running GP12"
+ ],
+ "394": [
+  "Givarfel –AZ10-BT27 kollektor ut",
+  "Sensor flt –AZ10-BT27 collector out"
+ ],
+ "395": [
+  "Givarfel –AZ11-BT27 kollektor ut",
+  "Sensor flt –AZ11-BT27 collector out"
+ ],
+ "396": [
+  "Givarfel –AZ12-BT27 kollektor ut",
+  "Sensor flt –AZ12-BT27 collector out"
+ ],
+ "397": [
+  "Givarfel –AZ13-BT27 kollektor ut",
+  "Sensor flt –AZ13-BT27 collector out"
+ ],
+ "400": [
+  "Givarfel rumsgivare kyldrift",
+  "Sen flt, rm sen cool oper"
+ ],
+ "420": [
+  "Fel på mjukstartskortets reläer",
+  "Fault in the soft-start board's relays"
+ ],
+ "423": [
+  "Driftstörning rotor 1",
+  "Malfunction rotor ERS S40 1"
+ ],
+ "431": [
+  "Driftstörning rotor 2",
+  "Malfunction rotor 2"
+ ],
+ "432": [
+  "Driftstörning rotor 3",
+  "Malfunction rotor 3"
+ ],
+ "433": [
+  "Driftstörning rotor 4",
+  "Malfunction rotor 4"
+ ],
+ "434": [
+  "Best. komm. fel ERS2",
+  "Perm. com. error ERS2"
+ ],
+ "435": [
+  "Best. komm. fel ERS3",
+  "Perm. com. error ERS3"
+ ],
+ "436": [
+  "Best. komm. fel ERS4",
+  "Perm. com. error ERS4"
+ ],
+ "437": [
+  "Fel PCB i värmepump.",
+  "Incorrect PCB in heat pump."
+ ],
+ "443": [
+  "Frånluftsfläkt i ERS S40 1 rapporterar elfel",
+  "Exh. air fan in ERS S40 1 reports elec flt"
+ ],
+ "444": [
+  "Tilluftsfläkt i ERS S40 1 rapporterar elfel",
+  "Supp. air fan in ERS S40 1 reports elec flt"
+ ],
+ "448": [
+  "Kom.fel mot DWS",
+  "Com flt to DWS"
+ ],
+ "450": [
+  "Kommunikationsfel mot AXC för –EB101/2-GP12",
+  "Communication flt to AXC for –EB101/2-GP12"
+ ],
+ "451": [
+  "Kommunikationsfel mot SFT kortet / Kommunikationsfel mot SFT10 kortet",
+  "Comm fault to the SFT card / Comm fault to the SFT10 card"
+ ],
+ "452": [
+  "Givarfel –BP15 tryckfall kondensor",
+  "Sens flt –BP15 diff. pressure airflow"
+ ],
+ "453": [
+  "Givarfel –BP16",
+  "Sens flt –BP16 air speed"
+ ],
+ "454": [
+  "Lågt luftflöde",
+  "Low airflow"
+ ],
+ "458": [
+  "Underspänning GP12-pump",
+  "Undervolt. GP12 pump"
+ ],
+ "462": [
+  "Frånluftsfläkt i ERS S40 2 rapporterar elfel",
+  "Exh. air fan in ERS S40 2 reports elec flt"
+ ],
+ "463": [
+  "Tilluftsfläkt i ERS S40 2 rapporterar elfel",
+  "Supp. air fan in ERS S40 2 reports elec flt"
+ ],
+ "464": [
+  "Frånluftsfläkt i ERS S40 3 rapporterar elfel",
+  "Exh. air fan in ERS S40 3 reports elec flt"
+ ],
+ "465": [
+  "Tilluftsfläkt i ERS S40 3 rapporterar elfel",
+  "Supp. air fan in ERS S40 3 reports elec flt"
+ ],
+ "466": [
+  "Frånluftsfläkt i ERS S40 4 rapporterar elfel",
+  "Exh. air fan in ERS S40 4 reports elec flt"
+ ],
+ "467": [
+  "Tilluftsfläkt i ERS S40 4 rapporterar elfel",
+  "Supp. air fan in ERS S40 4 reports elec flt"
+ ],
+ "468": [
+  "Frånluftsfläkt i ERS S40 5 rapporterar elfel",
+  "Exh. air fan in ERS S40 5 reports elec flt"
+ ],
+ "469": [
+  "Tilluftsfläkt i ERS S40 5 rapporterar elfel",
+  "Supp. air fan in ERS S40 5 reports elec flt"
+ ],
+ "470": [
+  "Frånluftsfläkt i ERS S40 6 rapporterar elfel",
+  "Exh. air fan in ERS S40 6 reports elec flt"
+ ],
+ "471": [
+  "Tilluftsfläkt i ERS S40 6 rapporterar elfel",
+  "Supp. air fan in ERS S40 6 reports elec flt"
+ ],
+ "472": [
+  "Frånluftsfläkt i ERS S40 7 rapporterar elfel",
+  "Exh. air fan in ERS S40 7 reports elec flt"
+ ],
+ "473": [
+  "Tilluftsfläkt i ERS S40 7 rapporterar elfel",
+  "Supp. air fan in ERS S40 7 reports elec flt"
+ ],
+ "474": [
+  "Frånluftsfläkt i ERS S40 8 rapporterar elfel",
+  "Exh. air fan in ERS S40 8 reports elec flt"
+ ],
+ "475": [
+  "Tilluftsfläkt i ERS S40 8 rapporterar elfel",
+  "Supp. air fan in ERS S40 8 reports elec flt"
+ ],
+ "476": [
+  "Givarfel - CM6-BT54",
+  "Sensor fault - CM6-BT54"
+ ],
+ "477": [
+  "Kom.fel mot AXC för energilagring",
+  "Communication fault to AXC for energy storage"
+ ],
+ "478": [
+  "Hög frånluftstemperatur",
+  "High exh. air temperature"
+ ],
+ "479": [
+  "Fel på säkerhetskrets i SFT",
+  "Flt in safety circuit in SFT"
+ ],
+ "480": [
+  "Kom.fel mot AXC för Extern värmemängdsmätare",
+  "Comm flt to AXC for Ext. heating vol. meter"
+ ],
+ "482": [
+  "Driftstörning rotor 5",
+  "Malfunction rotor 5"
+ ],
+ "483": [
+  "Driftstörning rotor 6",
+  "Malfunction rotor 6"
+ ],
+ "484": [
+  "Driftstörning rotor 7",
+  "Malfunction rotor 7"
+ ],
+ "485": [
+  "Driftstörning rotor 8",
+  "Malfunction rotor 8"
+ ],
+ "487": [
+  "Givarfel –BP9 högtryck",
+  "Sens flt –BP9 high pressure"
+ ],
+ "494": [
+  "Förvärmning misslyckad, lång körtid",
+  "Preheat. failed, long run time"
+ ],
+ "495": [
+  "Givare BT14 eller BP9 lös eller felaktig",
+  "Sensor BT14 or BP9 loose or defective"
+ ],
+ "496": [
+  "Kommunikationsfel mot ZAB",
+  "Communication fault with ZAB"
+ ],
+ "498": [
+  "Best. komm. fel ERS5",
+  "Perm. com. fault ERS5"
+ ],
+ "499": [
+  "Best. komm. fel ERS6",
+  "Perm. com. fault ERS6"
+ ],
+ "500": [
+  "Best. komm. fel ERS7",
+  "Perm. com. fault ERS7"
+ ],
+ "501": [
+  "Best. komm. fel ERS8",
+  "Perm. com. fault ERS8"
+ ],
+ "506": [
+  "Värmeväxlare för ventilation blockerad",
+  "Ventilation heat exchanger blocked (ERS)"
+ ],
+ "507": [
+  "Värmeväxlare för ventilation blockerad",
+  "Ventilation heat exchanger blocked (ERS)"
+ ],
+ "508": [
+  "Värmeväxlare för ventilation blockerad",
+  "Ventilation heat exchanger blocked (ERS)"
+ ],
+ "509": [
+  "Värmeväxlare för ventilation blockerad",
+  "Ventilation heat exchanger blocked (ERS)"
+ ],
+ "519": [
+  "Växelventil QN10 kan inte öppna/stänga",
+  "Reversing valve QN10 cannot open/close"
+ ],
+ "520": [
+  "Felaktig spänning växelventil QN10",
+  "Incorrect voltage, reversing valve QN10"
+ ],
+ "521": [
+  "Kommunikationsfel mot växelventil QN10",
+  "Communication fault to reversing valve QN10"
+ ],
+ "530": [
+  "Givarfel BT3 uteluftsvärmepump",
+  "Sens flt BT3 outd air ht pump"
+ ],
+ "531": [
+  "Givarfel BT12 uteluftsvärmepump",
+  "Sens flt BT12 outd air ht pump"
+ ],
+ "532": [
+  "Givarfel BT14 uteluftsvärmepump",
+  "Sens flt BT14 outd air ht pump"
+ ],
+ "533": [
+  "Givarfel BT15 uteluftsvärmepump",
+  "Sens flt BT15 outd air ht pump"
+ ],
+ "534": [
+  "Givarfel BT16 uteluftsvärmepump",
+  "Sens flt BT16 outd air ht pump"
+ ],
+ "535": [
+  "Givarfel BT17 uteluftsvärmepump",
+  "Sens flt BT17 outd air ht pump"
+ ],
+ "536": [
+  "Givarfel BT28 uteluftsvärmepump",
+  "Sens flt BT28 outd air ht pump"
+ ],
+ "537": [
+  "Givarfel BT81 uteluftsvärmepump",
+  "Sens flt BT81 outd air ht pump"
+ ],
+ "538": [
+  "Givarfel BP8 uteluftsvärmepump",
+  "Sens flt BP8 outd air ht pump"
+ ],
+ "539": [
+  "Givarfel BP9 uteluftsvärmepump",
+  "Sens flt BP9 outd air ht pump"
+ ],
+ "540": [
+  "Givarfel BP11 uteluftsvärmepump",
+  "Sens flt BP11 outd air ht pump"
+ ],
+ "541": [
+  "Givarfel BT84 uteluftsvärmepump",
+  "Sens flt BT84 outd air ht pump"
+ ],
+ "544": [
+  "Felaktig spänning shuntventil QN11",
+  "Incorrect voltage, shunt valve QN11"
+ ],
+ "545": [
+  "Kommunikationsfel mot shuntventil QN11",
+  "Communication fault to shunt valve QN11"
+ ],
+ "547": [
+  "Bestående temperaturskydd kompressor",
+  "Permanently temp-protected compressor"
+ ],
+ "548": [
+  "Flödesvakt köldbärare",
+  "Flow monitor, brine NC"
+ ],
+ "549": [
+  "Flödesvakt köldbärare",
+  "Flow monitor, brine NO"
+ ],
+ "551": [
+  "Givarfel: Varmvatten ut (BT38)",
+  "Sens flt: Hot water out (BT38)"
+ ],
+ "555": [
+  "Avbruten avfrostning",
+  "Interr. defrosting"
+ ],
+ "556": [
+  "Alarm linbus com GP12",
+  "Alarm linbus com GP12"
+ ],
+ "558": [
+  "Misslyckad tryckutjämning",
+  "Failed press. equalisation"
+ ],
+ "559": [
+  "Pump stopp GP6 i SAM / Pump stopp GP6 i DWS",
+  "Pump stop GP6 in SAM / Pump stop GP6 in DWS"
+ ],
+ "560": [
+  "Givarfel –BT7 HW VV-givare topp",
+  "Sens flt –BT7 HW sensor top"
+ ],
+ "562": [
+  "Förvärmning misslyckad, lång körtid",
+  "Preheat. failed, long run time"
+ ],
+ "570": [
+  "Komm. fel Sol API",
+  "Communication flt, Solar API"
+ ],
+ "574": [
+  "Frysskydd kyldrift",
+  "Freeze protection, cooling operation"
+ ],
+ "575": [
+  "Inkompatibel SFT, korttypen stämmer inte.",
+  "Incompatible SFT, board type does not correspond"
+ ],
+ "576": [
+  "Inkompatibel ZAB, fel revision på hårdvara.",
+  "Incompatibe ZAB, the HW revision is not correct."
+ ],
+ "577": [
+  "Hög avlufttemperatur i kyldrift",
+  "High extract air in cooling operation"
+ ],
+ "578": [
+  "Återkommande högtryckslarm i kyldrift",
+  "Recurrent high pressure alarm in cooling operation"
+ ],
+ "579": [
+  "Givarfel (BT9.1)",
+  "Sensor error (BT9.1)"
+ ],
+ "580": [
+  "Kommunikationsfel mot AXC kortet för PVT / Givarfel (BT9.2)",
+  "Communication fault to AXC for PVT / Sensor error (BT9.2)"
+ ],
+ "584": [
+  "Kommunikationsfel cirkulationspump (GP8)",
+  "Communication fault, circulation pump (GP8)"
+ ],
+ "605": [
+  "Återkommande lågtryckslarm(Köldbärarpump)",
+  "Recurring low pressure (brine)"
+ ],
+ "606": [
+  "Long period blockage AAC/PVT",
+  "Long period blockage AAC/PVT"
+ ],
+ "607": [
+  "GP8-pump blockerad, varmvatten kan inte produceras / Flöde blockerat (GP12)",
+  "GP8-pump blocked, hot water cannot be produced / Flow blocked (GP12)"
+ ],
+ "608": [
+  "Underspänning GP8-pump, varmv. kan ej produceras",
+  "Undervolt. GP8 pump, hot water cannot be produced"
+ ],
+ "609": [
+  "El-fel pump (GP12)",
+  "Electric fault pump (GP12)"
+ ],
+ "613": [
+  "Torrkörning GP8",
+  "Dry running GP8"
+ ],
+ "614": [
+  "Givarfel PCB",
+  "Sensor error PCB"
+ ]
+}
