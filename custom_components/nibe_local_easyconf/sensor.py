@@ -149,4 +149,12 @@ class NibeCopSensor(CoordinatorEntity[NibeCoordinator], SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict:
-        return self._result().as_attributes(self._language)
+        attributes = self._result().as_attributes(self._language)
+        history = self.coordinator.cop.history
+        if history and history.get("production"):
+            # Where the samples before installation came from, so a yearly
+            # figure that appears early can be traced to its source.
+            attributes["history_from"] = history.get("from")
+            attributes["history_production"] = history.get("production")
+            attributes["history_consumption"] = history.get("consumption")
+        return attributes

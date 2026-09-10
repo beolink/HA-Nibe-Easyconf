@@ -1,6 +1,9 @@
 {
   "domain": "nibe_local_easyconf",
   "name": "Nibe Local Easyconf",
+  "after_dependencies": [
+    "recorder"
+  ],
   "codeowners": [
     "@beolink"
   ],
@@ -24,5 +27,5 @@
   "requirements": [
     "nibe>=2.24.0"
   ],
-  "version": "1.6.0"
+  "version": "1.7.0"
 }

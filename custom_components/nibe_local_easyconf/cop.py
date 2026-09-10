@@ -96,6 +96,10 @@ class CopTracker:
         #: spacing than one a day, or "yesterday" could be anything from 12 to
         #: 36 hours ago depending on when the samples happened to land.
         self._recent: list[tuple[str, float, float]] = []
+        #: Where earlier history was imported from, once it has been. Kept so
+        #: the import runs once, and so the sensor can say what the yearly
+        #: figure stands on. Not in the CTC original.
+        self.history: dict[str, Any] | None = None
         self._loaded = False
 
     async def async_load(self) -> None:
@@ -108,6 +112,8 @@ class CopTracker:
                 for day, values in data["samples"].items()
                 if isinstance(values, (list, tuple)) and len(values) >= 2
             }
+        if isinstance(data, dict) and isinstance(data.get("history"), dict):
+            self.history = data["history"]
         if isinstance(data, dict) and isinstance(data.get("recent"), list):
             for row in data["recent"]:
                 if isinstance(row, (list, tuple)) and len(row) >= 3:
@@ -138,7 +144,58 @@ class CopTracker:
         keep = when - timedelta(days=RECENT_DAYS)
         self._recent = [r for r in self._recent if _parse(r[0]) >= keep]
 
-        await self._store.async_save({"samples": self._samples, "recent": self._recent})
+        await self._async_save()
+
+    async def _async_save(self) -> None:
+        data: dict[str, Any] = {"samples": self._samples, "recent": self._recent}
+        if self.history is not None:
+            data["history"] = self.history
+        await self._store.async_save(data)
+
+    async def async_seed(
+        self,
+        daily: dict[str, tuple[float, float]],
+        recent: list[tuple[str, float, float]],
+        energy_out: float,
+        energy_in: float,
+        source: dict[str, Any],
+    ) -> int:
+        """Add history recorded elsewhere for the same two counters.
+
+        Days the tracker sampled itself are never overwritten: its own readings
+        come straight from the pump, an import only fills in what came before.
+        A value above today's counter cannot be the past of this counter - a
+        mismatch or a replaced unit - so it is dropped rather than trusted.
+        Returns the number of days added. Not in the CTC original.
+        """
+        await self.async_load()
+
+        def plausible(out: float, consumed: float) -> bool:
+            return 0 < out <= energy_out and 0 < consumed <= energy_in
+
+        added = 0
+        for day, (out, consumed) in sorted(daily.items()):
+            if day in self._samples or not plausible(out, consumed):
+                continue
+            self._samples[day] = [float(out), float(consumed)]
+            added += 1
+        newest = max((date.fromisoformat(d) for d in self._samples), default=None)
+        if newest is not None:
+            cutoff = (newest - timedelta(days=COP_HISTORY_DAYS)).isoformat()
+            self._samples = {d: v for d, v in self._samples.items() if d >= cutoff}
+
+        have = {row[0] for row in self._recent}
+        for stamp, out, consumed in recent:
+            if stamp not in have and plausible(out, consumed):
+                self._recent.append((stamp, float(out), float(consumed)))
+        keep = datetime.now(UTC) - timedelta(days=RECENT_DAYS)
+        self._recent = sorted(
+            (r for r in self._recent if _parse(r[0]) >= keep), key=lambda r: _parse(r[0])
+        )
+
+        self.history = {**source, "days_added": added}
+        await self._async_save()
+        return added
 
     def result_day(
         self,

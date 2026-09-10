@@ -83,6 +83,16 @@
           "description": "Vilken pump som ska sökas om. Utelämna för att söka om alla."
         }
       }
+    },
+    "import_energy_history": {
+      "name": "Importera energihistorik",
+      "description": "Läser in tidigare inspelad historik för pumpens energiräknare i COP-beräkningen.",
+      "fields": {
+        "entry_id": {
+          "name": "Enhet",
+          "description": "Vilken pump. Utelämna för alla."
+        }
+      }
     }
   }
 }

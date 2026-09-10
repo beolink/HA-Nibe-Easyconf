@@ -37,6 +37,7 @@ DEFAULT_SCAN_INTERVAL: Final = 60
 SLOW_POLL_WARNING: Final = 30.0
 
 SERVICE_RESCAN: Final = "rescan_registers"
+SERVICE_IMPORT_HISTORY: Final = "import_energy_history"
 
 #: Component designations worth an entity on a normal installation.
 CORE_COMPONENTS: Final = frozenset({

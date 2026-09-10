@@ -83,6 +83,16 @@
           "description": "Which pump to rescan. Leave empty to rescan all."
         }
       }
+    },
+    "import_energy_history": {
+      "name": "Import energy history",
+      "description": "Reads earlier recorded history of the pump's energy counters into the COP tracker.",
+      "fields": {
+        "entry_id": {
+          "name": "Device",
+          "description": "Which pump. Leave empty for all."
+        }
+      }
     }
   }
 }

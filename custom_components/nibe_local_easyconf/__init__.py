@@ -8,10 +8,11 @@ import socket
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT, CONF_SCAN_INTERVAL
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv, entity_registry as er
 from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.storage import Store
 from homeassistant.loader import async_get_integration
 import voluptuous as vol
@@ -29,6 +30,7 @@ from .const import (
     ENERGY_OUT_REGISTER,
     FIRMWARE_REGISTER,
     PLATFORMS,
+    SERVICE_IMPORT_HISTORY,
     SERVICE_RESCAN,
     is_core_register,
     platform_for,
@@ -43,6 +45,7 @@ from .discovery import (
     modbus_address,
 )
 from .frontend import async_register_frontend, async_unregister_frontend
+from .history import async_import_history
 from .modbus import ModbusTransportError, NibeModbusClient
 from .names import assign_names
 from .registry import async_union_map
@@ -133,6 +136,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool
         entry.async_on_unload(
             async_track_time_interval(hass, _record_cop, COP_SAMPLE_INTERVAL)
         )
+
+        # Earlier history of the same counters, if Home Assistant recorded any
+        # (myUplink, for one, does). Once, after startup, when the recorder is
+        # certain to be up; the service runs it again on request.
+        if coordinator.cop.history is None:
+
+            async def _import(_hass: HomeAssistant) -> None:
+                if await async_import_history(hass, coordinator, DOMAIN):
+                    coordinator.async_update_listeners()
+
+            entry.async_on_unload(async_at_started(hass, _import))
 
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -305,4 +319,26 @@ def _register_services(hass: HomeAssistant) -> None:
         SERVICE_RESCAN,
         _rescan,
         schema=vol.Schema({vol.Optional("entry_id"): vol.All(cv.ensure_list, [cv.string])}),
+    )
+
+    async def _import_history(call: ServiceCall) -> dict:
+        """Import earlier energy history into the COP tracker, again if need be."""
+        entry_ids = call.data.get("entry_id")
+        results = {}
+        for entry in hass.config_entries.async_loaded_entries(DOMAIN):
+            if entry_ids and entry.entry_id not in entry_ids:
+                continue
+            coordinator: NibeCoordinator = entry.runtime_data
+            imported = await async_import_history(hass, coordinator, DOMAIN)
+            if imported:
+                coordinator.async_update_listeners()
+            results[entry.entry_id] = imported or {"production": None, "consumption": None}
+        return results
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_IMPORT_HISTORY,
+        _import_history,
+        schema=vol.Schema({vol.Optional("entry_id"): vol.All(cv.ensure_list, [cv.string])}),
+        supports_response=SupportsResponse.OPTIONAL,
     )

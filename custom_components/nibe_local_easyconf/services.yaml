@@ -12,3 +12,19 @@ rescan_registers:
       selector:
         config_entry:
           integration: nibe_local_easyconf
+
+import_energy_history:
+  name: Importera energihistorik
+  description: >-
+    Letar upp tidigare inspelad historik för pumpens energiräknare (till
+    exempel från myUplink) och läser in den i COP-beräkningen, så att
+    års-COP kan räknas utan att vänta ett år. Görs automatiskt en gång vid
+    start; kör den här om en källa har tillkommit sedan dess.
+  fields:
+    entry_id:
+      name: Enhet
+      description: Vilken pump. Utelämna för alla.
+      required: false
+      selector:
+        config_entry:
+          integration: nibe_local_easyconf

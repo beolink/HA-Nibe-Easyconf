@@ -196,6 +196,17 @@ The anonymous report is stricter than the sensor: it sends a yearly figure only
 once it really covers a year, since the lifetime figure under the yearly name
 would be a different number wearing the wrong label.
 
+**Earlier history is imported automatically.** If Home Assistant already
+recorded these two counters through another integration — myUplink reports
+them as *Tot. produktion* / *Tot. konsumtion* — that history is read into the
+COP once, at startup. Nothing is configured: the series are found because
+their latest values match the pump's own counters, and both have to come from
+the same device, which rules out a household meter that merely happens to sit
+near the pump's consumption. The daily figure is then there at once, and a real
+yearly figure arrives a year after the history begins rather than a year after
+installation. The `nibe_local_easyconf.import_energy_history` service runs it
+again, for instance after adding a source.
+
 ## The NIBE page
 
 Setting the integration up adds a **NIBE** entry to the sidebar on its own —
