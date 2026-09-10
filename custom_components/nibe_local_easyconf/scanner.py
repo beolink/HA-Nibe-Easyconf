@@ -25,7 +25,7 @@ from .codec import decode
 from .const import DEFAULT_PORT, DEFAULT_UNIT_ID
 from .discovery import function_code, modbus_address
 from .modbus import NibeModbusClient
-from .registry import union_map
+from .registry import async_union_map, union_map
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -71,8 +71,17 @@ async def _port_open(host: str, port: int) -> bool:
     return True
 
 
-async def async_identify(host: str, port: int, unit_id: int) -> FoundPump | None:
-    """Confirm that `host` is a NIBE S-series pump, by reading a known register."""
+async def async_identify(
+    host: str,
+    port: int,
+    unit_id: int,
+    registers: dict[int, dict] | None = None,
+) -> FoundPump | None:
+    """Confirm that `host` is a NIBE S-series pump, by reading a known register.
+
+    `registers` lets the caller pass an already-loaded map so a sweep of 254
+    addresses does not touch the register files at all.
+    """
     client = NibeModbusClient(host, port, unit_id, timeout=4.0)
     try:
         await client.connect()
@@ -86,7 +95,9 @@ async def async_identify(host: str, port: int, unit_id: int) -> FoundPump | None
 
     if not words:
         return None
-    value = decode(union_map()[IDENTIFY_REGISTER], words)
+    if registers is None:
+        registers = union_map()
+    value = decode(registers[IDENTIFY_REGISTER], words)
     if value is None or not PLAUSIBLE_OUTDOOR[0] <= value <= PLAUSIBLE_OUTDOOR[1]:
         return None
     return FoundPump(host=host, outdoor_temperature=float(value))
@@ -122,8 +133,11 @@ async def async_scan_hosts(
     hosts: list[str],
     port: int = DEFAULT_PORT,
     unit_id: int = DEFAULT_UNIT_ID,
+    registers: dict[int, dict] | None = None,
 ) -> list[FoundPump]:
     """Probe a list of addresses and return the ones that are NIBE pumps."""
+    if registers is None:
+        registers = union_map()
     semaphore = asyncio.Semaphore(CONCURRENCY)
 
     async def check(host: str) -> FoundPump | None:
@@ -132,7 +146,7 @@ async def async_scan_hosts(
                 return None
         # Identification happens outside the semaphore so one slow Modbus
         # handshake does not hold up the rest of the sweep.
-        return await async_identify(host, port, unit_id)
+        return await async_identify(host, port, unit_id, registers)
 
     results = await asyncio.gather(*(check(host) for host in hosts))
     return [pump for pump in results if pump is not None]
@@ -144,11 +158,12 @@ async def async_find_pumps(
     unit_id: int = DEFAULT_UNIT_ID,
 ) -> list[FoundPump]:
     """Scan Home Assistant's own local networks for NIBE pumps."""
+    registers = await async_union_map(hass)
     hosts = await async_candidate_hosts(hass)
     if not hosts:
         _LOGGER.warning("No suitable local network found to scan")
         return []
     _LOGGER.debug("Scanning %d addresses for Modbus on port %d", len(hosts), port)
-    found = await async_scan_hosts(hosts, port, unit_id)
+    found = await async_scan_hosts(hosts, port, unit_id, registers)
     _LOGGER.info("Network scan found %d NIBE pump(s)", len(found))
     return found

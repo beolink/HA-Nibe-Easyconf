@@ -61,6 +61,18 @@ MODEL_LABELS: dict[str, str] = {
 }
 
 
+async def async_union_map(hass) -> dict[int, dict]:
+    """Load the register maps without blocking the event loop.
+
+    `union_map` reads eleven JSON files off disk. That is fast, but Home
+    Assistant rightly flags any file I/O performed inside the loop, so the first
+    call is pushed to an executor. Afterwards the lru_cache makes the plain
+    `union_map()` free, which is why the synchronous form is still used on hot
+    paths once this has run.
+    """
+    return await hass.async_add_executor_job(union_map)
+
+
 @lru_cache(maxsize=1)
 def union_map() -> dict[int, dict]:
     """Every register any S-series map defines, merged into one.
@@ -119,7 +131,9 @@ TRAIT_LABELS: dict[str, tuple[str, str]] = {
 }
 
 
-async def detect_traits(client: NibeModbusClient) -> set[str]:
+async def detect_traits(
+    client: NibeModbusClient, registers: dict[int, dict] | None = None
+) -> set[str]:
     """Work out what the machine physically is, by reading telling sensors.
 
     This is deliberately based on readings rather than on which registers exist:
@@ -128,7 +142,8 @@ async def detect_traits(client: NibeModbusClient) -> set[str]:
     """
     from .codec import decode, word_count
 
-    registers = union_map()
+    if registers is None:
+        registers = union_map()
     traits: set[str] = set()
     for trait, candidates in _TRAIT_REGISTERS.items():
         for register in candidates:

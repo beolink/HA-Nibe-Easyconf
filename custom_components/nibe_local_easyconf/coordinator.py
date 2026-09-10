@@ -44,6 +44,7 @@ class NibeCoordinator(DataUpdateCoordinator[dict[int, float | int | None]]):
         client: NibeModbusClient,
         discovery: DiscoveryResult,
         scan_interval: int = DEFAULT_SCAN_INTERVAL,
+        registers: dict[int, dict] | None = None,
     ) -> None:
         super().__init__(
             hass,
@@ -54,7 +55,9 @@ class NibeCoordinator(DataUpdateCoordinator[dict[int, float | int | None]]):
         )
         self.client = client
         self.discovery = discovery
-        self.registers = union_map()
+        # Passed in by the setup path, which loaded it in an executor. Falling
+        # back to the cached sync call is safe once that has happened.
+        self.registers = registers if registers is not None else union_map()
         self._subscribed: set[int] = set()
         self._spans: list[Span] = []
         self._spans_stale = True

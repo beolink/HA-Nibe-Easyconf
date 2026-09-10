@@ -39,7 +39,12 @@ from .const import (
 )
 from .discovery import DiscoveryResult, RegisterDiscovery
 from .modbus import ModbusTransportError, NibeModbusClient
-from .registry import MODEL_LABELS, describe_traits, detect_traits, union_map
+from .registry import (
+    MODEL_LABELS,
+    async_union_map,
+    describe_traits,
+    detect_traits,
+)
 from .scanner import FoundPump, async_find_pumps, async_identify
 
 _LOGGER = logging.getLogger(__name__)
@@ -54,6 +59,7 @@ class NibeConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     def __init__(self) -> None:
+        self._registers: dict[int, dict] | None = None
         self._client: NibeModbusClient | None = None
         self._input: dict[str, Any] = {}
         self._traits: set[str] = set()
@@ -87,7 +93,10 @@ class NibeConfigFlow(ConfigFlow, domain=DOMAIN):
             await self.async_set_unique_id(f"nibe-{serial.lower()}")
             self._abort_if_unique_id_configured(updates={CONF_HOST: host})
 
-        pump = await async_identify(host, DEFAULT_PORT, DEFAULT_UNIT_ID)
+        self._registers = await async_union_map(self.hass)
+        pump = await async_identify(
+            host, DEFAULT_PORT, DEFAULT_UNIT_ID, self._registers
+        )
         if pump is None:
             # Named like a NIBE but not answering Modbus: most likely Modbus TCP
             # is still switched off in menu 7.5.9. Nothing to configure yet.
@@ -234,18 +243,21 @@ class NibeConfigFlow(ConfigFlow, domain=DOMAIN):
         Returns None when `errors` was supplied and validation failed, so the
         caller can redisplay its own form.
         """
+        if self._registers is None:
+            self._registers = await async_union_map(self.hass)
         client = NibeModbusClient(
             host=config[CONF_HOST], port=config[CONF_PORT], unit_id=config[CONF_UNIT_ID]
         )
         failure: str | None = None
         try:
             await client.connect()
-            if await async_identify(
-                config[CONF_HOST], config[CONF_PORT], config[CONF_UNIT_ID]
-            ) is None:
+            identified = await async_identify(
+                config[CONF_HOST], config[CONF_PORT], config[CONF_UNIT_ID], self._registers
+            )
+            if identified is None:
                 failure = "not_nibe"
             else:
-                self._traits = await detect_traits(client)
+                self._traits = await detect_traits(client, self._registers)
         except ModbusTransportError:
             failure = "cannot_connect"
         except Exception:
@@ -275,8 +287,9 @@ class NibeConfigFlow(ConfigFlow, domain=DOMAIN):
         """Probe every documented register to see which ones this pump has."""
         if self._register_task is None:
             assert self._client is not None
+            assert self._registers is not None
             self._register_task = self.hass.async_create_task(
-                RegisterDiscovery(self._client).run(union_map())
+                RegisterDiscovery(self._client).run(self._registers)
             )
 
         if not self._register_task.done():

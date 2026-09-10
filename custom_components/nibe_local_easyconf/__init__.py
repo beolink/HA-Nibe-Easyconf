@@ -23,7 +23,7 @@ from .const import (
 from .coordinator import NibeCoordinator
 from .discovery import DiscoveryResult, RegisterDiscovery
 from .modbus import ModbusTransportError, NibeModbusClient
-from .registry import union_map
+from .registry import async_union_map
 from .storage import async_load, async_remove, async_save
 
 _LOGGER = logging.getLogger(__name__)
@@ -42,6 +42,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool
     except ModbusTransportError as err:
         raise ConfigEntryNotReady(str(err)) from err
 
+    registers = await async_union_map(hass)
     discovery = await async_load(hass, entry.entry_id)
     if discovery is None and "discovery" in entry.data:
         # First start after setup: adopt the scan the config flow already did,
@@ -59,7 +60,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool
     if discovery is None:
         _LOGGER.info("No cached register scan; probing %s", entry.data[CONF_HOST])
         try:
-            discovery = await RegisterDiscovery(client).run(union_map())
+            discovery = await RegisterDiscovery(client).run(registers)
         except ModbusTransportError as err:
             await client.close()
             raise ConfigEntryNotReady(str(err)) from err
@@ -69,7 +70,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool
     scan_interval = entry.options.get(
         CONF_SCAN_INTERVAL, entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
     )
-    coordinator = NibeCoordinator(hass, entry, client, discovery, scan_interval)
+    coordinator = NibeCoordinator(
+        hass, entry, client, discovery, scan_interval, registers=registers
+    )
     await coordinator.async_config_entry_first_refresh()
 
     entry.runtime_data = coordinator
