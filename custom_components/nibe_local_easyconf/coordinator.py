@@ -75,8 +75,6 @@ class NibeCoordinator(DataUpdateCoordinator[dict[int, float | int | None]]):
         self._spans: list[Span] = []
         self._spans_stale = True
         self._write_lock = asyncio.Lock()
-        #: Set by the setup path when the daily report is enabled.
-        self.stats = None
         #: cop.CopTracker, set by the setup path when the counters exist.
         self.cop = None
         #: Decoded serial (serial.NibeSerial) when the network name gave it away.

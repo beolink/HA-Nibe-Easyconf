@@ -30,6 +30,13 @@ STORAGE_VERSION = 1
 COP_HISTORY_DAYS = 400
 COP_WINDOW_DAYS = 365
 
+#: A yearly figure has to stand on a span close to a year. Without an upper
+#: bound, a gap in the samples would quietly turn "the last year" into "the
+#: last fourteen months". Taken from the CTC integration, which added it after
+#: this port was made; it matters more here, because imported history has gaps
+#: (myUplink's 312 days on the development unit held 280 daily samples).
+YEAR_MAX_DAYS = 380
+
 #: Below this the divisor is noise rather than a measurement. A year needs a
 #: real number behind it; a single day is allowed to work with much less, since
 #: a day of heating is a few tens of kilowatt hours at most.
@@ -245,7 +252,8 @@ class CopTracker:
 
         now = today or date.today()
         window_start = (now - timedelta(days=COP_WINDOW_DAYS)).isoformat()
-        older = sorted(d for d in self._samples if d <= window_start)
+        earliest = (now - timedelta(days=YEAR_MAX_DAYS)).isoformat()
+        older = sorted(d for d in self._samples if earliest <= d <= window_start)
         if older:
             base_out, base_in = self._samples[older[-1]]
             span = (now - date.fromisoformat(older[-1])).days

@@ -6,26 +6,47 @@ v1.3.0 shipped three fields that never arrived intact, and nothing noticed:
   for CTC's four-digit codes and clamps anything larger without an error;
 * `block_reads` and `scan_interval_s` were dropped, because metrics are a
   closed list of physical quantities on the backend;
-* `firmwares` never left the house, because the shared stats.py only passes a
-  singular `firmware` key through.
+* `firmwares` never left the house, because the shared stats.py passed only a
+  singular `firmware` key through at the time.
 
-The rules below are copied from the backend's lib/ingest.ts and from stats.py.
-If either changes, change them here too - the point is that a field which the
-far end silently discards or mangles fails a test on this side first.
+The backend's rules below are copied from its lib/ingest.ts; if it changes,
+change them here too. stats.py's list is read from the file itself, because a
+hand-kept copy is how the last point went unnoticed. The point is that a field
+which the far end silently discards or mangles fails a test on this side first.
 """
 
 from __future__ import annotations
 
+import ast
 import importlib
 import math
+from pathlib import Path
 import re
 
 from .conftest import PACKAGE
 
 stats_extra = importlib.import_module(f"{PACKAGE}.stats_extra")
 
+
+
+def _stats_py_extra_keys() -> set[str]:
+    """EXTRA_KEYS as written in stats.py, read without importing it.
+
+    stats.py pulls in Home Assistant, which these tests run without.
+    """
+    source = Path(__file__).resolve().parent.parent / (
+        "custom_components/nibe_local_easyconf/stats.py"
+    )
+    for node in ast.parse(source.read_text(encoding="utf-8")).body:
+        if isinstance(node, ast.Assign) and any(
+            getattr(target, "id", None) == "EXTRA_KEYS" for target in node.targets
+        ):
+            return set(ast.literal_eval(node.value))
+    raise AssertionError("EXTRA_KEYS not found in stats.py")
+
+
 #: stats.py: the only keys the integration's extra callback may contribute.
-STATS_EXTRA_KEYS = ("models", "features", "errors", "metrics", "firmware")
+STATS_EXTRA_KEYS = _stats_py_extra_keys()
 
 #: lib/ingest.ts ALLOWED_KEYS. An unknown key rejects the whole report.
 ALLOWED_KEYS = {
@@ -81,7 +102,7 @@ def _full_report():
 
 def test_stats_py_passes_every_key_through():
     """Anything outside stats.py's list is dropped before the wire."""
-    assert set(_full_report()) <= set(STATS_EXTRA_KEYS)
+    assert set(_full_report()) <= STATS_EXTRA_KEYS
 
 
 def test_backend_accepts_every_top_level_key():

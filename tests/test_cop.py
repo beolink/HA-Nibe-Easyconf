@@ -73,7 +73,8 @@ def test_counters_going_backwards_fall_back_to_lifetime(cop):
     # A replaced unit or a reset counter must not produce a negative delta.
     tracker = cop.CopTracker(FakeStore())
     today = date(2026, 9, 9)
-    run(tracker.async_record(30000, 12000, today=today - timedelta(days=400)))
+    # Inside the year window, so it is the guard and not the window that refuses it.
+    run(tracker.async_record(30000, 12000, today=today - timedelta(days=366)))
     result = tracker.result(22421, 9088, today=today)
     assert result.basis == "lifetime"
 
@@ -111,7 +112,7 @@ def test_one_sample_a_day_replaces_the_earlier_one(cop):
 def test_samples_survive_a_restart(cop):
     store = FakeStore()
     today = date(2026, 9, 9)
-    run(cop.CopTracker(store).async_record(18000, 7500, today=today - timedelta(days=400)))
+    run(cop.CopTracker(store).async_record(18000, 7500, today=today - timedelta(days=366)))
 
     revived = cop.CopTracker(store)
     run(revived.async_load())
@@ -228,3 +229,19 @@ def test_attributes_keep_their_keys_in_every_language():
     assert set(sv) == set(en) == {"basis", "days", "energy_out_kwh", "energy_in_kwh"}
     assert sv["basis"] == "hela livslängden"
     assert en["basis"] == "whole lifetime"
+
+
+def test_a_gap_does_not_stretch_the_year():
+    """With the only old sample 400 days back, "the last year" would really be
+    thirteen months; no yearly figure is better than a mislabelled one."""
+    tracker = _cop.CopTracker(FakeStore())
+    today = date(2026, 11, 20)
+    run(tracker.async_record(150000.0, 36000.0, today=today - timedelta(days=400)))
+    assert tracker.result(200468.0, 47932.6, today=today).basis == "lifetime"
+
+
+def test_a_sample_a_few_days_past_a_year_still_counts():
+    tracker = _cop.CopTracker(FakeStore())
+    today = date(2026, 11, 20)
+    run(tracker.async_record(159264.7, 37592.7, today=today - timedelta(days=370)))
+    assert tracker.result(200468.0, 47932.6, today=today).basis == "year"
