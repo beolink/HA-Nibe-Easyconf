@@ -36,7 +36,8 @@ def test_known_designation_is_decoded():
 def test_prose_is_never_half_translated():
     """Substring translation produced hybrids like "Kyla start at over temp",
     which read worse than NIBE's English. Only whole phrases are translated."""
-    assert descriptions.friendly_name("Cooling start at over temp.") == "Cooling start at over temp."
+    unchanged = "Cooling start at over temp."
+    assert descriptions.friendly_name(unchanged) == unchanged
     assert descriptions.friendly_name("Current outdoor temperature (BT1)") == "Utetemperatur"
 
 
