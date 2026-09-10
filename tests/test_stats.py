@@ -121,8 +121,8 @@ def test_firmware_rejects_anything_else():
 
 
 def test_firmware_reaches_the_report_when_known():
-    # A single string under "firmware": the shared stats.py passes only that
-    # key through, so a "firmwares" object never left the house.
+    # One board, so a single string under "firmware" rather than CTC's
+    # per-board "firmwares" object.
     extra = _extra(firmware=1036)
     assert extra["firmware"] == "1036"
     assert "firmwares" not in extra

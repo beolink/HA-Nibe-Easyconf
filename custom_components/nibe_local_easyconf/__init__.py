@@ -50,7 +50,7 @@ from .modbus import ModbusTransportError, NibeModbusClient
 from .names import assign_names
 from .registry import async_union_map
 from .serial import parse_serial, serial_from_hostname
-from .stats import async_setup_stats
+from .stats import async_setup_stats, async_stop_stats
 from .stats_extra import ErrorCounter, build_extra
 from .storage import async_load, async_remove, async_save
 
@@ -63,8 +63,85 @@ COP_SAMPLE_INTERVAL = timedelta(hours=6)
 
 type NibeConfigEntry = ConfigEntry[NibeCoordinator]
 
+#: Failed poll cycles already reported, per entry. Outside the coordinator,
+#: which each set-up attempt creates anew.
+_FAILURES: dict[str, ErrorCounter] = {}
+
+
+def _scan_interval(entry: ConfigEntry) -> int:
+    return entry.options.get(
+        CONF_SCAN_INTERVAL, entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+    )
+
+
+def _stats_extra_for(entry: NibeConfigEntry) -> dict:
+    """The integration's part of the anonymous daily report.
+
+    Resolved when the report is built, not when it is armed. A pump that does
+    not answer makes the set-up raise, and Home Assistant retries it for as
+    long as that lasts; the report then has to say "installed and unreachable"
+    rather than nothing at all. It never opens a Modbus connection of its own:
+    everything in it is either a count the coordinator already has or a fixed
+    slug. See stats_extra.py for exactly what is sent.
+    """
+    failures = _FAILURES.setdefault(entry.entry_id, ErrorCounter())
+    coordinator: NibeCoordinator | None = getattr(entry, "runtime_data", None)
+    model = entry.data.get("model")
+    traits = set(entry.data.get(CONF_TRAITS) or [])
+    if coordinator is None:
+        # Set-up has not finished. What the config entry knows is sent, and a
+        # read failure is recorded so a pump that never answers is visible
+        # rather than silent.
+        return build_extra(
+            model,
+            traits=traits,
+            scan_interval_s=_scan_interval(entry),
+            read_failures=1,
+            serial=entry.data.get(CONF_SERIAL),
+        )
+    cop_day, cop_year, cop_lifetime = cop_for_report(
+        coordinator.cop, coordinator.energy_out, coordinator.energy_in
+    )
+    return build_extra(
+        model,
+        traits=traits,
+        registers_present=len(coordinator.discovery.present),
+        registers_reporting=len(coordinator.discovery.reporting),
+        registers_absent=len(coordinator.discovery.absent),
+        entities_enabled=coordinator.subscribed_count,
+        block_reads=coordinator.block_reads,
+        scan_interval_s=_scan_interval(entry),
+        read_failures=failures.delta(coordinator.read_failures),
+        firmware=coordinator.firmware,
+        serial=coordinator.serial.serial if coordinator.serial else None,
+        cop_day=cop_day,
+        cop_year=cop_year,
+        cop_lifetime=cop_lifetime,
+    )
+
+
+async def _async_arm_statistics(hass: HomeAssistant, entry: NibeConfigEntry) -> None:
+    """Arm the daily report before the first Modbus call.
+
+    Home Assistant runs an entry's on-unload callbacks after every failed
+    set-up attempt and retries for as long as the pump stays away, so a
+    reporter armed at the end of a successful set-up would go quiet exactly
+    then. Stopped only from async_unload_entry, which a failed attempt never
+    reaches. On unless the user switches it off in the options.
+    """
+    try:
+        integration = await async_get_integration(hass, DOMAIN)
+        await async_setup_stats(
+            hass, entry, DOMAIN, str(integration.version),
+            extra=lambda: _stats_extra_for(entry),
+        )
+    except Exception:  # statistics must never break a set-up
+        _LOGGER.debug("Could not arm the statistics reporter", exc_info=True)
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool:
+    await _async_arm_statistics(hass, entry)
+
     client = NibeModbusClient(
         host=entry.data[CONF_HOST],
         port=entry.data.get(CONF_PORT, DEFAULT_PORT),
@@ -100,11 +177,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool
         await async_save(hass, entry.entry_id, discovery)
     _LOGGER.debug("Register discovery for %s: %s", entry.title, discovery.summary())
 
-    scan_interval = entry.options.get(
-        CONF_SCAN_INTERVAL, entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-    )
     coordinator = NibeCoordinator(
-        hass, entry, client, discovery, scan_interval, registers=registers
+        hass, entry, client, discovery, _scan_interval(entry), registers=registers
     )
     _async_remove_moved_entities(hass, entry, registers, discovery.present)
 
@@ -153,41 +227,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool
     entry.async_on_unload(entry.add_update_listener(_async_reload_on_options))
     _register_services(hass)
 
-    # Anonymous daily report. On unless the user switches it off in the
-    # options, and it never opens a Modbus connection of its own: everything
-    # in it is either a count the coordinator already has or a fixed slug.
-    # See stats_extra.py for exactly what is sent.
-    integration = await async_get_integration(hass, DOMAIN)
-    failures = ErrorCounter()
-
-    def _stats_extra() -> dict:
-        cop_day, cop_year, cop_lifetime = cop_for_report(
-            coordinator.cop, coordinator.energy_out, coordinator.energy_in
-        )
-        return build_extra(
-            entry.data.get("model"),
-            traits=set(entry.data.get(CONF_TRAITS) or []),
-            registers_present=len(coordinator.discovery.present),
-            registers_reporting=len(coordinator.discovery.reporting),
-            registers_absent=len(coordinator.discovery.absent),
-            entities_enabled=coordinator.subscribed_count,
-            block_reads=coordinator.block_reads,
-            scan_interval_s=scan_interval,
-            read_failures=failures.delta(coordinator.read_failures),
-            firmware=coordinator.firmware,
-            serial=coordinator.serial.serial if coordinator.serial else None,
-            cop_day=cop_day,
-            cop_year=cop_year,
-            cop_lifetime=cop_lifetime,
-        )
-
-    coordinator.stats = await async_setup_stats(
-        hass, entry, DOMAIN, str(integration.version), extra=_stats_extra
-    )
-
     # The "NIBE" sidebar page and the dashboard card. Once per Home Assistant,
     # however many pumps there are; see frontend.py for why a panel rather
     # than a generated dashboard.
+    integration = await async_get_integration(hass, DOMAIN)
     await async_register_frontend(hass, str(integration.version))
     return True
 
@@ -274,8 +317,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> boo
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:
         coordinator = entry.runtime_data
-        if getattr(coordinator, "stats", None):
-            await coordinator.stats.async_stop()
+        # Only here, never from an on-unload callback: those also run when a
+        # set-up attempt fails, and the report has to survive that.
+        await async_stop_stats(hass, entry, DOMAIN)
         await coordinator.client.close()
         still_loaded = [
             other
@@ -288,6 +332,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> boo
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    # An entry removed while its set-up was still being retried was never
+    # unloaded through async_unload_entry, so its reporter may still be armed.
+    await async_stop_stats(hass, entry, DOMAIN)
+    _FAILURES.pop(entry.entry_id, None)
     await async_remove(hass, entry.entry_id)
     await Store(hass, COP_STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}.cop").async_remove()
 

@@ -184,8 +184,8 @@ def build_extra(
     if metrics:
         payload["metrics"] = metrics
 
-    # A single string under "firmware". The shared stats.py passes only that
-    # key through, so a "firmwares" object never left the house.
+    # One board carries software worth reporting, so a single string under
+    # "firmware" rather than CTC's per-board "firmwares" object.
     version = firmware_value(firmware)
     if version is not None:
         payload["firmware"] = str(version)
