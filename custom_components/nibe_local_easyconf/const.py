@@ -16,6 +16,25 @@ CONF_TRAITS: Final = "traits"
 #: the device; only the article number and build date go into the report.
 CONF_SERIAL: Final = "serial"
 
+#: How the pump is reached. Absent on entries from before the F-series, which
+#: are all Modbus TCP.
+CONF_CONNECTION: Final = "connection"
+CONNECTION_MODBUS_TCP: Final = "modbus_tcp"
+CONNECTION_NIBEGW: Final = "nibegw"
+#: NibeGW gateway ports: where it takes read requests and write requests.
+CONF_READ_PORT: Final = "read_port"
+CONF_WRITE_PORT: Final = "write_port"
+#: The F-series pump's own product message, e.g. "F1255-16 CU".
+CONF_PRODUCT: Final = "product"
+#: Software version from the product message; the S-series reads a register.
+CONF_FIRMWARE: Final = "firmware"
+#: MODBUS 40's 32-bit word order (register 48852), as found at setup.
+CONF_WORD_SWAP: Final = "word_swap"
+
+#: Outdoor temperature (BT1) on every F-series map. Read once at start-up to
+#: prove the gateway is there and the pump is talking to it.
+GATEWAY_PROBE_REGISTER: Final = 40004
+
 #: Shown in the options text so the user can read what is sent before deciding.
 STATS_ENDPOINT: Final = "stats.rnet.se"
 STATS_PRIVACY_URL: Final = "https://stats.rnet.se/integritet"

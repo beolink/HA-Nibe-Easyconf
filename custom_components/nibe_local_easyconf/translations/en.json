@@ -4,10 +4,11 @@
     "step": {
       "user": {
         "title": "Add heat pump",
-        "description": "Enable networking (menu 5.2) and Modbus TCP (menu 7.5.9) on the pump before continuing.",
+        "description": "S-series: enable networking (menu 5.2) and Modbus TCP (menu 7.5.9) on the pump. F-series: connect a NibeGW gateway to the pump's RS-485 bus and enable MODBUS 40 in menu 5.2.",
         "menu_options": {
           "search": "Search the network for the pump",
-          "manual": "Enter the IP address manually"
+          "manual": "Enter the IP address manually",
+          "gateway": "F-series through a NibeGW gateway"
         }
       },
       "pick": {
@@ -38,24 +39,51 @@
           "name": "Name (optional)",
           "scan_interval": "Update interval"
         }
+      },
+      "gateway": {
+        "title": "Connect to the NibeGW gateway",
+        "description": "F-series pumps are reached through a NibeGW gateway on the pump's RS-485 bus, such as an ESP32 running esphome-nibe. Enable MODBUS 40 in the pump's menu {menu}, and make sure Home Assistant's IP address is among the allowed sources in the gateway's configuration. The default ports are 9999 for reads and 10000 for writes.",
+        "data": {
+          "host": "Gateway IP address",
+          "read_port": "Read port",
+          "write_port": "Write port"
+        }
+      },
+      "gateway_discovery_confirm": {
+        "title": "Found a NIBE F-series",
+        "description": "A NibeGW gateway at {host} is connected to a {product}. Do you want to add the pump?"
+      },
+      "gateway_confirm": {
+        "title": "What the pump looks like",
+        "description": "{product} with software {firmware}, through the gateway at {host}. Found: {traits}.\n\nOf the {probed} registers shown by default, {reporting} report a value; the others have no sensor fitted and stay off. The pump's other registers are created switched off and can be enabled in the entity settings.\n\nEach register takes about a second to read through the gateway, so the update interval should be at least half a minute.",
+        "data": {
+          "name": "Name (optional)",
+          "scan_interval": "Update interval"
+        }
       }
     },
     "progress": {
       "searching": "Searching the network for heat pumps answering Modbus.",
-      "discovering": "Scanning the pump's registers. This takes about a minute and is only done once."
+      "discovering": "Scanning the pump's registers. This takes about a minute and is only done once.",
+      "gateway_scanning": "Reading the pump's main registers through the gateway. This takes about a minute and is only done once."
     },
     "error": {
       "cannot_connect": "No response. Check the IP address and that Modbus TCP is enabled in menu 7.5.9.",
       "not_nibe": "The device answers Modbus but does not look like a NIBE S-series. Check the unit ID.",
       "no_pumps_found": "No heat pump found on the network. Check that Modbus TCP is enabled in menu 7.5.9, or enter the address manually below.",
-      "unknown": "Unexpected error. See the log for details."
+      "unknown": "Unexpected error. See the log for details.",
+      "gateway_no_answer": "No pump answers through the gateway. Check the address, that MODBUS 40 is enabled in the pump's menu 5.2, and that Home Assistant's IP address is an allowed source in the gateway's configuration.",
+      "unsupported_model": "The pump calls itself {product}, which is not an F-series model this integration knows."
     },
     "abort": {
       "already_configured": "This pump is already set up.",
       "cannot_connect": "Lost contact with the pump during the register scan.",
       "modbus_disabled": "Found a NIBE heat pump, but it is not answering Modbus. Enable Modbus TCP in menu 7.5.9 and try again.",
       "not_nibe": "The device does not look like a NIBE S-series.",
-      "unknown": "Unexpected error during the register scan."
+      "unknown": "Unexpected error during the register scan.",
+      "gateway_no_answer": "Found a NibeGW gateway, but no pump answers through it. Enable MODBUS 40 in the pump's menu 5.2 and check the gateway's allowed sources.",
+      "unsupported_model": "The pump behind the gateway is not a supported F-series model.",
+      "not_nibe_gateway": "The device is not a NibeGW gateway for a NIBE pump."
     }
   },
   "options": {
@@ -64,12 +92,50 @@
         "title": "Settings",
         "data": {
           "scan_interval": "Update interval",
+          "heating_mode_blocked": "Heating mode blocked",
+          "heating_mode_eco": "Heating mode eco",
+          "heating_mode_boost": "Heating mode boost",
           "send_statistics": "Send anonymous usage statistics"
         },
         "data_description": {
           "scan_interval": "How often registers are read. Only registers backing an enabled entity are read, so more entities make each cycle longer.",
+          "heating_mode_blocked": "Steps from the house's normal heat offset (menu 1.1, temperature) while the heating mode is blocked. Heating is never switched off: the house coasts on its thermal mass and the minimum supply temperature still applies.",
+          "heating_mode_eco": "Steps from the normal heat offset while the heating mode is eco.",
+          "heating_mode_boost": "Steps above the normal heat offset while the heating mode is boost.",
           "send_statistics": "One report per day to {endpoint}: the integration's version, your Home Assistant version and installation type, the country you set in Home Assistant, an approximate position rounded to about 11 km, the number of entities and devices, which model you chose, what kind of machine it is (ground source, exhaust air, hot water, cooling), how many registers were found and how many report a value, how many block reads each poll cycle costs, the update interval, the control board's software version, the number of failed poll cycles, the coefficient of performance (COP) over the last day, a rolling year and the lifetime, and, from the serial number, the article number and the year and week of manufacture. Never a name, an address, an exact position, the serial number itself, an entity name, which registers were found, or any individual reading from the house (the COP is a ratio over a day or a year); never anything finer than one day, and your IP address is not stored. Switching this off also erases what has already been sent. The full list: {privacy_url} It also sends a hash that links the beolink plugins running on the same Home Assistant, and how many warnings and errors the integration logged since the previous report, never the messages themselves."
         }
+      }
+    },
+    "error": {
+      "heating_mode_order": "Blocked cannot be higher than eco."
+    }
+  },
+  "entity": {
+    "select": {
+      "heating_mode": {
+        "name": "Heating mode",
+        "state": {
+          "blocked": "Blocked",
+          "eco": "Eco",
+          "normal": "Normal",
+          "boost": "Boost"
+        },
+        "state_attributes": {
+          "normal_offset": {
+            "name": "Normal heat offset"
+          },
+          "offsets": {
+            "name": "Offset per mode"
+          },
+          "modbus_register": {
+            "name": "Modbus register"
+          }
+        }
+      }
+    },
+    "switch": {
+      "hot_water_boost": {
+        "name": "Hot water boost"
       }
     }
   },

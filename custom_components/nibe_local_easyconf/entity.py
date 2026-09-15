@@ -5,7 +5,7 @@ from __future__ import annotations
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, is_core_register, platform_for
+from .const import DOMAIN, platform_for
 from .coordinator import NibeCoordinator
 from .descriptions import describe, friendly_name
 
@@ -38,11 +38,14 @@ class NibeRegisterEntity(CoordinatorEntity[NibeCoordinator]):
             title, language
         )
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}-{register}"
-        self._description = describe(title, register, meta, language)
+        #: The register's value table in the viewer's language, from whichever
+        #: series' documentation applies.
+        self._labels = coordinator.labels_for(register, meta, language) or {}
+        self._description = describe(title, register, meta, language, labels=self._labels or None)
 
         # Only the registers a normal installation cares about are on by
         # default; the rest exist but stay dormant until switched on.
-        self._attr_entity_registry_enabled_default = is_core_register(title, meta)
+        self._attr_entity_registry_enabled_default = coordinator.default_enabled(register, meta)
 
         self._attr_device_info = device_info(coordinator)
 
@@ -109,7 +112,7 @@ def device_info(coordinator: NibeCoordinator) -> DeviceInfo:
     entry = coordinator.config_entry
     model = entry.data.get("model_label", "S-series")
     serial = coordinator.serial
-    if serial is not None and serial.size:
+    if serial is not None and serial.size and not coordinator.is_gateway:
         model = f"{model}-{serial.size}"
     return DeviceInfo(
         identifiers={(DOMAIN, entry.entry_id)},
@@ -120,5 +123,6 @@ def device_info(coordinator: NibeCoordinator) -> DeviceInfo:
         serial_number=serial.serial if serial is not None else None,
         sw_version=str(coordinator.firmware) if coordinator.firmware else None,
         name=entry.title,
-        configuration_url=f"http://{coordinator.client.host}",
+        # The S-series serves a web page; a NibeGW gateway has none.
+        configuration_url=None if coordinator.is_gateway else f"http://{coordinator.client.host}",
     )

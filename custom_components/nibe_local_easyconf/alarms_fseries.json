@@ -1,0 +1,1314 @@
+{
+ "1": [
+  "Givarfel BT1",
+  "Sensor fault BT1"
+ ],
+ "2": [
+  "Givarfel BT2",
+  "Sensor fault BT2"
+ ],
+ "3": [
+  "Givarfel BT3",
+  "Sensor fault BT3"
+ ],
+ "6": [
+  "Givarfel BT6",
+  "Sensor fault BT6"
+ ],
+ "7": [
+  "Givarfel BT7",
+  "Sensor fault BT7"
+ ],
+ "10": [
+  "Givarfel: BT10 köldbärare in",
+  "Sensor fault: BT10"
+ ],
+ "11": [
+  "Givarfel BT11",
+  "Sensor fault BT11"
+ ],
+ "12": [
+  "Givarfel BT12",
+  "Sensor fault BT12"
+ ],
+ "14": [
+  "Givarfel BT14 (hetgasgivare)",
+  null
+ ],
+ "16": [
+  "Givarfel BT16",
+  "Sensor fault BT16"
+ ],
+ "20": [
+  "Bergvärme: Givarfel AZ1-BT20 / Frånluft: Givarfel BT20",
+  "Ground source: Sensor fault AZ1-BT20 / Exhaust air: Sensor fault BT20"
+ ],
+ "21": [
+  "Bergvärme: Givarfel AZ1-BT21 / Frånluft: Givarfel BT21",
+  "Ground source: Sensor fault AZ1-BT21 / Exhaust air: Sensor fault BT21"
+ ],
+ "22": [
+  "Givarfel DEW-BT6",
+  "Sensor fault DEW-BT6"
+ ],
+ "23": [
+  "Givarfel AZ30-BT22 (tilluftsgivare)",
+  null
+ ],
+ "25": [
+  "Givarfel BT25",
+  "Sensor fault BT25"
+ ],
+ "26": [
+  "Givarfel AZ1-BT26",
+  "Sensor fault AZ1-BT26"
+ ],
+ "27": [
+  "Givarfel BP8",
+  "Sensor fault BP8"
+ ],
+ "28": [
+  "Givarfel BT71",
+  "Sensor fault BT71"
+ ],
+ "29": [
+  "Givarfel BT29",
+  "Sensor fault BT29"
+ ],
+ "31": [
+  "Givarfel BT63",
+  "Sensor fault BT63"
+ ],
+ "32": [
+  "Givarfel BS1",
+  "Sensor fault BS1"
+ ],
+ "33": [
+  "Givarfel EP30-BT53",
+  "Sensor fault EP30-BT53"
+ ],
+ "34": [
+  "Givarfel EP30-BT54",
+  null
+ ],
+ "35": [
+  "Givarfel EM1-BT52",
+  "Sensor fault EM1-BT52"
+ ],
+ "36": [
+  "Givarfel EP21-BT2",
+  "Sensor fault EP21-BT2"
+ ],
+ "37": [
+  "Givarfel EP22-BT2",
+  "Sensor fault EP22-BT2"
+ ],
+ "38": [
+  "Givarfel EP23-BT2",
+  "Sensor fault EP23-BT2"
+ ],
+ "39": [
+  "Givarfel EQ1-BT64",
+  "Sensor fault EQ1-BT64"
+ ],
+ "40": [
+  "Kompressor fas1 saknas",
+  "Compressor phase1 missing"
+ ],
+ "41": [
+  "Kompressor fas 2 saknas",
+  "Compressor phase 2 missing"
+ ],
+ "42": [
+  "Kompressor fas 3 saknas",
+  "Compressor phase 3 missing"
+ ],
+ "43": [
+  "Fel fasföljd",
+  "Faulty phase sequence"
+ ],
+ "44": [
+  "Fel på mjukstartskortets säkringar",
+  "Overheated softstart"
+ ],
+ "45": [
+  "Fel fasföljd / Motorskyddslarm",
+  null
+ ],
+ "50": [
+  "Högtryckslarm",
+  "High pressure alarm"
+ ],
+ "51": [
+  "Lågtryckslarm",
+  null
+ ],
+ "52": [
+  "Temperaturbegränsare",
+  null
+ ],
+ "53": [
+  "Nivåvakt",
+  null
+ ],
+ "54": [
+  "Motorskydd",
+  "Motor protection alarm"
+ ],
+ "55": [
+  "Hetgaslarm",
+  "Hot gas alarm"
+ ],
+ "56": [
+  "Felaktigt serienummer",
+  "Incorrect serial number"
+ ],
+ "57": [
+  "Felaktigt program",
+  "Incorrect firmware"
+ ],
+ "58": [
+  "Pressostatlarm",
+  "Pressure switch"
+ ],
+ "60": [
+  "Låg KB ut",
+  "Low HTF out"
+ ],
+ "63": [
+  "Lågt luftflöde",
+  "Low air flow"
+ ],
+ "64": [
+  "Låg frånluftstemperatur",
+  "Low exhaust air temperature"
+ ],
+ "65": [
+  "Hög kondensvattennivå",
+  "High condensation water level"
+ ],
+ "66": [
+  "Hög kondensvattennivå",
+  "High condensation water level"
+ ],
+ "67": [
+  "Frysskydd tilluft",
+  "Antifreeze protection Supply air"
+ ],
+ "69": [
+  "Ej kalibrerad luftflödesgivare",
+  "Non-calibrated air flow sensor"
+ ],
+ "70": [
+  "Best. komm. fel ingångskort.",
+  "Perm. com. error input card"
+ ],
+ "71": [
+  "Best. komm. fel grundkort.",
+  "Perm. com. error base card"
+ ],
+ "72": [
+  "Best. komm. fel mjukstartskort.",
+  "Perm. com. error softstart card"
+ ],
+ "73": [
+  "Best. komm. fel värmesystem 2",
+  "Perm. com. error heating system 2"
+ ],
+ "74": [
+  "Best. komm. fel värmesystem 3",
+  "Perm. com. error heating system 3"
+ ],
+ "75": [
+  "Best. komm. fel grundkort",
+  "Perm. com. error base card"
+ ],
+ "76": [
+  "Best. komm. fel värmesystem 4",
+  "Perm. com. error heating system 4"
+ ],
+ "77": [
+  "Best. komm. fel tillsats med shunt",
+  "Perm. com. error additive with shunt"
+ ],
+ "78": [
+  "Best. komm. fel pool",
+  "Perm. com. error pool"
+ ],
+ "79": [
+  "Best.komm. Fel FLM",
+  "Perm. com. error FLM"
+ ],
+ "83": [
+  "Misslyckad avfrostning",
+  "Unsuccessful defrosting"
+ ],
+ "86": [
+  "Bestående kommunikationsfel SAM 40",
+  "Perm. com. error SAM 40"
+ ],
+ "87": [
+  "Best. Komm. Fel stegstyrd tillsats",
+  "Perm. com. error step controlled additive"
+ ],
+ "88": [
+  "Best. Komm. Fel Sol",
+  "Perm. com. error Solar"
+ ],
+ "89": [
+  "Best. Komm. Fel HPAC",
+  "Perm. com. error HPAC"
+ ],
+ "90": [
+  "Best. Komm. Fel grundvattenpump",
+  "Perm. com. fault groundwater pump"
+ ],
+ "91": [
+  "Best. Komm. Fel HWC",
+  "Perm. com. error HWC"
+ ],
+ "92": [
+  "Best. Komm. Fel DEW",
+  "Perm. com. error DEW"
+ ],
+ "93": [
+  "Best. Komm. Fel kyla 2-rörs",
+  "Perm. com. error 2-pipes cooling"
+ ],
+ "94": [
+  "Best. Komm. Fel PCD4",
+  "Perm. com. error PCD4"
+ ],
+ "95": [
+  "Best. Komm. Fel FJVM",
+  "Perm. Com. Error FJVM"
+ ],
+ "96": [
+  "Best. Komm. Rumsenhet, zon 1",
+  "Perm. Com. Room unit, zone 1"
+ ],
+ "97": [
+  "Best. Komm. Rumsenhet, zon 2",
+  "Perm. Com. Room unit, zone 2"
+ ],
+ "98": [
+  "Best. Komm. Rumsenhet, zon 3",
+  "Perm. Com. room unit, zone 3"
+ ],
+ "99": [
+  "Best. Komm. Rumsenhet, zon 4",
+  "Perm. Com. room unit, zone 4"
+ ],
+ "100": [
+  "Best. Komm. Fel inverter",
+  "Perm. Com. error inverter"
+ ],
+ "101": [
+  "Givarfel BT1",
+  "Sensor fault BT1"
+ ],
+ "102": [
+  "Givarfel BT2",
+  "Sensor fault BT2"
+ ],
+ "103": [
+  "Givarfel BT3",
+  "Sensor fault BT3"
+ ],
+ "104": [
+  "Givarfel BT4",
+  "Sensor fault BT4"
+ ],
+ "105": [
+  "Givarfel BT5",
+  "Sensor fault BT5"
+ ],
+ "106": [
+  "Givarfel BT6",
+  "Sensor fault BT6"
+ ],
+ "107": [
+  "Givarfel BT7",
+  "Sensor fault BT7"
+ ],
+ "108": [
+  "Givarfel BT8",
+  "Sensor fault BT8"
+ ],
+ "109": [
+  "Givarfel BT9",
+  "Sensor fault BT9"
+ ],
+ "110": [
+  "Givarfel BT10",
+  "Sensor fault BT10"
+ ],
+ "111": [
+  "Givarfel BT11",
+  "Sensor fault BT11"
+ ],
+ "112": [
+  "Givarfel BT12",
+  "Sensor fault BT12"
+ ],
+ "113": [
+  "Givarfel BT13",
+  "Sensor fault BT13"
+ ],
+ "114": [
+  "Givarfel BT14",
+  "Sensor fault BT14"
+ ],
+ "115": [
+  "Givarfel BT15",
+  "Sensor fault BT15"
+ ],
+ "116": [
+  "Givarfel BT16",
+  "Sensor fault BT16"
+ ],
+ "117": [
+  "Givarfel BT17",
+  "Sensor fault BT17"
+ ],
+ "118": [
+  "Givarfel BT18",
+  "Sensor fault BT18"
+ ],
+ "119": [
+  "Givarfel BT19",
+  "Sensor fault BT19"
+ ],
+ "120": [
+  "Givarfel BT20",
+  "Sensor fault BT20"
+ ],
+ "123": [
+  "Givarfel AZ30-BT23 (uteluftsgivare)",
+  null
+ ],
+ "130": [
+  "Kom.fel Klimatsystem 5",
+  null
+ ],
+ "131": [
+  "Kom.fel Klimatsystem 6",
+  null
+ ],
+ "132": [
+  "Kom.fel Klimatsystem 7",
+  null
+ ],
+ "133": [
+  "Kom.fel Klimatsystem 8",
+  null
+ ],
+ "140": [
+  "Kompressorfas 1 saknas",
+  "Compressor phase 1 missing"
+ ],
+ "141": [
+  "Kompressorfas 2 saknas",
+  "Compressor phase 2 missing"
+ ],
+ "142": [
+  "Kompressorfas 3 saknas",
+  "Compressor phase 3 missing"
+ ],
+ "145": [
+  "Tillfälligt. generellt fasfel",
+  "Temporary general phase fault"
+ ],
+ "146": [
+  "Tillbehöret ERS är blockerat av nivåvakten",
+  null
+ ],
+ "147": [
+  "Tillbehöret ERS är blockerat av nivåvakten",
+  null
+ ],
+ "148": [
+  "Tillbehöret ERS är blockerat av nivåvakten",
+  null
+ ],
+ "149": [
+  "Tillbehöret ERS är blockerat av nivåvakten",
+  null
+ ],
+ "150": [
+  "Tillfälligt HP larm",
+  null
+ ],
+ "151": [
+  "Givarfel CL11-BT51",
+  null
+ ],
+ "152": [
+  "Givarfel CL12-BT51",
+  null
+ ],
+ "155": [
+  "Hetgaslarm",
+  "Hot gas alarm"
+ ],
+ "156": [
+  "Låg LP kyldrift",
+  null
+ ],
+ "158": [
+  "Låg avfrostningstemperatur",
+  "Low defrost temperature"
+ ],
+ "159": [
+  "Hög förångningstemperatur",
+  "High evaporator temperature"
+ ],
+ "160": [
+  "Lågt Kb ut",
+  "Low HTFout"
+ ],
+ "161": [
+  "Hög Kb in",
+  "High HTFin"
+ ],
+ "162": [
+  "Hög kondensor ut",
+  "High condensor out"
+ ],
+ "163": [
+  "Hög kondensor in",
+  "High condensor in"
+ ],
+ "164": [
+  "Låg frånluftstemperatur",
+  "Low exhaust air temperature"
+ ],
+ "165": [
+  "Lågt tryck i klimatsystemet",
+  null
+ ],
+ "166": [
+  "Elanod fel",
+  "Electrical anode incorrect"
+ ],
+ "170": [
+  "Komm. fel ingångskort",
+  "Com. error input card"
+ ],
+ "171": [
+  "Komm. fel grundkort",
+  "Com. error base card"
+ ],
+ "172": [
+  "Komm. fel mjukstartskort",
+  "Com. error softstart card"
+ ],
+ "173": [
+  "Komm. fel värmesystem2",
+  "Com. error heating system 2"
+ ],
+ "174": [
+  "Komm. fel värmesystem3",
+  "Com. error heating system 3"
+ ],
+ "175": [
+  "Uppstart av mjukstartskort",
+  "Start-up of softstart card"
+ ],
+ "176": [
+  "Komm. Fel värmesystem4",
+  "Com. error heating system 4"
+ ],
+ "177": [
+  "Komm. Fel tillsats med shunt",
+  "Com. error addition with mixing valve"
+ ],
+ "178": [
+  "Komm. Fel pool",
+  "Com. error pool"
+ ],
+ "179": [
+  "Komm. Fel FLM",
+  "Com. error FLM"
+ ],
+ "180": [
+  "Frysskydd",
+  "Freeze prot"
+ ],
+ "181": [
+  "Misslyckad periodisk höjning",
+  "Failed periodic increase"
+ ],
+ "182": [
+  "Effektvakt aktiverad",
+  "Load monitor activated"
+ ],
+ "183": [
+  "Avfrostning",
+  "Defrosting"
+ ],
+ "184": [
+  "Filterlarm",
+  "Filter alarm"
+ ],
+ "185": [
+  "Frysskydd tilluft",
+  "Anti-freeze supply air"
+ ],
+ "187": [
+  "Komm. Fel stegstyrd tillsats",
+  "Com. error step controlled additional heat"
+ ],
+ "188": [
+  "Komm. Fel sol",
+  "Com. fault solar"
+ ],
+ "189": [
+  "Komm. Fel HPAC",
+  "Com. error HPAC"
+ ],
+ "190": [
+  "Komm. Fel grundvattenkort",
+  "Com. error ground water pump"
+ ],
+ "191": [
+  "Komm. Fel WWC",
+  "Com. error HWC"
+ ],
+ "192": [
+  "Komm. Fel 2-rörs kyla",
+  "Com. error 2 pipe cooling"
+ ],
+ "193": [
+  "Komm. Fel DEW",
+  "Com. Error DEW"
+ ],
+ "194": [
+  "Komm. Fel PCD4",
+  "Com. Error PCD4"
+ ],
+ "195": [
+  "Komm. Fel FJVM",
+  "Com. error FJVM"
+ ],
+ "196": [
+  "Komm. Rumsenhet zon 1",
+  "Com. room unit zone 1"
+ ],
+ "197": [
+  "Komm. Rumsenhet zon 2",
+  "Com. room unit zone 2"
+ ],
+ "198": [
+  "Komm. Rumsenhet zon 3",
+  "Com. room unit zone 3"
+ ],
+ "199": [
+  "Komm. Rumsenhet zon 4",
+  "Com. room unit zone 4"
+ ],
+ "200": [
+  "Komm. fel inverter",
+  "Com. error inverter"
+ ],
+ "201": [
+  "Inverter alarm",
+  "Inverter alarm"
+ ],
+ "202": [
+  "Inverter fault",
+  "Inverter fault"
+ ],
+ "203": [
+  "Inverter fel typ I",
+  "Inverter error type I"
+ ],
+ "204": [
+  "Inverter fel typ II",
+  "Inverter error type II"
+ ],
+ "205": [
+  "Inverter fel typ III",
+  "Inverter error type III"
+ ],
+ "206": [
+  "Best.komm.fel VV-komfort",
+  "Perm. com. error HW-comfort"
+ ],
+ "207": [
+  "Komm.fel VV-komfort",
+  "Com. error HW-comfort"
+ ],
+ "208": [
+  "Komm.fel Acc-EB1",
+  "Com. error Acc-EB1"
+ ],
+ "209": [
+  "Komm.fel mot ACC-EPxx",
+  "Com. error ACC-EPxx"
+ ],
+ "213": [
+  "Inverter fel typ I",
+  "Inverter error type I"
+ ],
+ "214": [
+  "Inverter fel typ II",
+  "Inverter error type II"
+ ],
+ "215": [
+  "Inverter fel typ III",
+  "Inverter error type III"
+ ],
+ "216": [
+  "Inverter typ II",
+  "Inverter alarm type II"
+ ],
+ "220": [
+  "Högtryckslarm",
+  "High pressure alarm"
+ ],
+ "221": [
+  "Lågtryckslarm",
+  "Low pressure alarm"
+ ],
+ "222": [
+  "Motorskyddslarm",
+  "Motor protection alarm"
+ ],
+ "223": [
+  "Kommunikationslarm",
+  "Communication alarm"
+ ],
+ "224": [
+  "Fläktlarm",
+  "Fan error"
+ ],
+ "225": [
+  "Fram / returledning",
+  "Flow / return"
+ ],
+ "227": [
+  "Givarfel",
+  "Sensor fault"
+ ],
+ "228": [
+  "Avfrostningsfel",
+  "Defrost fault"
+ ],
+ "229": [
+  "Korta drifttider för kompressor",
+  "Short operation times for compressor"
+ ],
+ "230": [
+  "Hetgaslarm",
+  "Hot gas alarm"
+ ],
+ "231": [
+  "Fasföljdsfel",
+  "Phase sequence error"
+ ],
+ "232": [
+  "Låg förångning",
+  "Low evaporation"
+ ],
+ "236": [
+  "Givarfel AZ2-BT20",
+  "Sensor fault AZ2-BT20"
+ ],
+ "237": [
+  "Givarfel AZ2-BT21",
+  "Sensor fault AZ2-BT21"
+ ],
+ "238": [
+  "Givarfel AZ2-BT26",
+  "Sensor fault AZ2-BT26"
+ ],
+ "239": [
+  "Givarfel AZ3-BT20",
+  "Sensor fault AZ3-BT20"
+ ],
+ "240": [
+  "Givarfel AZ3-BT21",
+  "Sensor fault AZ3-BT21"
+ ],
+ "241": [
+  "Givarfel AZ3-BT26",
+  "Sensor fault AZ3-BT26"
+ ],
+ "242": [
+  "Givarfel AZ4-BT20",
+  "Sensor fault AZ4-BT20"
+ ],
+ "243": [
+  "Givarfel AZ4-BT21",
+  "Sensor fault AZ4-BT21"
+ ],
+ "244": [
+  "Givarfel AZ4-BT26",
+  "Sensor fault AZ4-BT26"
+ ],
+ "245": [
+  "Komm.fel FLM 2",
+  "Com. error FLM 2"
+ ],
+ "246": [
+  "Komm.fel FLM 3",
+  null
+ ],
+ "247": [
+  "Komm.fel FLM 4",
+  "Com. error FLM 4"
+ ],
+ "248": [
+  "Kommunikationsfel mot grundkort",
+  null
+ ],
+ "250": [
+  "Komm.fel ACC-SMS 40",
+  "Com.error ACC-SMS 40"
+ ],
+ "251": [
+  "Komm.fel ACC Modbus 40",
+  "Com. error ACC Modbus 40"
+ ],
+ "252": [
+  "Komm.fel slav",
+  "Com.error slave"
+ ],
+ "253": [
+  "Givarfel QZ1-BT70",
+  "Sensor fault QZ1-BT70"
+ ],
+ "255": [
+  "Motorskyddslarm köldbärarpump",
+  "Motor protection alarm, brine pump"
+ ],
+ "257": [
+  "Komm.fel ACS45",
+  "Com. error ACS45"
+ ],
+ "258": [
+  "Givarfel EQ1-BT57",
+  "Sensor fault EQ1-BT57"
+ ],
+ "259": [
+  "Givarfel EQ1-BT75",
+  "Sensor fault EQ1-BT75"
+ ],
+ "264": [
+  "Detta larm genererades av värmepumpen",
+  "This alarm was generated by the heat pump"
+ ],
+ "270": [
+  "Förvärmning",
+  "Compressor preheater is active / Preheating"
+ ],
+ "271": [
+  "Kall uteluft EB 101",
+  "Cold outdoor air EB 101"
+ ],
+ "272": [
+  "Varm uteluft",
+  "Hot outdoor air"
+ ],
+ "273": [
+  "VV-start och VV-stopp har fabriksåterställts",
+  "HW-start and HW-stop have been reset to factory settings"
+ ],
+ "290": [
+  "Fläktlarm",
+  "Fan alarm"
+ ],
+ "291": [
+  "Laddpumpslarm",
+  "Charge pump alarm"
+ ],
+ "292": [
+  "Givarfel BT74 kyla-/värmegivare",
+  null
+ ],
+ "293": [
+  "Låg avluftstemperatur",
+  null
+ ],
+ "294": [
+  "Ej kompatibel utedel",
+  "Not compatible heatpump"
+ ],
+ "297": [
+  "Kom.fel mot PCA Acc. FTX",
+  null
+ ],
+ "299": [
+  "Fel version PCA Base",
+  "Wrong version PCA Base"
+ ],
+ "301": [
+  "Komm.fel slav 1",
+  "Com. error slave 1"
+ ],
+ "302": [
+  "Komm.fel slav 2",
+  "Com. error slave 2"
+ ],
+ "303": [
+  "Komm.fel slav 3",
+  "Com. error slave 3"
+ ],
+ "304": [
+  "Komm.fel slav 4",
+  "Com. error slave 4"
+ ],
+ "305": [
+  "Komm.fel slav 5",
+  "Com. error slave 5"
+ ],
+ "306": [
+  "Komm.fel slav 6",
+  "Com.error slave 6"
+ ],
+ "307": [
+  "Komm.fel slav 7",
+  "Com. error slave 7"
+ ],
+ "308": [
+  "Komm.fel slav 8",
+  "Com. error slave 8"
+ ],
+ "322": [
+  "SPA ej uppdaterad",
+  null
+ ],
+ "323": [
+  "Givarfel EQ1-BT25 extern framledning Kyla",
+  null
+ ],
+ "324": [
+  "Kom. fel PCA Acc. HTS 1",
+  null
+ ],
+ "325": [
+  "Temperaturbegränsarlarm för avfrostningselementet",
+  "Temperature limiter alarm for defrost element"
+ ],
+ "326": [
+  "Fel på EB16",
+  "Fault in EB16"
+ ],
+ "333": [
+  "Maxtemp ut från värmepumpen överskriden",
+  null
+ ],
+ "334": [
+  "Maxtemp genom värmepumpen överskriden",
+  null
+ ],
+ "336": [
+  "Givarfel EP44-BT2",
+  null
+ ],
+ "337": [
+  "Givarfel EP45-BT2",
+  null
+ ],
+ "338": [
+  "Givarfel EP46-BT2",
+  null
+ ],
+ "339": [
+  "Givarfel EP47-BT2",
+  null
+ ],
+ "340": [
+  "Frysskydd tilluft",
+  "Anti-freeze supply air"
+ ],
+ "341": [
+  "Återkommande säkerhetsavfrostning",
+  null
+ ],
+ "344": [
+  "Återkommande lågtryck",
+  null
+ ],
+ "346": [
+  "Återkommande högtryck",
+  null
+ ],
+ "350": [
+  "Givarfel på BT50 rumsgivare",
+  null
+ ],
+ "351": [
+  "Osäker givarnoggrannhet",
+  "Uncertain sensor accuracy"
+ ],
+ "352": [
+  "Osäker givarnoggrannhet",
+  "Uncertain sensor accuracy"
+ ],
+ "353": [
+  "Osäker givarnoggrannhet",
+  "Uncertain sensor accuracy"
+ ],
+ "356": [
+  "Misslyckad givarkalibrering",
+  "Failed sensor calibration"
+ ],
+ "357": [
+  "Kom.fel PCA Acc. OPT",
+  null
+ ],
+ "358": [
+  "Internt OPT fel",
+  null
+ ],
+ "359": [
+  "Int tmp OPT fel",
+  null
+ ],
+ "361": [
+  "Givarfel EP21-BT3",
+  null
+ ],
+ "362": [
+  "Givarfel EP22-BT3",
+  null
+ ],
+ "363": [
+  "Givarfel EP23-BT3",
+  null
+ ],
+ "364": [
+  "Givarfel EP44-BT3",
+  null
+ ],
+ "365": [
+  "Givarfel EP45-BT3",
+  null
+ ],
+ "366": [
+  "Givarfel EP46-BT3",
+  null
+ ],
+ "367": [
+  "Givarfel EP47-BT3",
+  null
+ ],
+ "369": [
+  "Givarfel EP12-BT57",
+  null
+ ],
+ "370": [
+  "Givarfel EP12-BT58",
+  null
+ ],
+ "371": [
+  "Frysrisk EP12-BT58",
+  null
+ ],
+ "372": [
+  "Best. komm. fel pool 2",
+  "Perm. com. error pool 2"
+ ],
+ "400": [
+  "Ospecificerat fel",
+  null
+ ],
+ "420": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "421": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "422": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "423": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "425": [
+  "Pressostatlarm",
+  "Triggered pressure switch"
+ ],
+ "426": [
+  "Inverterlarm typ III",
+  "Inverter alarm type III"
+ ],
+ "427": [
+  "Inverterlarm typ III",
+  "Inverter alarm type III"
+ ],
+ "428": [
+  "Inverterlarm typ II",
+  null
+ ],
+ "429": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "430": [
+  "Inverterlarm typ I",
+  "Inverter alarm type I"
+ ],
+ "431": [
+  "Inverterlarm typ I",
+  "Inverter alarm type I"
+ ],
+ "432": [
+  "Fasspänning till Invertern har tillfälligt varit för låg.",
+  null
+ ],
+ "433": [
+  "Inverterlarm typ I",
+  "Inverter alarm type I"
+ ],
+ "434": [
+  "Inverterlarm typ I",
+  "Inverter alarm type I"
+ ],
+ "435": [
+  "Inverterlarm typ I",
+  "Inverter alarm type I"
+ ],
+ "436": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "437": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "438": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "439": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "440": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "441": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "442": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "443": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "444": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "445": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "446": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "447": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "448": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "449": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "450": [
+  "Inverterlarm typ III",
+  "Inverter alarm type III"
+ ],
+ "451": [
+  "Inverterlarm typ III",
+  "Inverter alarm type III"
+ ],
+ "452": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "453": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "454": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "455": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "460": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "461": [
+  "Inverterlarm typ II",
+  "Inverter alarm type II"
+ ],
+ "467": [
+  "Inverterfel",
+  null
+ ],
+ "468": [
+  "Inverterlarm typ III",
+  "Inverter alarm type III"
+ ],
+ "469": [
+  "Inverterlarm typ III",
+  "Inverter alarm type III"
+ ],
+ "470": [
+  "Inverterlarm typ III",
+  "Inverter alarm type III"
+ ],
+ "471": [
+  "Inverterlarm typ III",
+  "Inverter alarm type III"
+ ],
+ "472": [
+  "Inverterlarm typ III",
+  "Inverter alarm type III"
+ ],
+ "473": [
+  "Inverterlarm typ III",
+  "Inverter alarm type III"
+ ],
+ "474": [
+  "Inverterlarm typ III",
+  "Inverter alarm type III"
+ ],
+ "475": [
+  "Inverterlarm typ III",
+  "Inverter alarm type III"
+ ],
+ "476": [
+  "Inverterlarm typ III",
+  "Inverter alarm type III"
+ ],
+ "477": [
+  "Inverterlarm typ III",
+  "Inverter alarm type III"
+ ],
+ "478": [
+  "Inverterlarm typ III",
+  "Inverter alarm type III"
+ ],
+ "479": [
+  "Inverterlarm typ III",
+  "Inverter alarm type III"
+ ],
+ "480": [
+  "Inverterlarm typ III",
+  null
+ ],
+ "481": [
+  "Inverterlarm typ III",
+  "Inverter alarm type III"
+ ],
+ "482": [
+  "Invertern är begränsad pga temperatur",
+  null
+ ],
+ "483": [
+  "Invertern begränsad under lång tid",
+  null
+ ],
+ "501": [
+  "Misslyckad start, ej tryckdiff.",
+  null
+ ],
+ "503": [
+  "Kompressorhastighet för låg",
+  null
+ ],
+ "504": [
+  "Växelriktaren har ett meddelande",
+  null
+ ],
+ "505": [
+  "Växelriktaren har jordfel",
+  null
+ ],
+ "506": [
+  "Nätspänn. utanför vxlrikt. arbetsområde",
+  null
+ ],
+ "507": [
+  "Nätspänn. utanför vxlrikt. arbetsområde",
+  null
+ ],
+ "508": [
+  "Växelrikt. har ingen kontakt med elnät.",
+  null
+ ],
+ "509": [
+  "Växelrikt. övertemperatur",
+  null
+ ],
+ "510": [
+  "Växelriktaren har hög DC spänning.",
+  null
+ ],
+ "511": [
+  "Ingen kom. med växelrikt. på fem dagar.",
+  null
+ ],
+ "523": [
+  "Lågt flöde avfrostning",
+  null
+ ],
+ "524": [
+  "Kom. fel PCA Acc. HTS 2",
+  null
+ ],
+ "525": [
+  "Kom. fel PCA Acc. HTS 3",
+  null
+ ],
+ "526": [
+  "Kom. fel PCA Acc. HTS 4",
+  null
+ ],
+ "900": [
+  "Inget land är definierat",
+  null
+ ],
+ "991": [
+  "Blockerad",
+  null
+ ],
+ "995": [
+  "Externt larm",
+  "External alarm"
+ ],
+ "996": [
+  "Blockerad",
+  "Blocked"
+ ],
+ "997": [
+  "Blockerad",
+  "Blocked"
+ ],
+ "998": [
+  "Startar / 998",
+  "Starts / 998"
+ ]
+}

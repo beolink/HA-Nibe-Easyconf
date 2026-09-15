@@ -1,7 +1,8 @@
 # Nibe Local Easyconf
 
-A Home Assistant integration for NIBE S-series heat pumps over **local Modbus TCP**.
-No cloud, no myUplink account, no gateway hardware.
+A Home Assistant integration for NIBE heat pumps on the local network: the
+S-series over **Modbus TCP**, and the F-series through a **NibeGW gateway** on the
+pump's RS-485 bus. No cloud, no myUplink account.
 
 It differs from the existing options in two ways, both of which came out of
 actually probing a pump rather than reading the documentation:
@@ -54,6 +55,9 @@ as an Integration → install → restart Home Assistant.
 
 ## Set up
 
+This section is the S-series. For the F1145 up to the VVM 500, see
+[F-series through a NibeGW gateway](#f-series-through-a-nibegw-gateway).
+
 On the pump: enable network (menu **5.2**) and **Modbus TCP** (menu **7.5.9**).
 
 You should not need to know the pump's IP address. There are three ways in:
@@ -82,6 +86,87 @@ what it found before asking which model to name the device after.
 
 The scan result is cached, so restarts are instant. After a firmware update or
 fitting an accessory, call the **`nibe_local_easyconf.rescan_registers`** service.
+
+## F-series through a NibeGW gateway
+
+The F-series - F1145/F1245, F1155/F1255, F1345, F1355, F370/F470, F730, F750,
+SMO 20/40 and VVM - has no Modbus TCP. It is reached through a NibeGW gateway on
+the pump's RS-485 accessory bus instead: a small ESP32 that stands in for NIBE's
+MODBUS 40 accessory, acknowledges the pump's telegrams on its own, and relays
+reads and writes over UDP. This path was built and measured on an F1255-16
+through a Waveshare ESP32-S3-RS485-CAN running
+[esphome-nibe](https://github.com/elupus/esphome-nibe).
+
+### The gateway
+
+[`esphome/nibe-gw.yaml`](esphome/nibe-gw.yaml) is a complete ESPHome
+configuration for the Waveshare ESP32-S3-RS485-CAN, its pins read off
+Waveshare's schematic. What belongs to one installation - Wi-Fi, which hosts may
+send requests, the gateway's network name - goes in `esphome/secrets.yaml`; copy
+[`secrets.example.yaml`](esphome/secrets.example.yaml) to start.
+
+1. Flash it once over USB-C with `esphome run esphome/nibe-gw.yaml`; later
+   updates go over Wi-Fi. If ESPHome stops while installing its ESP-IDF Python
+   packages with *Can not perform a '--user' install*, a global pip setting is
+   forcing user installs: run that first build as `PIP_USER=0 esphome run ...`.
+2. Wire the board's RS-485 terminal to the pump's input board (AA3): **A+ to
+   X4:11** and **B- to X4:10**. The board's RS-485 side is galvanically isolated
+   and has no ground terminal, so X4:9 stays empty, and the termination jumper
+   stays open. NIBE's MODBUS 40 manual asks for the pump to be switched off and
+   the connection made by a qualified electrician.
+3. On the pump, select **MODBUS 40** in menu **5.2**. Menu 5 is the service
+   menu: hold Back for seven seconds in the main menu. The board's RS-485 LEDs
+   then blink, blue for the pump and green for the gateway answering.
+
+Name the gateway `nibe-<the pump's serial>-gw`, as the example does. The
+integration reads the model and the build date from the serial just as it does
+for the S-series, and the suffix keeps the gateway apart from the pump's own
+network name.
+
+### Adding the pump
+
+The gateway is offered as a discovered device, through DHCP or through the mDNS
+record every ESPHome device publishes. Otherwise: **Add integration → Nibe Local
+Easyconf → F-series through a NibeGW gateway**, with the gateway's address. Home
+Assistant's own address has to be among the gateway's allowed sources, or it
+drops the requests and says so in its log.
+
+There is no model to pick: the pump announces itself every fifteen seconds as,
+for instance, *F1255-16 CU* with its software version. Setup then reads the
+registers worth showing by default - 43 on an F1255, in under a minute - and
+switches on those that report a value.
+
+### What is different
+
+Measured on the F1255-16 CU:
+
+| | S-series, Modbus TCP | F-series, NibeGW |
+|---|---|---|
+| A read | a block of up to 125 registers, ~40 ms | one register, ~1.1 s |
+| A register the pump does not implement | an exception | answers anyway |
+| Hardware that is not fitted | NIBE's "no reading" value | the same, in 71 of 982 registers |
+| The model | picked, or from the serial | the pump's own product message |
+
+Since every register answers, which ones exist cannot be probed: 901 of the 982
+registers in the F1155/F1255 map returned a value, including an exhaust air
+sensor on a pump that has none. So on the F-series:
+
+- **Setup reads only the default set.** The rest of the map still becomes
+  entities, switched off, and a scan of all of it would take a quarter of an
+  hour.
+- **Polling reads what is due, not everything.** Measurements every cycle,
+  counters every five and settings every ten, most overdue first; a register
+  that fails backs off, doubling up to an hour. A cycle may spend three
+  quarters of the update interval reading, so the default minute fits about 40
+  reads; what does not fit is read first in the next cycle.
+- **Registers in LOG.SET are never read.** Up to 20 registers loaded into the
+  pump from a USB stick arrive on their own every two seconds. A ready file for
+  the F1155/F1255 and a generator for other models are described in
+  [docs/logset.md](docs/logset.md).
+
+The device page shows the product message's model and software version.
+Through the gateway there is no coefficient of performance: the F-series keeps
+no electricity counter to divide by.
 
 ## Which model is it?
 
@@ -169,6 +254,16 @@ number kept as an `alarm_code` attribute for automations. NIBE reuses some codes
 for more than one alarm (237 is a short running time in hot water/heating, in
 the compressor or in cooling), so those carry every meaning the list gives.
 
+The F-series uses a different list, whose numbers mean other things: 163 is a
+missing phase on an S-series pump and a hot condenser inlet on an F1255. Its
+alarms read from NIBE's list for products with the Emmy display, 328 codes in
+Swedish, via `tools/extract_nibe_alarms_fseries.py`. The English titles come
+from NIBE's older English edition, and only where it agrees with the Swedish:
+between the two, NIBE gave some numbers new meanings - 150 went from *High
+condensor out* to a temporary high pressure alarm - so a code whose English
+title disagrees, or is missing, reads as *Alarm 150* in English rather than as
+the wrong alarm.
+
 Registers with a value table read as words too, and settings with one become
 dropdowns. The tables come from NIBE's own register documentation, which is
 more complete and more precise than the library's: it labels the diverter valve
@@ -206,6 +301,55 @@ near the pump's consumption. The daily figure is then there at once, and a real
 yearly figure arrives a year after the history begins rather than a year after
 installation. The `nibe_local_easyconf.import_energy_history` service runs it
 again, for instance after adding a source.
+
+### Heating mode
+
+A select, *Värmeläge* (*Heating mode*), offers `blocked`, `eco`, `normal` and
+`boost`: exactly the ids an energy manager such as
+[EMS Steward](https://github.com/beolink/ha-ems) writes to the heat pump it is
+bound to, shown in the interface as words. No NIBE map has a register for it,
+so the select steers the one lever every map has, the heat offset of climate
+system 1 - *temperatur* in menu 1.1, register 47011 on the F-series and 40031
+on the S-series:
+
+| Mode | Offset written |
+|---|---|
+| `boost` | normal + 1 |
+| `normal` | normal |
+| `eco` | normal − 1 |
+| `blocked` | normal − 3 |
+
+The steps are set under **Configure**. On an F1255 one step moves the supply
+temperature 2.5 °C at every outdoor temperature (NIBE's installer manual IHB SE
+1614-2). Heating is never switched off: a blocked house coasts on its thermal
+mass with the minimum supply temperature still in force, the bounded set-back
+EMS asks of a heat pump. The defaults are EMS's own thermostat set-backs
+(+1, −1.5 and −3 °C) taken as steps.
+
+Normal is learned: the offset the pump had when the select first saw it. An
+offset changed anywhere else - on the display, in myUplink, through the
+offset's own entity - is taken as meant. In `normal` it becomes the new normal
+and the other modes follow it; in any other mode it holds until the mode next
+changes. The select keeps showing the mode last chosen, so an energy manager
+does not undo a change made by hand, and its attributes show the normal offset
+and what each mode writes.
+
+NIBE's own mechanism would be SG Ready, but on these pumps that is two contacts
+on the input board rather than a register, and the F-series' smart home mode
+and smart price adaption are read-only over MODBUS 40.
+
+### Hot water boost
+
+On the F-series a switch, *Varmvattenboost* (*Hot water boost*), is the one to
+bind as an energy manager's water heater, with EMS's *water heater is a boost*
+ticked. On writes temporary lux's *One time increase* (*engångshöjning*) to
+register 48132, off writes *Off*. Those are the values myUplink's own
+*Tillfällig lyx* switch was seen writing on the F1255-16, so a plan tuned on the
+cloud switch behaves the same through the gateway. A 3, 6 or 12 hour lux
+started at the pump reads as on.
+
+The S-series calls its boost *More hot water* (40698), and neither the maps nor
+NIBE's register documentation give its values, so it has no switch yet.
 
 ## The NIBE page
 
@@ -282,8 +426,11 @@ What is collected and why: <https://stats.rnet.se/integritet>
 
 ## Limitations
 
-- S-series only for now. F-series pumps and SMO 40 have no Modbus TCP; support
-  through NIBE's MODBUS 40 accessory is on the [roadmap](#roadmap).
+- The F-series is supported through a NibeGW gateway, not yet through NIBE's
+  own MODBUS 40 accessory, and without a coefficient of performance; see
+  [what is different](#what-is-different). About a quarter of its alarms have
+  no English title, for the reason given under
+  [alarms and values in words](#alarms-and-values-in-words).
 - Register names come from NIBE's published maps, which are in English. Titles
   are translated to Swedish only where the whole phrase is recognised —
   a partial translation reads worse than the original.
@@ -292,23 +439,11 @@ What is collected and why: <https://stats.rnet.se/integritet>
 
 ## Roadmap
 
-- **F-series through NIBE's MODBUS 40 accessory.** The F-series and SMO 40
-  have no Modbus TCP, and MODBUS 40 is NIBE's own way in. Its FAQ (linked from
-  [docs/nibe-references.md](docs/nibe-references.md)) sets the terms:
-  - RS-485 Modbus RTU at a fixed 9600 baud, 8N1, address 1 (changeable from
-    MODBUS 40 version 10): a serial adapter on the Home Assistant host, or a
-    Modbus TCP-to-RTU gateway in front of the existing client;
-  - holding registers only, addressed by their full number (40004 is 0x9C44),
-    offset addressing only from version 10, and PLC-style masters one higher;
-  - writes as Write Multiple Registers only;
-  - 2.1 s per register, unless it is one of up to 20 in a LOG.SET file loaded
-    from a USB stick. With 650 to 1,580 registers per map, a full scan takes
-    20 to 55 minutes, so it has to run in the background with progress, and
-    the poll interval has to grow with the number of enabled entities.
-
-  The register maps are already in the `nibe` library (F1145/F1245,
-  F1155/F1255, F1345, F1355, F370/F470, F730, F750, SMO 20/40, VVM); the alarm
-  texts would come from NIBE's F-series alarm list.
+- **NIBE's MODBUS 40 accessory as an alternative to the gateway.** The same pump
+  protocol behind a real MODBUS 40, reached as Modbus RTU through a TCP-to-RTU
+  converter: holding registers only, addressed by their full number (40004 is
+  0x9C44) before MODBUS 40 version 10, writes as Write Multiple Registers only,
+  and 2.1 s per register outside LOG.SET.
 - **Hold stats.py's own keys to the backend as well.** The contract test checks
   what `stats_extra` builds, but not the keys `stats.py` adds itself (`ha_id`,
   `log_errors` and `log_warnings` since 1.7.2). The backend rejects a whole

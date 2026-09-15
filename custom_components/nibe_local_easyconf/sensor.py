@@ -12,7 +12,6 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import PLATFORM_SENSOR
 from .coordinator import NibeCoordinator
 from .entity import NibeRegisterEntity, async_add_register_entities, device_info
-from .official import alarm_text, is_alarm_register, labels_for
 from .units import resolve
 
 
@@ -39,18 +38,14 @@ class NibeSensor(NibeRegisterEntity, SensorEntity):
 
         # An alarm register is a code into NIBE's alarm list. It reads as the
         # alarm's text, and keeps the code as an attribute for automations.
-        self._alarm = is_alarm_register(meta.get("title", ""))
+        self._alarm = coordinator.is_alarm(meta)
         if self._alarm:
             self._attr_native_unit_of_measurement = None
             self._attr_state_class = None
             self._attr_device_class = None
             self._attr_icon = "mdi:alert-circle-outline"
 
-        self._mappings = (
-            {}
-            if self._alarm
-            else labels_for(register, language) or meta.get("mappings") or {}
-        )
+        self._mappings = {} if self._alarm else self._labels
         if self._mappings:
             # An enumerated register reports a label, not a number.
             self._attr_device_class = SensorDeviceClass.ENUM
@@ -64,7 +59,7 @@ class NibeSensor(NibeRegisterEntity, SensorEntity):
         if value is None:
             return None
         if self._alarm:
-            return alarm_text(value, self._language)
+            return self.coordinator.alarm_text(value, self._language)
         if self._mappings:
             return self._mappings.get(str(int(value)))
         return value

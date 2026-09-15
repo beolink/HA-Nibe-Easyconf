@@ -150,3 +150,37 @@ def test_every_cop_figure_survives():
     assert metrics["cop_day"] == 3.91
     assert metrics["cop_year"] == 3.98
     assert metrics["cop_lifetime"] == 4.18
+
+
+def _gateway_report():
+    """An F-series pump through a NibeGW gateway: the development unit's counts."""
+    return stats_extra.build_extra(
+        "f1255",
+        traits={"ground_source", "hot_water"},
+        registers_present=980,
+        registers_reporting=40,
+        registers_absent=0,
+        entities_enabled=40,
+        block_reads=25,
+        scan_interval_s=60,
+        read_failures=0,
+        firmware=9721,
+        serial="06505916100001",
+    )
+
+
+def test_an_f_series_report_passes_the_same_rules():
+    report = _gateway_report()
+    assert set(report) <= STATS_EXTRA_KEYS
+    assert set(report) <= ALLOWED_KEYS
+    assert report["models"][0] == "f1255"
+    for model in report["models"]:
+        assert RE_MODEL.match(model), f"model {model!r} would be dropped"
+    assert len(report["features"]) <= MAX_FEATURES
+    for key, value in report["features"].items():
+        assert RE_FEATURE.match(key), f"feature {key!r} would be dropped"
+        if not isinstance(value, bool):
+            assert 0 <= value <= MAX_FEATURE_VALUE, f"feature {key}={value} would be clamped"
+    assert RE_VERSION.match(report["firmware"])
+    for key, value in report.get("metrics", {}).items():
+        assert key in METRICS and _clamp(value, METRICS[key]) == value

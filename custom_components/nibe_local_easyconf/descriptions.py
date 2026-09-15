@@ -398,7 +398,13 @@ def _scope_phrase(codes: list[str], language: str) -> str:
     return f" i {joined}" if language.startswith("sv") else f" in {joined}"
 
 
-def describe(title: str, register: int, meta: dict, language: str = "sv") -> str:
+def describe(
+    title: str,
+    register: int,
+    meta: dict,
+    language: str = "sv",
+    labels: dict[str, str] | None = None,
+) -> str:
     """Build a human-readable explanation of one register."""
     sv = language.startswith("sv")
     codes = _CODE_RE.findall(title)
@@ -469,7 +475,11 @@ def describe(title: str, register: int, meta: dict, language: str = "sv") -> str
         else:
             sentences.append("Inställbar" if sv else "Writable")
 
-    values = labels_for(register, language) or meta.get("mappings")
+    # `labels` is how the F-series passes its own: its register numbers overlap
+    # the S-series tables below with entirely different meanings.
+    values = (
+        labels if labels is not None else labels_for(register, language) or meta.get("mappings")
+    )
     if values:
         pairs = ", ".join(f"{k} = {v}" for k, v in sorted(values.items(), key=_numeric))
         sentences.append(f"Värden: {pairs}" if sv else f"Values: {pairs}")

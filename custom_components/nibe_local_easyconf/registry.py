@@ -62,6 +62,27 @@ MODEL_LABELS: dict[str, str] = {
 }
 
 
+async def async_model_map(hass, model) -> dict[int, dict]:
+    """One F-series model's register map, loaded off the event loop.
+
+    The F-series gets no union: its pump names itself, so the map is the one
+    for the model it names. `model` is a nibe.heatpump.Model.
+    """
+    return await hass.async_add_executor_job(model_map, model.data_file)
+
+
+@lru_cache(maxsize=16)
+def model_map(data_file: str) -> dict[int, dict]:
+    """A register map as the nibe library ships it, keyed by register number.
+
+    NIBE's own S-series value tables are deliberately not applied: F-series
+    register numbers overlap them with different meanings (40217 is an AUX
+    relay setting on an S1155 and a calculated supply temperature on an F1255).
+    """
+    raw = (files("nibe.data") / f"{data_file}.json").read_text(encoding="utf-8")
+    return {int(key): value for key, value in json.loads(raw).items()}
+
+
 async def async_union_map(hass) -> dict[int, dict]:
     """Load the register maps without blocking the event loop.
 
