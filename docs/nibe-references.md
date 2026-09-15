@@ -31,7 +31,12 @@ MODBUS 40 accessory. These describe that path.
 | [Modbus 40 A3 F1345, dockningsprincip](https://headless.nibe.eu/download/18.9a97aba184a9b5f272c92/1669797336609/ModbusDockning_A3_1345_Svenska.pdf) | Wiring |
 | [Vanliga frågor och svar, MODBUS 40](https://headless.nibe.eu/download/18.9a97aba184a9b5f272c51/1669796001070/FAQ_SE_MODBUS40-2.pdf) | FAQ |
 | [Vanliga frågor om Log.Set](https://headless.nibe.eu/download/18.9a97aba184a9b5f272c5c/1669796068500/DOH%2014-262-36%20FAQ%20LogSet%201722-3.pdf) | Choosing which parameters MODBUS 40 prioritises |
-| [Larmlista (F-series)](https://headless.nibe.eu/download/18.9a97aba184a9b5f272c66/1669796147755/Larms%C3%B6k%20Emmy%202044-5.pdf) | Alarm list |
+| [Larmlista, NIBE-produkter med Emmy-display, version 5 (2020-10-26)](https://headless.nibe.eu/download/18.9a97aba184a9b5f272c66/1669796147755/Larms%C3%B6k%20Emmy%202044-5.pdf) | The F-series alarm list in Swedish, source of `alarms_fseries.json` via `tools/extract_nibe_alarms_fseries.py`. |
+| [Alarm list, products with Emmy display, 1747-1 (2017-11-23)](https://installer.nibe.eu/download/18.17fb7f4e185eab8ed4027e7/1676466235274/Alarm%20list%20Emmy%201747-1.pdf) | The English titles, where they agree with the newer Swedish list. |
+
+| [MODBUS 40 installatörshandbok, IHB 1822-10](https://professional.nibe.eu/document/Installer%20manual%20(IHB)/031725-10.pdf) | Terminals for each model (AA3-X4:9-12 on the F1145 to F1255), activation in menu 5.2, LOG.SET and read timings. The F-series gateway path follows it. |
 
 NIBE also offers *ModbusManager*, a Windows program for building MODBUS 40
-log.set files. It is not needed for the S-series.
+LOG.SET files. [Nibe F-series ModbusAdapter](https://github.com/beolink/Nibe-F-series-ModbusAdapter) writes the same files
+without it; the format and its sources are in its
+[docs/logset.md](https://github.com/beolink/Nibe-F-series-ModbusAdapter/blob/main/docs/logset.md).

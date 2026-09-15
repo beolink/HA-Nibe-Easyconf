@@ -73,9 +73,19 @@ class DiscoveryResult:
     raw: dict[int, list[int]] = field(default_factory=dict)
     """First-pass raw words, keyed by register number."""
 
+    probed: set[int] | None = None
+    """Registers actually read, when that is fewer than `present`.
+
+    A Modbus TCP scan reads every present register, so this stays None there.
+    Through a NibeGW gateway every register exists but only a chosen few are
+    read at setup, and an unread register must not be reported as one whose
+    hardware is missing.
+    """
+
     @property
     def unavailable(self) -> set[int]:
-        return self.present - self.reporting
+        read = self.present if self.probed is None else self.probed & self.present
+        return read - self.reporting
 
     def summary(self) -> str:
         return (

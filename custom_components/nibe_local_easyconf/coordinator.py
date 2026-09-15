@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections import Counter
 from datetime import timedelta
 import logging
 import time
@@ -19,6 +20,7 @@ from .const import (
     ENERGY_IN_REGISTER,
     ENERGY_OUT_REGISTER,
     SLOW_POLL_WARNING,
+    is_core_register,
 )
 from .discovery import (
     DiscoveryResult,
@@ -29,6 +31,7 @@ from .discovery import (
     plan_spans,
 )
 from .modbus import FC_READ_HOLDING, ModbusError, ModbusTransportError, NibeModbusClient
+from .official import alarm_text, is_alarm_register, labels_for
 from .registry import union_map
 
 _LOGGER = logging.getLogger(__name__)
@@ -42,6 +45,8 @@ class NibeCoordinator(DataUpdateCoordinator[dict[int, float | int | None]]):
     which register they need as they are added, so a normal installation polls a
     few dozen and the rest cost nothing until someone enables them.
     """
+
+    is_gateway = False
 
     def __init__(
         self,
@@ -65,6 +70,9 @@ class NibeCoordinator(DataUpdateCoordinator[dict[int, float | int | None]]):
         # back to the cached sync call is safe once that has happened.
         self.registers = registers if registers is not None else union_map()
         self._subscribed: set[int] = set()
+        #: How many entities read each register: the heat offset backs both its
+        #: own number and the heating mode select.
+        self._subscribers: Counter[int] = Counter()
         #: Registers read every cycle whether or not an entity shows them: the
         #: energy counters behind the COP. Two adjacent 32-bit words, so one
         #: more block read at most.
@@ -113,15 +121,40 @@ class NibeCoordinator(DataUpdateCoordinator[dict[int, float | int | None]]):
         """Electricity consumed over the pump's lifetime, kWh."""
         return self._value(ENERGY_IN_REGISTER)
 
+    # -- what the entities ask, answered the S-series way -----------------
+    # The gateway coordinator answers the same questions for the F-series,
+    # whose register numbers overlap these tables with different meanings.
+
+    def default_enabled(self, register: int, meta: dict) -> bool:
+        return is_core_register(meta.get("title", ""), meta)
+
+    def labels_for(self, register: int, meta: dict, language: str) -> dict[str, str] | None:
+        return labels_for(register, language) or meta.get("mappings") or None
+
+    def is_alarm(self, meta: dict) -> bool:
+        return is_alarm_register(meta.get("title", ""))
+
+    def alarm_text(self, code: float | None, language: str) -> str | None:
+        return alarm_text(code, language)
+
+    async def async_close(self) -> None:
+        await self.client.close()
+
     # -- entity subscriptions -------------------------------------------
 
     def subscribe(self, register: int) -> None:
         """Ask for a register to be included in the poll cycle."""
+        self._subscribers[register] += 1
         if register not in self._subscribed:
             self._subscribed.add(register)
             self._spans_stale = True
 
     def unsubscribe(self, register: int) -> None:
+        """Leave a register out once no entity reads it any more."""
+        self._subscribers[register] -= 1
+        if self._subscribers[register] > 0:
+            return
+        del self._subscribers[register]
         self._subscribed.discard(register)
         self._spans_stale = True
 

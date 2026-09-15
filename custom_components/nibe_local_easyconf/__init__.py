@@ -9,19 +9,33 @@ import socket
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT, CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
-from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers import config_validation as cv, entity_registry as er
+from homeassistant.exceptions import ConfigEntryError, ConfigEntryNotReady
+from homeassistant.helpers import (
+    config_validation as cv,
+    device_registry as dr,
+    entity_registry as er,
+)
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.storage import Store
 from homeassistant.loader import async_get_integration
+from nibe.exceptions import NibeException
 import voluptuous as vol
 
+from . import fseries
 from .codec import decode, word_count
 from .const import (
+    CONF_CONNECTION,
+    CONF_FIRMWARE,
+    CONF_MODEL,
+    CONF_PRODUCT,
+    CONF_READ_PORT,
     CONF_SERIAL,
     CONF_TRAITS,
     CONF_UNIT_ID,
+    CONF_WORD_SWAP,
+    CONF_WRITE_PORT,
+    CONNECTION_NIBEGW,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_UNIT_ID,
@@ -29,10 +43,10 @@ from .const import (
     ENERGY_IN_REGISTER,
     ENERGY_OUT_REGISTER,
     FIRMWARE_REGISTER,
+    GATEWAY_PROBE_REGISTER,
     PLATFORMS,
     SERVICE_IMPORT_HISTORY,
     SERVICE_RESCAN,
-    is_core_register,
     platform_for,
 )
 from .coordinator import NibeCoordinator
@@ -45,10 +59,18 @@ from .discovery import (
     modbus_address,
 )
 from .frontend import async_register_frontend, async_unregister_frontend
+from .gateway import (
+    DEFAULT_READ_PORT,
+    DEFAULT_WRITE_PORT,
+    GatewayClient,
+    GatewayError,
+    probe,
+)
+from .gateway_coordinator import NibeGatewayCoordinator, gateway_discovery
 from .history import async_import_history
 from .modbus import ModbusTransportError, NibeModbusClient
 from .names import assign_names
-from .registry import async_union_map
+from .registry import async_model_map, async_union_map
 from .serial import parse_serial, serial_from_hostname
 from .stats import async_setup_stats, async_stop_stats
 from .stats_extra import ErrorCounter, build_extra
@@ -139,8 +161,36 @@ async def _async_arm_statistics(hass: HomeAssistant, entry: NibeConfigEntry) -> 
         _LOGGER.debug("Could not arm the statistics reporter", exc_info=True)
 
 
+async def _async_cached_discovery(
+    hass: HomeAssistant, entry: ConfigEntry
+) -> DiscoveryResult | None:
+    """The register scan from an earlier start, or the one setup just did.
+
+    On the first start after setup the config flow's scan is adopted, then
+    moved out of the config entry so it is not carried around in
+    core.config_entries on every future start.
+    """
+    discovery = await async_load(hass, entry.entry_id)
+    if discovery is None and "discovery" in entry.data:
+        cached = entry.data["discovery"]
+        probed = cached.get("probed")
+        discovery = DiscoveryResult(
+            present=set(cached.get("present", [])),
+            reporting=set(cached.get("reporting", [])),
+            absent=set(cached.get("absent", [])),
+            probed=None if probed is None else set(probed),
+        )
+        await async_save(hass, entry.entry_id, discovery)
+        remaining = {k: v for k, v in entry.data.items() if k != "discovery"}
+        hass.config_entries.async_update_entry(entry, data=remaining)
+    return discovery
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool:
     await _async_arm_statistics(hass, entry)
+
+    if entry.data.get(CONF_CONNECTION) == CONNECTION_NIBEGW:
+        return await _async_setup_gateway_entry(hass, entry)
 
     client = NibeModbusClient(
         host=entry.data[CONF_HOST],
@@ -153,20 +203,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool
         raise ConfigEntryNotReady(str(err)) from err
 
     registers = await async_union_map(hass)
-    discovery = await async_load(hass, entry.entry_id)
-    if discovery is None and "discovery" in entry.data:
-        # First start after setup: adopt the scan the config flow already did,
-        # then move it out of the config entry so it is not carried around in
-        # core.config_entries on every future start.
-        cached = entry.data["discovery"]
-        discovery = DiscoveryResult(
-            present=set(cached.get("present", [])),
-            reporting=set(cached.get("reporting", [])),
-            absent=set(cached.get("absent", [])),
-        )
-        await async_save(hass, entry.entry_id, discovery)
-        remaining = {k: v for k, v in entry.data.items() if k != "discovery"}
-        hass.config_entries.async_update_entry(entry, data=remaining)
+    discovery = await _async_cached_discovery(hass, entry)
     if discovery is None:
         _LOGGER.info("No cached register scan; probing %s", entry.data[CONF_HOST])
         try:
@@ -180,7 +217,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool
     coordinator = NibeCoordinator(
         hass, entry, client, discovery, _scan_interval(entry), registers=registers
     )
-    _async_remove_moved_entities(hass, entry, registers, discovery.present)
+    _async_remove_moved_entities(
+        hass, entry, registers, discovery.present, coordinator.default_enabled
+    )
 
     # Everything the entities read at construction time has to be in place
     # before the platforms are forwarded: names, and the device identity.
@@ -235,8 +274,114 @@ async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool
     return True
 
 
+async def _async_setup_gateway_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool:
+    """Set up an F-series pump reached through a NibeGW gateway.
+
+    The same shape as the Modbus TCP set-up, with three differences: the model
+    comes from the pump's own product message rather than a pick list, the scan
+    covers only the registers shown by default, and the software version is
+    the product message's rather than a register's.
+    """
+    product = fseries.identify_product(entry.data.get(CONF_PRODUCT))
+    model = (
+        product.model
+        if product is not None
+        else fseries.F_SERIES_MODELS.get(str(entry.data.get(CONF_MODEL, "")).upper())
+    )
+    if model is None:
+        raise ConfigEntryError(f"Unsupported F-series model {entry.data.get(CONF_MODEL)!r}")
+
+    registers = await async_model_map(hass, model)
+    client = GatewayClient(
+        entry.data[CONF_HOST],
+        model,
+        entry.data.get(CONF_READ_PORT, DEFAULT_READ_PORT),
+        entry.data.get(CONF_WRITE_PORT, DEFAULT_WRITE_PORT),
+        word_swap=entry.data.get(CONF_WORD_SWAP),
+    )
+    try:
+        await client.start()
+        # One read proves both the gateway and the pump behind it are there.
+        outdoor = await client.read(GATEWAY_PROBE_REGISTER)
+    except (GatewayError, OSError, NibeException) as err:
+        await client.stop()
+        raise ConfigEntryNotReady(
+            f"No answer through the NibeGW gateway at {client.host}: {err}"
+        ) from err
+
+    try:
+        discovery = await _async_cached_discovery(hass, entry)
+        if discovery is None:
+            _LOGGER.info("No cached register scan; reading the defaults through %s", client.host)
+            result = await probe(client, fseries.default_registers(registers))
+            discovery = gateway_discovery(registers, result)
+            await async_save(hass, entry.entry_id, discovery)
+        _LOGGER.debug("Register discovery for %s: %s", entry.title, discovery.summary())
+
+        coordinator = NibeGatewayCoordinator(
+            hass, entry, client, registers, discovery, _scan_interval(entry)
+        )
+        coordinator.seed(GATEWAY_PROBE_REGISTER, outdoor)
+        coordinator.async_start_listening()
+        _async_remove_moved_entities(
+            hass, entry, registers, discovery.present, coordinator.default_enabled
+        )
+        language = entry.data.get("language", "sv")
+        coordinator.entity_names = assign_names(
+            registers, discovery.present, language, friendly_name
+        )
+        coordinator.serial = parse_serial(
+            entry.data.get(CONF_SERIAL) or await _async_serial_by_reverse_dns(hass, client.host)
+        )
+        coordinator.firmware = entry.data.get(CONF_FIRMWARE)
+        await coordinator.async_config_entry_first_refresh()
+    except BaseException:
+        await client.stop()
+        raise
+
+    entry.runtime_data = coordinator
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    entry.async_on_unload(entry.add_update_listener(_async_reload_on_options))
+    _register_services(hass)
+    integration = await async_get_integration(hass, DOMAIN)
+    await async_register_frontend(hass, str(integration.version))
+    entry.async_create_background_task(
+        hass, _async_follow_software_version(hass, entry, coordinator), f"{DOMAIN} product message"
+    )
+    return True
+
+
+async def _async_follow_software_version(
+    hass: HomeAssistant, entry: ConfigEntry, coordinator: NibeGatewayCoordinator
+) -> None:
+    """Show the software version the pump announces now, not the one at setup.
+
+    The device registry is updated rather than the config entry: an entry
+    update would trigger the reload listener.
+    """
+    try:
+        info = await coordinator.client.product_info()
+    except GatewayError:
+        return
+    version = info.firmware_version
+    if not version or version == coordinator.firmware:
+        return
+    coordinator.firmware = version
+    registry = dr.async_get(hass)
+    # Looked up among this entry's own devices: async_get_device by identifier
+    # is deprecated from Home Assistant 2026.9, and its replacement is too new
+    # for the oldest release this integration supports.
+    for device in dr.async_entries_for_config_entry(registry, entry.entry_id):
+        if (DOMAIN, entry.entry_id) in device.identifiers:
+            registry.async_update_device(device.id, sw_version=str(version))
+
+
 def _async_remove_moved_entities(
-    hass: HomeAssistant, entry: ConfigEntry, registers: dict, present: set[int]
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    registers: dict,
+    present: set[int],
+    default_enabled,
 ) -> None:
     """Keep the entity registry in step with the current register policy.
 
@@ -267,7 +412,7 @@ def _async_remove_moved_entities(
         # two energy counters did - would stay switched off on every existing
         # installation. Re-enable it, but only where this integration was the
         # one that disabled it: anything the user switched off stays off.
-        if not is_core_register(meta.get("title", ""), meta):
+        if not default_enabled(register, meta):
             continue
         entity_id = registry.async_get_entity_id(current, DOMAIN, unique_id)
         entity = registry.async_get(entity_id) if entity_id else None
@@ -320,7 +465,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> boo
         # Only here, never from an on-unload callback: those also run when a
         # set-up attempt fails, and the report has to survive that.
         await async_stop_stats(hass, entry, DOMAIN)
-        await coordinator.client.close()
+        await coordinator.async_close()
         still_loaded = [
             other
             for other in hass.config_entries.async_loaded_entries(DOMAIN)

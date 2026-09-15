@@ -4,10 +4,11 @@
     "step": {
       "user": {
         "title": "Lägg till värmepump",
-        "description": "Aktivera nätverk (meny 5.2) och Modbus TCP (meny 7.5.9) i pumpen innan du fortsätter.",
+        "description": "S-serien: aktivera nätverk (meny 5.2) och Modbus TCP (meny 7.5.9) i pumpen. F-serien: anslut en NibeGW-gateway till pumpens RS-485-buss och aktivera MODBUS 40 i meny 5.2.",
         "menu_options": {
           "search": "Sök efter pumpen på nätverket",
-          "manual": "Ange IP-adress manuellt"
+          "manual": "Ange IP-adress manuellt",
+          "gateway": "F-serie via NibeGW-gateway"
         }
       },
       "pick": {
@@ -38,24 +39,51 @@
           "name": "Namn (valfritt)",
           "scan_interval": "Uppdateringsintervall"
         }
+      },
+      "gateway": {
+        "title": "Anslut till NibeGW-gatewayn",
+        "description": "F-seriens pumpar nås via en NibeGW-gateway på pumpens RS-485-buss, till exempel en ESP32 med esphome-nibe. Aktivera MODBUS 40 i pumpens meny {menu}, och se till att Home Assistants IP-adress finns bland de tillåtna avsändarna i gatewayns konfiguration. Standardportarna är 9999 för läsning och 10000 för skrivning.",
+        "data": {
+          "host": "Gatewayns IP-adress",
+          "read_port": "Port för läsning",
+          "write_port": "Port för skrivning"
+        }
+      },
+      "gateway_discovery_confirm": {
+        "title": "Hittade en NIBE F-serie",
+        "description": "En NibeGW-gateway på {host} är ansluten till en {product}. Vill du lägga till pumpen?"
+      },
+      "gateway_confirm": {
+        "title": "Så här ser pumpen ut",
+        "description": "{product} med programvara {firmware}, via gatewayn på {host}. Hittade: {traits}.\n\nAv de {probed} register som visas som standard rapporterar {reporting} ett värde; de övriga saknar givare och slås inte på. Pumpens övriga register skapas avstängda och kan slås på i entitetsinställningarna.\n\nVarje register tar ungefär en sekund att läsa via gatewayn, så uppdateringsintervallet bör vara minst en halv minut.",
+        "data": {
+          "name": "Namn (valfritt)",
+          "scan_interval": "Uppdateringsintervall"
+        }
       }
     },
     "progress": {
       "searching": "Söker igenom nätverket efter värmepumpar som svarar på Modbus.",
-      "discovering": "Söker igenom registren i värmepumpen. Det tar ungefär en minut och görs bara en gång."
+      "discovering": "Söker igenom registren i värmepumpen. Det tar ungefär en minut och görs bara en gång.",
+      "gateway_scanning": "Läser pumpens viktigaste register via gatewayn. Det tar ungefär en minut och görs bara en gång."
     },
     "error": {
       "cannot_connect": "Ingen kontakt. Kontrollera IP-adressen och att Modbus TCP är påslaget i meny 7.5.9.",
       "not_nibe": "Enheten svarar på Modbus men ser inte ut som en NIBE S-serie. Kontrollera enhets-ID.",
       "no_pumps_found": "Hittade ingen värmepump på nätverket. Kontrollera att Modbus TCP är påslaget i meny 7.5.9, eller ange adressen manuellt nedan.",
-      "unknown": "Oväntat fel. Se loggen för detaljer."
+      "unknown": "Oväntat fel. Se loggen för detaljer.",
+      "gateway_no_answer": "Ingen pump svarar via gatewayn. Kontrollera adressen, att MODBUS 40 är aktiverat i pumpens meny 5.2 och att Home Assistants IP-adress är en tillåten avsändare i gatewayns konfiguration.",
+      "unsupported_model": "Pumpen kallar sig {product}, som inte är en F-seriemodell den här integrationen känner till."
     },
     "abort": {
       "already_configured": "Den här pumpen är redan tillagd.",
       "cannot_connect": "Tappade kontakten med pumpen under registersökningen.",
       "modbus_disabled": "Hittade en NIBE-värmepump, men den svarar inte på Modbus. Slå på Modbus TCP i meny 7.5.9 och försök igen.",
       "not_nibe": "Enheten ser inte ut som en NIBE S-serie.",
-      "unknown": "Oväntat fel under registersökningen."
+      "unknown": "Oväntat fel under registersökningen.",
+      "gateway_no_answer": "Hittade en NibeGW-gateway, men ingen pump svarar via den. Aktivera MODBUS 40 i pumpens meny 5.2 och kontrollera gatewayns tillåtna avsändare.",
+      "unsupported_model": "Pumpen bakom gatewayn är inte en F-seriemodell som stöds.",
+      "not_nibe_gateway": "Enheten är ingen NibeGW-gateway för en NIBE-pump."
     }
   },
   "options": {
@@ -64,12 +92,50 @@
         "title": "Inställningar",
         "data": {
           "scan_interval": "Uppdateringsintervall",
+          "heating_mode_blocked": "Värmeläge blockerad",
+          "heating_mode_eco": "Värmeläge ekonomi",
+          "heating_mode_boost": "Värmeläge boost",
           "send_statistics": "Skicka anonym användningsstatistik"
         },
         "data_description": {
           "scan_interval": "Hur ofta registren läses. Bara register som backar en aktiverad entitet läses, så fler entiteter gör varje varv längre.",
+          "heating_mode_blocked": "Steg från husets normala värmeförskjutning (meny 1.1, temperatur) när värmeläget är blockerad. Värmen stängs aldrig av: huset går på sin värmetröghet och min. framledningstemperatur gäller fortfarande.",
+          "heating_mode_eco": "Steg från den normala värmeförskjutningen när värmeläget är ekonomi.",
+          "heating_mode_boost": "Steg över den normala värmeförskjutningen när värmeläget är boost.",
           "send_statistics": "En rapport per dygn till {endpoint}: integrationens version, Home Assistant-version och installationstyp, landet du ställt in i Home Assistant, en ungefärlig plats avrundad till cirka 11 km, antal entiteter och enheter, vilken modell du valt, vad för slags maskin det är (bergvärme, frånluft, varmvatten, kyla), hur många register som hittades och hur många som rapporterar värden, hur många blockläsningar varje pollcykel kostar, uppdateringsintervallet, styrkortets programversion, antal misslyckade pollcykler, värmefaktorn (COP) för senaste dygnet, rullande år och hela livslängden samt, ur serienumret, artikelnumret och tillverkningsår och -vecka. Aldrig namn, adress, exakt position, själva serienumret, entitetsnamn, vilka register som hittades eller någon enskild avläsning från huset (COP är en kvot över ett dygn eller ett år), aldrig något finare än ett dygn, och din IP-adress sparas inte. Stänger du av den raderas också det som redan skickats. Hela listan: {privacy_url} Dessutom skickas en hash som knyter ihop beolinks plugin på samma Home Assistant, hur många varningar och fel integrationen loggat sedan förra rapporten, och om den är igång eller väntar på att starta igen, aldrig själva meddelandena eller skälet."
         }
+      }
+    },
+    "error": {
+      "heating_mode_order": "Blockerad kan inte ligga högre än ekonomi."
+    }
+  },
+  "entity": {
+    "select": {
+      "heating_mode": {
+        "name": "Värmeläge",
+        "state": {
+          "blocked": "Blockerad",
+          "eco": "Ekonomi",
+          "normal": "Normal",
+          "boost": "Boost"
+        },
+        "state_attributes": {
+          "normal_offset": {
+            "name": "Normal värmeförskjutning"
+          },
+          "offsets": {
+            "name": "Förskjutning per läge"
+          },
+          "modbus_register": {
+            "name": "Modbusregister"
+          }
+        }
+      }
+    },
+    "switch": {
+      "hot_water_boost": {
+        "name": "Varmvattenboost"
       }
     }
   },

@@ -30,6 +30,7 @@ async def async_get_config_entry_diagnostics(
 
     return {
         "connection": {
+            "type": "nibegw" if coordinator.is_gateway else "modbus_tcp",
             "host": coordinator.client.host,
             "port": coordinator.client.port,
             "unit_id": coordinator.client.unit_id,
@@ -45,8 +46,8 @@ async def async_get_config_entry_diagnostics(
             "absent": len(discovery.absent),
         },
         "polling": {
-            "subscribed": len(coordinator._subscribed),
-            "block_reads": len(coordinator._spans),
+            "subscribed": coordinator.subscribed_count,
+            "block_reads": coordinator.block_reads,
         },
         "reporting_registers": [detail(r) for r in sorted(discovery.reporting)],
     }

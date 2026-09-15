@@ -38,6 +38,25 @@ MODEL_SLUGS = {
     "vvms320": "vvms320",
     "vvms325": "vvms325",
     "vvms500": "vvms500",
+    # F-series, through a NibeGW gateway: the key is the model the pump names
+    # in its own product message, lower-cased.
+    "f1145": "f1145",
+    "f1245": "f1245",
+    "f1155": "f1155",
+    "f1255": "f1255",
+    "f1345": "f1345",
+    "f1355": "f1355",
+    "f370": "f370",
+    "f470": "f470",
+    "f730": "f730",
+    "f750": "f750",
+    "smo20": "smo20",
+    "smo40": "smo40",
+    "vvm225": "vvm225",
+    "vvm310": "vvm310",
+    "vvm320": "vvm320",
+    "vvm325": "vvm325",
+    "vvm500": "vvm500",
 }
 
 #: Detected machine characteristics. A closed list, and each is a property of
