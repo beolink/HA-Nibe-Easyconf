@@ -1,7 +1,11 @@
 # Nibe Local Easyconf
 
-A Home Assistant integration for NIBE S-series heat pumps over **local Modbus TCP**.
-No cloud, no myUplink account, no gateway hardware.
+Local communication between Home Assistant and NIBE heat pumps and indoor
+modules. No cloud, no myUplink account.
+
+Today that is the S-series over **Modbus TCP**, which the pump has built in, so
+no extra hardware is needed. Models without Modbus TCP, such as the older
+F-series, are on the [roadmap](#roadmap).
 
 It differs from the existing options in two ways, both of which came out of
 actually probing a pump rather than reading the documentation:
