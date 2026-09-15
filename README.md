@@ -1,8 +1,12 @@
 # Nibe Local Easyconf
 
-A Home Assistant integration for NIBE heat pumps on the local network: the
-S-series over **Modbus TCP**, and the F-series through a **NibeGW gateway** on the
-pump's RS-485 bus. No cloud, no myUplink account.
+Local communication between Home Assistant and NIBE heat pumps and indoor
+modules. No cloud, no myUplink account.
+
+The S-series has **Modbus TCP** built in, so it needs no extra hardware. The
+F-series, which has no Modbus TCP, is reached through a **NibeGW gateway** on the
+pump's RS-485 bus, built with
+[Nibe F-series ModbusAdapter](https://github.com/beolink/Nibe-F-series-ModbusAdapter).
 
 It differs from the existing options in two ways, both of which came out of
 actually probing a pump rather than reading the documentation:
