@@ -2,7 +2,7 @@
 
 The F-series has no Modbus TCP. It is reached through a gateway on the pump's
 RS-485 accessory bus that stands in for NIBE's MODBUS 40 accessory: an ESP32
-running esphome-nibe (see esphome/ in this repository), which acknowledges the
+running esphome-nibe (see Nibe-F-series-ModbusAdapter), which acknowledges the
 pump's telegrams on its own and relays reads and writes over UDP. The `nibe`
 library speaks that protocol; this module turns it into what the rest of the
 integration expects - numbers per register - and decides what to read when.

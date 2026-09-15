@@ -89,7 +89,7 @@ def identify_product(text: str | None) -> Product | None:
     return Product(model=model, name=name, size=size, variant=variant or None, text=text.strip())
 
 
-#: The gateway's network name: nibe-<the pump's serial>-gw, as esphome/ names
+#: The gateway's network name: nibe-<the pump's serial>-gw, as the adapter names
 #: it, or plain nibe-gw. The S-series pump itself is NIBE-<serial>, without -gw.
 _GATEWAY_HOSTNAME_RE = re.compile(r"^nibe(?:-\d{14})?-gw(?:[.-]|$)", re.I)
 
@@ -207,41 +207,6 @@ def default_registers(registers: dict[int, dict]) -> list[int]:
 def is_default(meta: dict, reporting: bool) -> bool:
     """Whether a register's entity is switched on when first created."""
     return reporting and meta.get("title") in DEFAULT_TITLES and meta.get("type") != "date"
-
-
-#: What LOG.SET should make the pump push on its own, most dynamic first. At
-#: most 20 registers take part; each is then fresh twice a second instead of
-#: costing a read every cycle, and never read by the poll schedule.
-LOGSET_TITLES: tuple[str, ...] = (
-    "BT1 Outdoor Temperature",
-    "BT2 Supply temp S1",
-    "EB100-EP14-BT3 Return temp",
-    "BT7 HW Top",
-    "BT6 HW Load",
-    "EB100-EP14-BT10 Brine In Temp",
-    "EB100-EP14-BT11 Brine Out Temp",
-    "EB100-EP14-BT12 Condensor Out",
-    "EB100-EP14-BT14 Hot Gas Temp",
-    "EB100-EP14-BT15 Liquid Line",
-    "EB100-EP14-BT17 Suction",
-    "Calc. Supply S1",
-    "Degree Minutes (16 bit)",
-    "Compressor Frequency, Actual",
-    "Compressor State EP14",
-    "Supply Pump Speed EP14",
-    "EP14-GP2 Brine Pump Status EP14",
-    "Int. el.add. Power",
-    "Prio",
-    "Alarm",
-)
-LOGSET_MAX = 20
-
-
-def logset_registers(registers: dict[int, dict]) -> list[int]:
-    """The LOG.SET registers that exist in this model's map, in priority order."""
-    by_title = {meta.get("title"): register for register, meta in registers.items()}
-    chosen = [by_title[title] for title in LOGSET_TITLES if title in by_title]
-    return chosen[:LOGSET_MAX]
 
 
 # -- words -------------------------------------------------------------------

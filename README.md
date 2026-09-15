@@ -103,29 +103,16 @@ through a Waveshare ESP32-S3-RS485-CAN running
 
 ### The gateway
 
-[`esphome/nibe-gw.yaml`](esphome/nibe-gw.yaml) is a complete ESPHome
-configuration for the Waveshare ESP32-S3-RS485-CAN, its pins read off
-Waveshare's schematic. What belongs to one installation - Wi-Fi, which hosts may
-send requests, the gateway's network name - goes in `esphome/secrets.yaml`; copy
-[`secrets.example.yaml`](esphome/secrets.example.yaml) to start.
+The gateway is a project of its own,
+[Nibe F-series ModbusAdapter](https://github.com/beolink/Nibe-F-series-ModbusAdapter):
+ESPHome firmware for a Waveshare ESP32-S3-RS485-CAN, with how to build it, wire
+it to the pump's input board and switch MODBUS 40 on in the pump. This
+integration was built and measured against it.
 
-1. Flash it once over USB-C with `esphome run esphome/nibe-gw.yaml`; later
-   updates go over Wi-Fi. If ESPHome stops while installing its ESP-IDF Python
-   packages with *Can not perform a '--user' install*, a global pip setting is
-   forcing user installs: run that first build as `PIP_USER=0 esphome run ...`.
-2. Wire the board's RS-485 terminal to the pump's input board (AA3): **A+ to
-   X4:11** and **B- to X4:10**. The board's RS-485 side is galvanically isolated
-   and has no ground terminal, so X4:9 stays empty, and the termination jumper
-   stays open. NIBE's MODBUS 40 manual asks for the pump to be switched off and
-   the connection made by a qualified electrician.
-3. On the pump, select **MODBUS 40** in menu **5.2**. Menu 5 is the service
-   menu: hold Back for seven seconds in the main menu. The board's RS-485 LEDs
-   then blink, blue for the pump and green for the gateway answering.
-
-Name the gateway `nibe-<the pump's serial>-gw`, as the example does. The
-integration reads the model and the build date from the serial just as it does
-for the S-series, and the suffix keeps the gateway apart from the pump's own
-network name.
+Name the gateway `nibe-<the pump's serial>-gw`, as that project's example does.
+The integration reads the model and the build date from the serial just as it
+does for the S-series, and the suffix keeps the gateway apart from the pump's
+own network name.
 
 ### Adding the pump
 
@@ -165,8 +152,8 @@ sensor on a pump that has none. So on the F-series:
   reads; what does not fit is read first in the next cycle.
 - **Registers in LOG.SET are never read.** Up to 20 registers loaded into the
   pump from a USB stick arrive on their own every two seconds. A ready file for
-  the F1155/F1255 and a generator for other models are described in
-  [docs/logset.md](docs/logset.md).
+  the F1155/F1255, a generator for other models and how to load them are in
+  [Nibe F-series ModbusAdapter](https://github.com/beolink/Nibe-F-series-ModbusAdapter/blob/main/docs/logset.md).
 
 The device page shows the product message's model and software version.
 Through the gateway there is no coefficient of performance: the F-series keeps

@@ -127,15 +127,6 @@ def test_dates_are_never_enabled():
     assert not fseries.is_default({**F1255_MAP[48044], "title": "Alarm"}, reporting=True)
 
 
-def test_logset_holds_at_most_twenty_registers_that_exist():
-    chosen = fseries.logset_registers(F1255_MAP)
-    assert len(chosen) == fseries.LOGSET_MAX == 20
-    assert len(set(chosen)) == len(chosen)
-    assert all(register in F1255_MAP for register in chosen)
-    # Everything LOG.SET pushes is also something shown by default.
-    assert {F1255_MAP[r]["title"] for r in chosen} <= fseries.DEFAULT_TITLES
-
-
 # ------------------------------------------------------------ traits
 
 

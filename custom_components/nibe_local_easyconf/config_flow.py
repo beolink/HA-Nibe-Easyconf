@@ -10,7 +10,7 @@ Three ways in, in order of how little the user has to do:
 3. **Typing the address in**, which always works.
 
 F-series pumps have no Modbus TCP and are reached through a NibeGW gateway
-instead (esphome/ in this repository). The gateway announces itself as
+instead (Nibe-F-series-ModbusAdapter builds one). The gateway announces itself as
 nibe-<serial>-gw over DHCP and mDNS, and the pump behind it names its own
 model, so that path asks for even less: confirm, wait a minute, done.
 """

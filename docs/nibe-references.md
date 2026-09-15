@@ -37,5 +37,6 @@ MODBUS 40 accessory. These describe that path.
 | [MODBUS 40 installatörshandbok, IHB 1822-10](https://professional.nibe.eu/document/Installer%20manual%20(IHB)/031725-10.pdf) | Terminals for each model (AA3-X4:9-12 on the F1145 to F1255), activation in menu 5.2, LOG.SET and read timings. The F-series gateway path follows it. |
 
 NIBE also offers *ModbusManager*, a Windows program for building MODBUS 40
-LOG.SET files. `tools/make_logset.py` writes the same files without it; the
-format and its sources are in [logset.md](logset.md).
+LOG.SET files. [Nibe F-series ModbusAdapter](https://github.com/beolink/Nibe-F-series-ModbusAdapter) writes the same files
+without it; the format and its sources are in its
+[docs/logset.md](https://github.com/beolink/Nibe-F-series-ModbusAdapter/blob/main/docs/logset.md).
