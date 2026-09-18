@@ -66,9 +66,18 @@ def gateway_discovery(registers: dict[int, dict], result: ProbeResult) -> Discov
         for register, meta in registers.items()
         if meta.get("type") != "date" and meta.get("title") not in fseries.UNRELIABLE_TITLES
     }
+    # A flag that answered "no" is a module the pump does not have; leaving it
+    # reporting would put "FLM 4 accessory: off" on the page of every pump.
+    fitted = {accessory.flag for accessory in fseries.fitted_accessories(registers, result.values)}
+    silent_flags = {
+        register
+        for register, meta in registers.items()
+        if (title := meta.get("title")) in {a.flag for a in fseries.ACCESSORIES}
+        and title not in fitted
+    }
     return DiscoveryResult(
         present=present,
-        reporting=result.reporting & present,
+        reporting=(result.reporting & present) - silent_flags,
         absent=set(),
         probed=result.probed & present,
     )
@@ -282,6 +291,17 @@ class NibeGatewayCoordinator(DataUpdateCoordinator[dict[int, Value]]):
         wanted = sorted(set(fseries.default_registers(self.registers)) | self._subscribed)
         try:
             result = await probe(self.client, wanted)
+            # This service exists for the day an accessory is fitted, so the
+            # flags just read decide what else is worth reading.
+            extra = [
+                register
+                for register in fseries.accessory_registers(self.registers, result.values)
+                if register not in result.values
+            ]
+            if extra:
+                more = await probe(self.client, extra)
+                result.values.update(more.values)
+                result.failed |= more.failed
         except GatewayError as err:
             raise HomeAssistantError(f"Rescan through the gateway failed: {err}") from err
         for register, value in result.values.items():

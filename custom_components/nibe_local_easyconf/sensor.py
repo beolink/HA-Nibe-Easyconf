@@ -12,6 +12,8 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import PLATFORM_SENSOR
 from .coordinator import NibeCoordinator
 from .entity import NibeRegisterEntity, async_add_register_entities, device_info
+from .explanations import explain_own
+from .translations_extra import entity_language
 from .units import resolve
 
 
@@ -86,7 +88,10 @@ class NibeManufacturedSensor(CoordinatorEntity[NibeCoordinator], SensorEntity):
 
     def __init__(self, coordinator: NibeCoordinator) -> None:
         super().__init__(coordinator)
-        language = coordinator.config_entry.data.get("language", "sv")
+        language = entity_language(
+            coordinator.hass.config.language, coordinator.config_entry.data.get("language")
+        )
+        self._language = language
         self._attr_name = "Tillverkad" if language.startswith("sv") else "Manufactured"
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}-manufactured"
         self._attr_device_info = device_info(coordinator)
@@ -99,6 +104,7 @@ class NibeManufacturedSensor(CoordinatorEntity[NibeCoordinator], SensorEntity):
     def extra_state_attributes(self) -> dict:
         serial = self.coordinator.serial
         return {
+            "description": explain_own("manufactured", self._language),
             "article_number": serial.article,
             "iso_week": serial.iso_week,
             "day_of_year": serial.day_of_year,
@@ -122,11 +128,15 @@ class NibeCopSensor(CoordinatorEntity[NibeCoordinator], SensorEntity):
     def __init__(self, coordinator: NibeCoordinator, span: str) -> None:
         super().__init__(coordinator)
         self._span = span
-        self._language = coordinator.config_entry.data.get("language", "sv")
+        self._language = entity_language(
+            coordinator.hass.config.language, coordinator.config_entry.data.get("language")
+        )
         sv = self._language.startswith("sv")
+        # Swedish calls it värmefaktor as often as COP, and someone searching
+        # the page for either word should find it.
         self._attr_name = {
-            "day": "COP, dygn" if sv else "COP, day",
-            "year": "COP, år" if sv else "COP, year",
+            "day": "Värmefaktor (COP), dygn" if sv else "COP, day",
+            "year": "Värmefaktor (COP), år" if sv else "COP, year",
         }[span]
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}-cop-{span}"
         self._attr_device_info = device_info(coordinator)
@@ -145,6 +155,10 @@ class NibeCopSensor(CoordinatorEntity[NibeCoordinator], SensorEntity):
     @property
     def extra_state_attributes(self) -> dict:
         attributes = self._result().as_attributes(self._language)
+        # Which span this figure stands on, as a word rather than as a name:
+        # the dashboard tells the two apart without reading Swedish.
+        attributes["span"] = self._span
+        attributes["description"] = explain_own(f"cop_{self._span}", self._language)
         history = self.coordinator.cop.history
         if history and history.get("production"):
             # Where the samples before installation came from, so a yearly

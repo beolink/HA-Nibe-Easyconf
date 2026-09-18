@@ -134,6 +134,136 @@ def traits_for(product: Product, reporting_titles: set[str]) -> set[str]:
 
 # -- what is on by default ---------------------------------------------------
 
+#: Registers the pump answers but the library's F1155/F1255 map does not carry.
+#:
+#: 47260 is the fan speed selector of an exhaust air module: normal, or one of
+#: the four speeds set in 47261-47265. NIBE leaves it out of its published
+#: Modbus list - the library has it for the F370, F730, F750 and the VVM
+#: models, where the fan is built in, but not for the F1155/F1255, where it
+#: arrives with the FLM accessory. Owners found it anyway, and myUplink has
+#: always shown it. The definition is the library's own, copied verbatim.
+EXTRA_REGISTERS: dict[int, dict] = {
+    47260: {
+        "title": "Fan Mode",
+        "size": "u8",
+        "factor": 1,
+        "min": 0,
+        "max": 4,
+        "write": True,
+        "mappings": {
+            "0": "Normal",
+            "1": "Fan mode 1",
+            "2": "Fan mode 2",
+            "3": "Fan mode 3",
+            "4": "Fan mode 4",
+        },
+    },
+}
+
+#: The accessories a pump can have, and the registers that come with each.
+#:
+#: Every register answers through the gateway whether its hardware is fitted or
+#: not, so an exhaust air module that is not there would otherwise arrive as a
+#: fan running at zero per cent. NIBE solves it for us: each accessory has a
+#: register that says whether it is registered in the pump, titled "<name>
+#: accessory", and its own registers carry the accessory's name. Setup reads
+#: the flags, then reads the registers of the accessories that answered yes.
+#:
+#: `extra` is for registers that belong to an accessory without saying so in
+#: their title, like the exhaust fan speeds that arrive with an FLM module.
+#: Registers whose definition in the library is thinner than the pump's own
+#: behaviour. 49280 sets which speed an exhaust air module runs at, and takes
+#: the same values 43108 reports back, but the library gives it no labels and
+#: no range, so it would arrive as a number between nothing and nothing.
+REGISTER_PATCHES: dict[int, dict] = {
+    49280: {
+        "min": 0,
+        "max": 4,
+        "mappings": {
+            "0": "Normal",
+            "1": "Fan mode 1",
+            "2": "Fan mode 2",
+            "3": "Fan mode 3",
+            "4": "Fan mode 4",
+        },
+    },
+}
+
+
+@dataclass(frozen=True)
+class Accessory:
+    flag: str
+    prefixes: tuple[str, ...]
+    extra: frozenset[str] = frozenset()
+
+
+FAN_TITLES: frozenset[str] = frozenset({
+    "Fan Mode",
+    "Fan speed current",
+    "Exhaust Fan speed normal",
+    "Exhaust Fan speed 1",
+    "Exhaust Fan speed 2",
+    "Exhaust Fan speed 3",
+    "Exhaust Fan speed 4",
+})
+
+ACCESSORIES: tuple[Accessory, ...] = (
+    Accessory("FLM 1 accessory", ("FLM 1",), FAN_TITLES),
+    Accessory("FLM 2 accessory", ("FLM 2",)),
+    Accessory("FLM 3 accessory", ("FLM 3",)),
+    Accessory("FLM 4 accessory", ("FLM 4",)),
+    Accessory("ERS 1 accessory", ("ERS 1", "External ERS 1")),
+    Accessory("ERS 2 accessory", ("ERS 2", "External ERS 2")),
+    Accessory("ERS 3 accessory", ("ERS 3", "External ERS 3")),
+    Accessory("ERS 4 accessory", ("ERS 4", "External ERS 4")),
+    Accessory("Pool 1 accessory", ("Pool 1",)),
+    Accessory("Pool 2 accessory", ("Pool 2",)),
+)
+
+#: Values NIBE answers with when an accessory is registered in the pump.
+_FITTED = ("ON", "1", "1.0", "TRUE", "YES")
+
+
+def accessory_for(title: str) -> Accessory | None:
+    """The accessory a register belongs to, if any."""
+    for accessory in ACCESSORIES:
+        if title == accessory.flag or title in accessory.extra:
+            return accessory
+        if any(title.startswith(f"{prefix} ") for prefix in accessory.prefixes):
+            return accessory
+    return None
+
+
+def flag_registers(registers: dict[int, dict]) -> list[int]:
+    """The registers that say which accessories the pump has."""
+    flags = {accessory.flag for accessory in ACCESSORIES}
+    return sorted(r for r, meta in registers.items() if meta.get("title") in flags)
+
+
+def fitted_accessories(registers: dict[int, dict], values: dict[int, object]) -> list[Accessory]:
+    """The accessories whose flag answered yes during the scan."""
+    by_title = {meta.get("title"): register for register, meta in registers.items()}
+    fitted = []
+    for accessory in ACCESSORIES:
+        register = by_title.get(accessory.flag)
+        if register is not None and str(values.get(register)).upper() in _FITTED:
+            fitted.append(accessory)
+    return fitted
+
+
+def accessory_registers(registers: dict[int, dict], values: dict[int, object]) -> list[int]:
+    """What is worth reading once the flags are known: the registers of every
+    accessory the pump says it has, and nothing for the ones it does not."""
+    fitted = fitted_accessories(registers, values)
+    wanted = set()
+    for register, meta in registers.items():
+        title = meta.get("title") or ""
+        accessory = accessory_for(title)
+        if accessory in fitted and title != accessory.flag:
+            wanted.add(register)
+    return sorted(wanted)
+
+
 #: Registers worth an enabled entity on a normal installation, by NIBE title.
 #: One that does not report a value at setup - a room sensor, a cooling
 #: circuit, current sensors - stays switched off like everything else.
@@ -200,13 +330,22 @@ UNRELIABLE_TITLES: frozenset[str] = frozenset({"Degree Minutes (32 bit)"})
 
 
 def default_registers(registers: dict[int, dict]) -> list[int]:
-    """The registers in a model's map that setup reads, in address order."""
-    return sorted(r for r, meta in registers.items() if meta.get("title") in DEFAULT_TITLES)
+    """The registers setup reads first: the usual ones, and the flags that say
+    which accessories the pump has."""
+    wanted = {r for r, meta in registers.items() if meta.get("title") in DEFAULT_TITLES}
+    return sorted(wanted | set(flag_registers(registers)))
 
 
 def is_default(meta: dict, reporting: bool) -> bool:
-    """Whether a register's entity is switched on when first created."""
-    return reporting and meta.get("title") in DEFAULT_TITLES and meta.get("type") != "date"
+    """Whether a register's entity is switched on when first created.
+
+    An accessory's registers are only read when its flag said the accessory is
+    there, so one that reported a value has hardware behind it.
+    """
+    title = meta.get("title") or ""
+    if meta.get("type") == "date" or not reporting:
+        return False
+    return title in DEFAULT_TITLES or accessory_for(title) is not None
 
 
 # -- words -------------------------------------------------------------------

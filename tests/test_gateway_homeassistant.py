@@ -173,7 +173,9 @@ async def test_typing_in_the_gateway_adds_the_pump(hass):
     placeholders = result["description_placeholders"]
     assert placeholders["product"] == "NIBE F1255-16 CU"
     assert placeholders["firmware"] == "9721"
-    assert (placeholders["probed"], placeholders["reporting"]) == ("43", "40")
+    # 43 registers worth showing, plus the ten flags that say which accessories
+    # the pump has; this one reports none, so nothing more is read.
+    assert (placeholders["probed"], placeholders["reporting"]) == ("53", "40")
 
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"name": "", "scan_interval": 60}
@@ -283,6 +285,9 @@ async def _advance(hass, freezer, seconds: float) -> None:
 
 
 async def _set_up(hass, freezer=None, **overrides) -> MockConfigEntry:
+    # The entities speak Home Assistant's language, not the one set-up stored,
+    # so a test that reads Swedish names has to say Home Assistant is Swedish.
+    hass.config.language = overrides.pop("system_language", "sv")
     entry = MockConfigEntry(
         domain=DOMAIN, unique_id=f"nibe-{SERIAL}", title="NIBE F1255-16 CU",
         data=_entry_data(**overrides),

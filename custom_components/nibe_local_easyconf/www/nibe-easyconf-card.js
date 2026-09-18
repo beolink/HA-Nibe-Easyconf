@@ -1,4 +1,5 @@
-/* Nibe Local Easyconf — the heat pump's entities, each with its explanation.
+/* Nibe Local Easyconf — the heat pump on one page: control it, see how it is
+ * doing, and read every value with its explanation.
  *
  * Served by the integration at /nibe_local_easyconf/nibe-easyconf-card.js and
  * used two ways:
@@ -10,12 +11,27 @@
  *
  *       type: custom:nibe-easyconf-card
  *       device_id: <optional, when there is more than one pump>
+ *       tabs: [overview, controls, performance, values]  # optional, the default
  *
- * Why it exists: Home Assistant's device page cuts entity names at roughly 25
- * characters, fixes its own column count from the window width, and has no
- * way to show an entity's explanation on hover. This lays the same entities
- * out two to a row with room for the whole name, and shows each one's
- * `description` attribute.
+ * The page has four tabs:
+ *
+ *   1. **Overview.** What the pump is doing right now: its mode, the alarm, the
+ *      temperatures around the circuit, the compressor, and the coefficient of
+ *      performance, in that order, with one graph of the last day.
+ *   2. **Controls.** Everything writable, as the thing it is - a dropdown, a
+ *      slider, a toggle - grouped by what it does to the house rather than by
+ *      Home Assistant's entity domain: heating, hot water, operation, fans and
+ *      pumps. Reading a setting off a list and then hunting for it in a dialog
+ *      is what this page existed to avoid.
+ *   3. **Performance.** Graphs, built from Home Assistant's own history and
+ *      statistics cards through `loadCardHelpers`. They are a bonus: if that
+ *      ever goes away the tab hides itself and the rest still works.
+ *   4. **All values.** The full list with the filter, each row with its
+ *      explanation, as before.
+ *
+ * Why the page exists at all: Home Assistant's device page cuts entity names at
+ * roughly 25 characters, fixes its own column count from the window width, and
+ * has no way to show an entity's explanation on hover.
  *
  * The explanation is shown on hover through the title attribute, and also on
  * tap, written out under the row: a title attribute alone is invisible on a
@@ -44,6 +60,88 @@ const TEXT = {
     on: "på",
     off: "av",
     title: "NIBE värmepump",
+    overview: "Översikt",
+    controls: "Styrning",
+    performance: "Prestanda",
+    values: "Alla värden",
+    quick: "Snabbstyrning",
+    now: "Just nu",
+    readings: "Nyckeltal",
+    heating: "Värme",
+    hotwater: "Varmvatten",
+    operation: "Drift",
+    air: "Fläkt och pumpar",
+    other: "Övrigt",
+    graphTemps: "Temperaturer, ett dygn",
+    graphCompressor: "Kompressorn, ett dygn",
+    graphEnergy: "Energi per dygn",
+    graphCop: "Värmefaktor per dygn",
+    noControls: "Inget styrbart värde är påslaget.",
+    explain: "Förklaring",
+  },
+  de: {
+    sensor: "Messwerte",
+    control: "Steuerung",
+    config: "Einstellungen",
+    diagnostic: "Diagnose",
+    filter: "Filtern…",
+    empty: "Noch keine Entitäten von Nibe Local Easyconf.",
+    none: "Nichts entspricht dem Filter.",
+    details: "Mehr Info",
+    unavailable: "nicht verfügbar",
+    on: "an",
+    off: "aus",
+    title: "NIBE Wärmepumpe",
+    overview: "Übersicht",
+    controls: "Steuerung",
+    performance: "Leistung",
+    values: "Alle Werte",
+    quick: "Schnellsteuerung",
+    now: "Jetzt",
+    readings: "Kennzahlen",
+    heating: "Heizung",
+    hotwater: "Warmwasser",
+    operation: "Betrieb",
+    air: "Lüfter und Pumpen",
+    other: "Sonstiges",
+    graphTemps: "Temperaturen, 24 Stunden",
+    graphCompressor: "Der Verdichter, 24 Stunden",
+    graphEnergy: "Energie pro Tag",
+    graphCop: "Leistungszahl pro Tag",
+    noControls: "Kein steuerbarer Wert ist eingeschaltet.",
+    explain: "Erklärung",
+  },
+  fr: {
+    sensor: "Mesures",
+    control: "Commandes",
+    config: "Réglages",
+    diagnostic: "Diagnostic",
+    filter: "Filtrer…",
+    empty: "Aucune entité de Nibe Local Easyconf pour l'instant.",
+    none: "Rien ne correspond au filtre.",
+    details: "Plus d'infos",
+    unavailable: "indisponible",
+    on: "activé",
+    off: "désactivé",
+    title: "Pompe à chaleur NIBE",
+    overview: "Vue d'ensemble",
+    controls: "Commandes",
+    performance: "Performance",
+    values: "Toutes les valeurs",
+    quick: "Commandes rapides",
+    now: "En ce moment",
+    readings: "Chiffres clés",
+    heating: "Chauffage",
+    hotwater: "Eau chaude",
+    operation: "Fonctionnement",
+    air: "Ventilateurs et pompes",
+    other: "Divers",
+    graphTemps: "Températures, 24 heures",
+    graphCompressor: "Le compresseur, 24 heures",
+    graphEnergy: "Énergie par jour",
+    graphCop: "Coefficient de performance par jour",
+    noControls: "Aucune valeur réglable n'est activée.",
+    explain: "Explication",
   },
   en: {
     sensor: "Readings",
@@ -58,12 +156,143 @@ const TEXT = {
     on: "on",
     off: "off",
     title: "NIBE heat pump",
+    overview: "Overview",
+    controls: "Controls",
+    performance: "Performance",
+    values: "All values",
+    quick: "Quick controls",
+    now: "Right now",
+    readings: "Key readings",
+    heating: "Heating",
+    hotwater: "Hot water",
+    operation: "Operation",
+    air: "Fans and pumps",
+    other: "Other",
+    graphTemps: "Temperatures, 24 hours",
+    graphCompressor: "The compressor, 24 hours",
+    graphEnergy: "Energy per day",
+    graphCop: "Coefficient of performance, daily",
+    noControls: "No writable value is switched on.",
+    explain: "Explanation",
   },
 };
 
 const GROUP_ORDER = ["sensor", "control", "config", "diagnostic"];
+const TAB_ORDER = ["overview", "controls", "performance", "values"];
+const CONTROL_DOMAINS = ["select", "number", "switch", "button"];
+const CONTROL_GROUP_ORDER = ["heating", "hotwater", "operation", "air", "other"];
 
-/** The viewing user's language, falling back to English for anything else. */
+/** Which part of the house a writable value belongs to. The first rule that
+ *  matches decides, and the order is what makes it right: an alarm action that
+ *  lowers the hot water is about operation, a brine pump whose title is
+ *  "operating mode brine medium pump" is a pump, and "allow additional heat"
+ *  is about operation rather than heating even though it says heat. Matched
+ *  against the entity's name and NIBE's own title, so both languages and both
+ *  series land in the same places. */
+const CONTROL_RULES = [
+  ["operation", /larm|alarm/i],
+  ["hotwater", /varmvatten|hot ?water|\bvv\b|\bhw\b|lyx|lux/i],
+  ["air", /fläkt|\bfan\b|frånluft|exhaust|pump|brine|köldbärar|\bkb-|\bvb-|defrost|avfrost|filter/i],
+  ["operation", /driftläge|operating mode|elpatron|immersion|add(?:itional)?\.? ?heat|tillskott|semester|holiday|smart ?(?:control|price)/i],
+  ["heating", /värme|heat|kurv|curve|gradminut|degree ?minute|framledning|supply|\brum\b|room|kyla|cooling/i],
+];
+
+//: The overview, in the order the questions come: what is the pump doing, how
+//: warm is everything, and how hard is the compressor working. Each line is
+//: matched by several spellings, since the S- and F-series maps word their
+//: registers differently.
+const STATUS_PATTERNS = [
+  /^prio$|driftprioritering|priority/i,
+  /värmeläge|heating mode/i,
+  /driftläge|operating mode/i,
+  /varmvattenläge|hot ?water mode/i,
+];
+
+const READING_PATTERNS = [
+  /BT1 Outdoor|outdoor temperature|utetemperatur/i,
+  /BT2 Supply|supply line|framledning/i,
+  /BT3 Return|return line|returledning/i,
+  /calc\.? supply|beräknad framledning|calculated supply/i,
+  /BT7 HW|hot water top|varmvatten topp/i,
+  /BT6 HW|hot water charging|varmvattenladdning/i,
+  /BT10 Brine|brine in|köldbärare in/i,
+  /BT11 Brine|brine out|köldbärare ut/i,
+  /compressor frequency, actual|^compressor frequency$|^kompressorfrekvens$/i,
+  /compr\.? in power|compressor power input$/i,
+  /degree ?minutes|^gradminuter$/i,
+];
+
+//: The handful of controls the overview carries, in the order they matter to
+//: someone standing in the house: how the heating runs, how the hot water runs,
+//: whether anybody is home, and the exhaust air module's fans. Only what the
+//: pump actually has shows up, so a ground source pump without a module simply
+//: has no fans here.
+const QUICK_CONTROLS = [
+  { pattern: /värmeläge|heating mode/i, limit: 1 },
+  { pattern: /varmvattenläge|hot ?water (comfort |demand )?mode/i, limit: 1 },
+  { pattern: /varmvattenboost|hot ?water boost|tillfällig lyx|temporary lux/i, limit: 1 },
+  { pattern: /semester|holiday|vacation/i, limit: 1 },
+  // The exhaust air module belongs here through the control that runs it, its
+  // fan selector, and not through its service settings.
+  { pattern: /frånluftsmodul|exhaust air module|\bflm\b\s*\d*\s*(?:fan|fläkt)|fan ?mode(?!\s*\d)|fläktläge(?!\s*\d)/i, limit: 1 },
+  // Normal airflow, the one figure an owner changes; speeds 1 to 4 belong to
+  // the schedule and stay under Controls.
+  { pattern: /(frånluftsfläkt|exhaust air fan|exhaust fan speed|fläkthastighet)(?!.*\b[1-4]\b)/i, limit: 1 },
+];
+
+/** The controls the overview puts at the top, in QUICK_CONTROLS' order. */
+function pickQuickControls(rows) {
+  const writable = controlRows(rows);
+  const picked = [];
+  for (const { pattern, limit } of QUICK_CONTROLS) {
+    const matches = writable.filter(
+      (row) =>
+        !picked.includes(row) &&
+        (pattern.test(row.nibeTitle || "") || pattern.test(row.name || ""))
+    );
+    picked.push(...matches.slice(0, limit));
+  }
+  return picked;
+}
+
+/** What the overview shows: the pump's own state, and the numbers that say how
+ *  it is doing. The coefficient of performance has no card of its own; how the
+ *  pump is running right now is the day's figure, and the year's is one key
+ *  figure among the others. */
+function pickOverview(rows) {
+  const modes = pickByPatterns(rows, STATUS_PATTERNS, 4);
+  const alarm = rows.filter((row) => row.isAlarm).slice(0, 1);
+  const cop = rows.filter((row) => row.isCop);
+  const day = cop.filter((row) => row.copSpan === "day");
+  // A pump whose sensors carry no span keeps the old rule: the figure that has
+  // a number stands on the chip, rather than an empty "unavailable".
+  const chip = day.length
+    ? day.slice(0, 1)
+    : cop.slice().sort((a, b) => Number(hasNumber(b)) - Number(hasNumber(a))).slice(0, 1);
+  const status = alarm.concat(modes, chip);
+  const rest = cop.filter((row) => !status.includes(row));
+  const readings = rest.concat(
+    pickByPatterns(
+      rows.filter((row) => !status.includes(row) && !rest.includes(row)),
+      READING_PATTERNS,
+      9
+    )
+  );
+  return { status, readings, cop };
+}
+
+/** The language the page speaks. Home Assistant has two: the system language,
+ *  which is the one the integration named the entities in, and the language of
+ *  the person looking. Following the viewer would leave English entity names
+ *  under Swedish headings on an English installation, so the system language
+ *  wins and the whole page reads as one. */
+function languageOf(hass) {
+  const config = (hass && hass.config && hass.config.language) || "";
+  const viewer = (hass && hass.locale && hass.locale.language) || "";
+  return config || viewer;
+}
+
+/** The chosen language's words, falling back to English for anything else. */
 function textFor(language) {
   const code = String(language || "").slice(0, 2).toLowerCase();
   return TEXT[code] || TEXT.en;
@@ -73,8 +302,34 @@ function textFor(language) {
 function groupOf(entry, domain) {
   if (entry && entry.entity_category === "diagnostic") return "diagnostic";
   if (entry && entry.entity_category === "config") return "config";
-  if (["number", "select", "switch", "button"].includes(domain)) return "control";
+  if (CONTROL_DOMAINS.includes(domain)) return "control";
   return "sensor";
+}
+
+/** Which control group a writable row belongs to. */
+function controlGroupOf(row) {
+  const haystack = `${(row && row.name) || ""} ${(row && row.nibeTitle) || ""}`;
+  for (const [group, pattern] of CONTROL_RULES) {
+    if (pattern.test(haystack)) return group;
+  }
+  return "other";
+}
+
+/** The control a value deserves. A number gets a slider when its range has few
+ *  enough steps to aim at; degree minutes, which run from -3000 to 3000 in
+ *  tenths, would be a lottery, so those get a field to type in. */
+function widgetFor(entityId, attributes) {
+  const domain = String(entityId || "").split(".")[0];
+  if (domain === "select") return "select";
+  if (domain === "switch") return "toggle";
+  if (domain === "button") return "button";
+  if (domain !== "number") return "text";
+  const attrs = attributes || {};
+  const min = Number(attrs.min);
+  const max = Number(attrs.max);
+  const step = Number(attrs.step) || 1;
+  if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) return "number";
+  return (max - min) / step <= 120 ? "slider" : "number";
 }
 
 /** A state as a person reads it: the value with its unit, or a word. */
@@ -123,10 +378,137 @@ function collectRows(hass, deviceId) {
       description: attributes.description || "",
       nibeTitle: attributes.nibe_title || "",
       register: attributes.modbus_register,
+      deviceClass: attributes.device_class || "",
+      stateClass: attributes.state_class || "",
+      // The coefficient of performance sensors are the only ones carrying a
+      // basis, and they are what the performance graph is really about.
+      isCop: attributes.basis !== undefined,
+      // "day" or "year" on the coefficient of performance sensors: the day's
+      // figure belongs to right now, the year's among the key figures.
+      copSpan: attributes.span || "",
+      // The state as a string, for picking between two of the same kind: the
+      // day's coefficient of performance has no value on a mild day, when too
+      // little electricity has been used to divide by.
+      state: stateObj.state,
+      // The alarm sensor is the one that reads out an alarm code in words.
+      isAlarm: attributes.alarm_code !== undefined,
     });
   }
   rows.sort((a, b) => a.name.localeCompare(b.name));
   return rows;
+}
+
+/** The writable rows, in the order the control section shows them. */
+function controlRows(rows) {
+  const writable = rows.filter((row) =>
+    CONTROL_DOMAINS.includes(row.entityId.split(".")[0])
+  );
+  return writable.sort((a, b) => {
+    const left = CONTROL_GROUP_ORDER.indexOf(controlGroupOf(a));
+    const right = CONTROL_GROUP_ORDER.indexOf(controlGroupOf(b));
+    return left === right ? a.name.localeCompare(b.name) : left - right;
+  });
+}
+
+/** The first row matching each pattern, at most `limit`, never twice.
+ *  Patterns are matched against NIBE's title first, since that is the same
+ *  wording on every installation, and then the user-visible name. */
+function pickByPatterns(rows, patterns, limit) {
+  const picked = [];
+  for (const pattern of patterns) {
+    if (picked.length >= limit) break;
+    const hit = rows.find(
+      (row) =>
+        !picked.includes(row) &&
+        (pattern.test(row.nibeTitle || "") || pattern.test(row.name || ""))
+    );
+    if (hit) picked.push(hit);
+  }
+  return picked;
+}
+
+//: The series name their registers differently - "BT1 Outdoor Temperature" on
+//: the F-series, "Current outdoor temperature (BT1)" on the S-series - so each
+//: line is matched by several spellings, most wanted first.
+const TEMPERATURE_PATTERNS = [
+  /BT1 Outdoor|outdoor temperature|utetemperatur/i,
+  /BT2 Supply|supply line|framledning/i,
+  /BT3 Return|return line|returledning/i,
+  /BT7 HW|hot water top|varmvatten topp/i,
+  /BT6 HW|hot water charging|varmvattenladdning/i,
+  /BT10 Brine|brine in|köldbärare in/i,
+  /BT11 Brine|brine out|köldbärare ut/i,
+];
+
+const COMPRESSOR_PATTERNS = [
+  /compressor frequency, actual|^compressor frequency$|^kompressorfrekvens$/i,
+  /compr\.? in power|compressor power input$|kompressor.*effekt/i,
+  /degree ?minutes|^gradminuter$/i,
+];
+
+/** What the performance section draws, given what this pump reports.
+ *
+ * Each graph names the entities it needs; an empty one is left out, which is
+ * how an F-series pump ends up without the coefficient of performance and a
+ * pump without brine sensors without its brine lines.
+ */
+function pickGraphs(rows) {
+  const graphs = [];
+  const temps = pickByPatterns(
+    rows.filter((row) => row.deviceClass === "temperature"),
+    TEMPERATURE_PATTERNS,
+    6
+  );
+  if (temps.length) graphs.push({ key: "temps", title: "graphTemps", entities: ids(temps) });
+
+  const compressor = pickByPatterns(rows, COMPRESSOR_PATTERNS, 3);
+  if (compressor.length) {
+    graphs.push({ key: "compressor", title: "graphCompressor", entities: ids(compressor) });
+  }
+
+  const cop = rows.filter((row) => row.isCop).slice(0, 2);
+  if (cop.length) {
+    graphs.push({ key: "cop", title: "graphCop", entities: ids(cop), statistic: "mean" });
+  }
+
+  const energy = rows
+    .filter((row) => row.deviceClass === "energy" && row.stateClass === "total_increasing")
+    .slice(0, 3);
+  if (energy.length) {
+    graphs.push({ key: "energy", title: "graphEnergy", entities: ids(energy), statistic: "change" });
+  }
+  return graphs;
+}
+
+function hasNumber(row) {
+  return row && Number.isFinite(Number(row.state));
+}
+
+function ids(rows) {
+  return rows.map((row) => row.entityId);
+}
+
+/** A graph as a Home Assistant card configuration. Counters are drawn from the
+ *  long-term statistics, which is the only place a year of them survives; the
+ *  rest come from the recorder's own history. */
+function graphConfig(graph, text) {
+  if (graph.statistic) {
+    return {
+      type: "statistics-graph",
+      title: text[graph.title],
+      entities: graph.entities,
+      period: "day",
+      days_to_show: 30,
+      stat_types: [graph.statistic],
+      chart_type: graph.statistic === "change" ? "bar" : "line",
+    };
+  }
+  return {
+    type: "history-graph",
+    title: text[graph.title],
+    hours_to_show: 24,
+    entities: graph.entities,
+  };
 }
 
 /** What the list currently shows, as one string. Home Assistant hands the card
@@ -150,10 +532,32 @@ function stripDeviceName(name, deviceName) {
   return name;
 }
 
+/** The service call a control makes. Returned rather than called, so the
+ *  mapping from widget to service is testable without Home Assistant. */
+function serviceFor(entityId, value) {
+  const domain = String(entityId || "").split(".")[0];
+  if (domain === "select") {
+    return { domain: "select", service: "select_option", data: { entity_id: entityId, option: value } };
+  }
+  if (domain === "number") {
+    return { domain: "number", service: "set_value", data: { entity_id: entityId, value: Number(value) } };
+  }
+  if (domain === "switch") {
+    return { domain: "switch", service: value ? "turn_on" : "turn_off", data: { entity_id: entityId } };
+  }
+  if (domain === "button") {
+    return { domain: "button", service: "press", data: { entity_id: entityId } };
+  }
+  return null;
+}
+
 if (typeof module !== "undefined") {
   module.exports = {
     textFor, groupOf, formatState, matchesFilter, collectRows, stripDeviceName,
-    signature, GROUP_ORDER, DOMAIN,
+    signature, controlGroupOf, controlRows, widgetFor, pickGraphs, graphConfig,
+    languageOf,
+    pickByPatterns, serviceFor, pickOverview, pickQuickControls, hasNumber,
+    GROUP_ORDER, CONTROL_GROUP_ORDER, TAB_ORDER, DOMAIN,
   };
 }
 
@@ -162,7 +566,96 @@ if (typeof module !== "undefined") {
 if (typeof customElements !== "undefined") {
   const STYLE = `
     :host { display: block; }
-    .wrap { padding: 16px; }
+    .wrap { padding: 16px; max-width: 1600px; margin: 0 auto; }
+    .head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; }
+    h1 { font-size: 1.4rem; font-weight: 500; margin: 4px 0; color: var(--primary-text-color); }
+    h3 { font-size: .95rem; font-weight: 500; margin: 0 0 8px; color: var(--primary-text-color); }
+    .tabs {
+      display: flex; gap: 4px; margin: 12px 0 16px; overflow-x: auto;
+      border-bottom: 1px solid var(--divider-color, #e0e0e0);
+    }
+    .tabs button {
+      font: inherit; padding: 10px 16px; border: none; background: none; cursor: pointer;
+      color: var(--secondary-text-color); border-bottom: 2px solid transparent; white-space: nowrap;
+    }
+    .tabs button[aria-selected="true"] {
+      color: var(--primary-color, #03a9f4); border-bottom-color: var(--primary-color, #03a9f4);
+    }
+    .tabs button:focus-visible { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: -2px; }
+    .cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+    .card {
+      background: var(--ha-card-background, var(--card-background-color, #fff));
+      border-radius: var(--ha-card-border-radius, 12px);
+      box-shadow: var(--ha-card-box-shadow, 0 2px 4px rgba(0,0,0,.08));
+      border: var(--ha-card-border-width, 0) solid var(--ha-card-border-color, transparent);
+      padding: 14px 16px; margin-bottom: 16px;
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+    .chip {
+      display: flex; gap: 8px; align-items: baseline; padding: 8px 14px; border-radius: 999px;
+      background: var(--secondary-background-color, #f1f3f4);
+    }
+    .chip .label { color: var(--secondary-text-color); font-size: .8em; }
+    .chip .value { color: var(--primary-text-color); font-weight: 500; }
+    .chip.alarm-on { background: var(--error-color, #db4437); }
+    .chip.alarm-on .label, .chip.alarm-on .value { color: #fff; }
+    .tiles { display: grid; gap: 16px 24px; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+    .tile .label { color: var(--secondary-text-color); font-size: .8em; overflow-wrap: anywhere; }
+    .tile .note, .chips-note { grid-column: auto; padding-top: 4px; }
+    .chips-note { color: var(--secondary-text-color); font-size: .85em; line-height: 1.45; }
+    .tile .big { font-size: 1.6rem; font-weight: 500; color: var(--primary-text-color); }
+    .tile .sub { color: var(--secondary-text-color); font-size: .75em; }
+    .control {
+      display: grid; grid-template-columns: 1fr auto; align-items: center;
+      gap: 6px 12px; padding: 8px 0; border-bottom: 1px solid var(--divider-color, #eee);
+    }
+    .control:last-of-type { border-bottom: none; }
+    .control .name { color: var(--primary-text-color); overflow-wrap: anywhere; }
+    .control .widget { display: flex; align-items: center; gap: 8px; justify-self: end; }
+    .control .widget[data-pending="1"] { opacity: .5; }
+    .control select, .control input[type="number"] {
+      font: inherit; padding: 6px 8px; border-radius: 8px; max-width: 190px;
+      border: 1px solid var(--divider-color, #ccc);
+      background: var(--card-background-color, #fff); color: var(--primary-text-color);
+    }
+    .control input[type="range"] { width: 130px; accent-color: var(--primary-color, #03a9f4); }
+    .control .reading { color: var(--primary-text-color); font-weight: 500; min-width: 64px; text-align: right; }
+    .control .widget button {
+      font: inherit; padding: 6px 14px; border-radius: 8px; cursor: pointer;
+      border: 1px solid var(--primary-color, #03a9f4);
+      background: transparent; color: var(--primary-color, #03a9f4);
+    }
+    .switch { position: relative; width: 44px; height: 24px; }
+    .switch input { opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+    .switch .track {
+      position: absolute; inset: 0; border-radius: 12px; pointer-events: none;
+      background: var(--divider-color, #ccc); transition: background .15s;
+    }
+    .switch .knob {
+      position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%;
+      background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: transform .15s; pointer-events: none;
+    }
+    .switch input:checked ~ .track { background: var(--primary-color, #03a9f4); }
+    .switch input:checked ~ .knob { transform: translateX(20px); }
+    .switch input:focus-visible ~ .track { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: 2px; }
+    .why {
+      background: none; border: none; cursor: pointer; padding: 0 2px;
+      color: var(--primary-color, #03a9f4); font: inherit; line-height: 1;
+    }
+    .why:focus-visible { outline: 1px solid var(--primary-color, #03a9f4); outline-offset: 2px; }
+    .note {
+      grid-column: 1 / -1; color: var(--secondary-text-color); font-size: .85em;
+      line-height: 1.45; padding-bottom: 4px;
+    }
+    .graphs { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); }
+    /* The overview reads left to right: what to change, and how it has run.
+       Both boxes take the height of the taller one, so the row lines up. */
+    .beside { display: grid; gap: 16px; align-items: stretch;
+              grid-template-columns: minmax(280px, 1fr) minmax(0, 2fr); }
+    .beside > * { min-width: 0; margin-bottom: 0; }
+    .beside > .graphs { grid-template-columns: minmax(0, 1fr); }
+    .beside > .graphs > * { height: 100%; }
+    @media (max-width: 900px) { .beside { grid-template-columns: 1fr; } }
     .toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
     .toolbar input {
       flex: 1; max-width: 420px; padding: 8px 12px; font: inherit;
@@ -196,6 +689,9 @@ if (typeof customElements !== "undefined") {
     .empty { color: var(--secondary-text-color); padding: 24px 4px; }
   `;
 
+  //: Where the chosen tab is remembered, so a reload comes back to it.
+  const TAB_STORAGE = "nibe-easyconf-tab";
+
   /** Shared rendering: one instance per card or panel. */
   class NibeEasyconfView {
     constructor(root) {
@@ -204,8 +700,22 @@ if (typeof customElements !== "undefined") {
       this.open = new Set();
       this.hass = null;
       this.deviceId = null;
+      this.tabs = TAB_ORDER;
+      this.tab = restoreTab();
       this.built = false;
       this.lastSignature = null;
+      this.controlSignature = null;
+      this.graphSignature = null;
+      this.overviewSignature = null;
+      this.quickSignature = null;
+      this.overviewGraphSignature = null;
+      this.widgets = new Map();
+      this.quickWidgets = new Map();
+      this.readingTiles = new Map();
+      this.statusChips = new Map();
+      this.graphCards = [];
+      this.overviewCards = [];
+      this.explained = new Set();
     }
 
     build() {
@@ -213,23 +723,110 @@ if (typeof customElements !== "undefined") {
       const style = document.createElement("style");
       style.textContent = STYLE;
       this.root.appendChild(style);
+
       this.wrap = document.createElement("div");
       this.wrap.className = "wrap";
+
+      const head = document.createElement("div");
+      head.className = "head";
+      this.heading = document.createElement("h1");
+      head.appendChild(this.heading);
+
+      this.tabBar = document.createElement("div");
+      this.tabBar.className = "tabs";
+      this.tabBar.setAttribute("role", "tablist");
+      this.tabButtons = new Map();
+      for (const tab of this.tabs) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.setAttribute("role", "tab");
+        button.addEventListener("click", () => this.showTab(tab));
+        this.tabBar.appendChild(button);
+        this.tabButtons.set(tab, button);
+      }
+
+      // Overview
+      this.overviewPanel = document.createElement("div");
+      this.quickCard = document.createElement("div");
+      this.quickCard.className = "card";
+      this.quickHeading = document.createElement("h3");
+      this.quickBody = document.createElement("div");
+      this.quickCard.append(this.quickHeading, this.quickBody);
+      this.statusCard = document.createElement("div");
+      this.statusCard.className = "card";
+      this.statusChipsRow = document.createElement("div");
+      this.statusChipsRow.className = "chips";
+      this.statusHeading = document.createElement("h3");
+      this.statusNote = document.createElement("div");
+      this.statusNote.className = "chips-note";
+      this.statusNote.hidden = true;
+      this.statusCard.append(this.statusHeading, this.statusChipsRow, this.statusNote);
+      this.readingsCard = document.createElement("div");
+      this.readingsCard.className = "card";
+      this.readingsHeading = document.createElement("h3");
+      this.readingsGrid = document.createElement("div");
+      this.readingsGrid.className = "tiles";
+      this.readingsCard.append(this.readingsHeading, this.readingsGrid);
+      this.overviewGraphs = document.createElement("div");
+      this.overviewGraphs.className = "graphs";
+      // The graph and the controls share a row: the graph takes the width it
+      // needs to be readable, the controls stand beside it rather than under.
+      this.overviewRow = document.createElement("div");
+      this.overviewRow.className = "beside";
+      this.overviewRow.append(this.quickCard, this.overviewGraphs);
+      this.overviewPanel.append(
+        this.statusCard, this.overviewRow, this.readingsCard
+      );
+
+      // Controls
+      this.controlsPanel = document.createElement("div");
+      this.controlsBody = document.createElement("div");
+      this.controlsBody.className = "cards";
+      this.controlsPanel.appendChild(this.controlsBody);
+
+      // Performance
+      this.performancePanel = document.createElement("div");
+      this.graphsBody = document.createElement("div");
+      this.graphsBody.className = "graphs";
+      this.performancePanel.appendChild(this.graphsBody);
+
+      // All values
+      this.valuesPanel = document.createElement("div");
       const toolbar = document.createElement("div");
       toolbar.className = "toolbar";
       this.input = document.createElement("input");
       this.input.type = "search";
       this.input.addEventListener("input", () => {
         this.filter = this.input.value;
-        this.render(true);
+        this.renderList(true);
       });
       this.count = document.createElement("span");
       this.count.className = "count";
       toolbar.append(this.input, this.count);
       this.body = document.createElement("div");
-      this.wrap.append(toolbar, this.body);
+      this.valuesPanel.append(toolbar, this.body);
+
+      this.panels = {
+        overview: this.overviewPanel,
+        controls: this.controlsPanel,
+        performance: this.performancePanel,
+        values: this.valuesPanel,
+      };
+      this.wrap.append(head, this.tabBar);
+      for (const tab of this.tabs) this.wrap.appendChild(this.panels[tab]);
       this.root.appendChild(this.wrap);
       this.built = true;
+      if (!this.tabs.includes(this.tab)) this.tab = this.tabs[0];
+    }
+
+    showTab(tab) {
+      this.tab = tab;
+      try {
+        window.localStorage.setItem(TAB_STORAGE, tab);
+      } catch (err) {
+        // A browser that refuses storage still gets the tab for this visit.
+      }
+      this.render();
     }
 
     moreInfo(entityId) {
@@ -238,21 +835,418 @@ if (typeof customElements !== "undefined") {
       }));
     }
 
-    render(force = false) {
+    call(entityId, value) {
+      const call = serviceFor(entityId, value);
+      if (!call) return;
+      this.hass.callService(call.domain, call.service, call.data);
+    }
+
+    render() {
       if (!this.hass) return;
       if (!this.built) this.build();
-      const text = textFor(this.hass.locale && this.hass.locale.language);
+      const text = textFor(languageOf(this.hass));
       this.input.placeholder = text.filter;
+      const rows = collectRows(this.hass, this.deviceId);
+      this.heading.textContent = this.deviceNames() || text.title;
 
-      const all = collectRows(this.hass, this.deviceId);
+      for (const [tab, button] of this.tabButtons) {
+        button.textContent = text[tab];
+        button.setAttribute("aria-selected", String(tab === this.tab));
+        this.panels[tab].hidden = tab !== this.tab;
+      }
+
+      // Only the tab in front is drawn; the others keep what they had.
+      if (this.tab === "overview") this.renderOverview(rows, text);
+      if (this.tab === "controls") this.renderControls(rows, text);
+      if (this.tab === "performance") this.renderGraphs(rows, text);
+      if (this.tab === "values") this.renderList(false, rows, text);
+    }
+
+    deviceNames() {
+      const devices = this.hass.devices || {};
+      const names = new Set();
+      for (const entry of Object.values(this.hass.entities || {})) {
+        if (!entry || entry.platform !== DOMAIN || !entry.device_id) continue;
+        if (this.deviceId && entry.device_id !== this.deviceId) continue;
+        const device = devices[entry.device_id];
+        if (device) names.add(device.name_by_user || device.name);
+      }
+      return [...names].join(" · ");
+    }
+
+    /* ----------------------------------------------------------- overview */
+
+    renderOverview(rows, text) {
+      const picked = pickOverview(rows);
+      const structure = [
+        ids(picked.status).join(","), ids(picked.readings).join(","), ids(picked.cop).join(","),
+      ].join("|");
+      this.statusHeading.textContent = text.now;
+      this.quickHeading.textContent = text.quick;
+      this.readingsHeading.textContent = text.readings;
+
+      if (structure !== this.overviewSignature) {
+        this.overviewSignature = structure;
+        this.statusChips.clear();
+        this.readingTiles.clear();
+        this.statusChipsRow.innerHTML = "";
+        this.readingsGrid.innerHTML = "";
+        this.statusNote.hidden = true;
+        for (const row of picked.status) {
+          const chip = document.createElement("div");
+          chip.className = "chip";
+          const label = document.createElement("span");
+          label.className = "label";
+          label.textContent = row.name;
+          const value = document.createElement("span");
+          value.className = "value";
+          chip.append(label, value);
+          if (row.description) {
+            chip.title = row.description;
+            label.appendChild(this.explainButton(row, text, (open) => {
+              this.statusNote.textContent = open ? row.description : "";
+              this.statusNote.hidden = !open;
+            }));
+          }
+          this.statusChipsRow.appendChild(chip);
+          this.statusChips.set(row.entityId, { chip, value, isAlarm: row.isAlarm });
+        }
+        for (const row of picked.readings) {
+          this.readingsGrid.appendChild(this.buildTile(row, row.isCop));
+        }
+      }
+      this.statusCard.hidden = !picked.status.length;
+      this.readingsCard.hidden = !picked.readings.length;
+
+      for (const [entityId, chip] of this.statusChips) {
+        const stateObj = this.hass.states[entityId];
+        chip.value.textContent = formatState(stateObj, text);
+        // An alarm that is not "no alarm" is the one thing on this page that
+        // should be impossible to miss.
+        const raised = chip.isAlarm && stateObj &&
+          stateObj.attributes.alarm_code !== 0 && stateObj.state !== "unavailable";
+        chip.chip.classList.toggle("alarm-on", Boolean(raised));
+      }
+      for (const [entityId, tile] of this.readingTiles) {
+        const stateObj = this.hass.states[entityId];
+        tile.value.textContent = formatState(stateObj, text);
+        if (tile.sub) {
+          tile.sub.textContent = (stateObj && stateObj.attributes.basis) || "";
+        }
+      }
+      this.renderQuickControls(rows, text);
+      this.renderOverviewGraph(rows, text);
+    }
+
+    /** The most important controls, on the overview, as the same widgets the
+     *  controls tab uses. They keep their own map: both tabs can hold a widget
+     *  for the same entity, and each has to update its own. */
+    renderQuickControls(rows, text) {
+      const controls = pickQuickControls(rows);
+      const structure = ids(controls).join("|");
+      if (structure !== this.quickSignature) {
+        this.quickSignature = structure;
+        this.quickWidgets.clear();
+        this.quickBody.innerHTML = "";
+        for (const row of controls) {
+          this.quickBody.appendChild(this.buildControl(row, text, this.quickWidgets));
+        }
+      }
+      this.quickCard.hidden = !controls.length;
+      for (const widget of this.quickWidgets.values()) widget.update();
+    }
+
+    buildTile(row, withBasis = false, text = null) {
+      text = text || textFor(languageOf(this.hass));
+      const tile = document.createElement("div");
+      tile.className = "tile";
+      const label = document.createElement("div");
+      label.className = "label";
+      label.textContent = row.name;
+      const value = document.createElement("div");
+      value.className = "big";
+      tile.append(label, value);
+      let note = null;
+      if (row.description) {
+        tile.title = row.description;
+        note = document.createElement("div");
+        note.className = "note";
+        note.textContent = row.description;
+        note.hidden = !this.explained.has(row.entityId);
+        label.appendChild(
+          this.explainButton(row, text, (open) => { note.hidden = !open; })
+        );
+      }
+      let sub = null;
+      if (withBasis) {
+        sub = document.createElement("div");
+        sub.className = "sub";
+        tile.appendChild(sub);
+      }
+      // The explanation stands under the figure and what it rests on.
+      if (note) tile.appendChild(note);
+      this.readingTiles.set(row.entityId, { value, sub });
+      return tile;
+    }
+
+    /** One graph on the overview: the circuit over the last day. */
+    async renderOverviewGraph(rows, text) {
+      const temps = pickGraphs(rows).filter((graph) => graph.key === "temps");
+      const structure = temps.map((graph) => graph.entities.join(",")).join("|");
+      if (structure === this.overviewGraphSignature) {
+        for (const card of this.overviewCards) card.hass = this.hass;
+        return;
+      }
+      this.overviewGraphSignature = structure;
+      this.overviewCards = await this.fillGraphs(this.overviewGraphs, temps, text);
+    }
+
+    /* ----------------------------------------------------------- controls */
+
+    renderControls(rows, text) {
+      const controls = controlRows(rows);
+      const structure = ids(controls).join("|");
+      if (structure !== this.controlSignature) {
+        this.controlSignature = structure;
+        this.buildControls(controls, text);
+      }
+      for (const widget of this.widgets.values()) widget.update();
+    }
+
+    buildControls(controls, text) {
+      this.controlsBody.innerHTML = "";
+      this.widgets.clear();
+      if (!controls.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = text.noControls;
+        this.controlsBody.appendChild(empty);
+        return;
+      }
+      for (const group of CONTROL_GROUP_ORDER) {
+        const members = controls.filter((row) => controlGroupOf(row) === group);
+        if (!members.length) continue;
+        const card = document.createElement("div");
+        card.className = "card";
+        const heading = document.createElement("h3");
+        heading.textContent = text[group];
+        card.appendChild(heading);
+        for (const row of members) card.appendChild(this.buildControl(row, text, this.widgets));
+        this.controlsBody.appendChild(card);
+      }
+    }
+
+    /** The blue "i" that opens an explanation. Everything the page shows has
+     *  one: a value is only worth reading if you know what it is. */
+    explainButton(row, text, toggle) {
+      const why = document.createElement("button");
+      why.className = "why";
+      why.type = "button";
+      why.textContent = "ⓘ";
+      why.setAttribute("aria-label", text.explain);
+      why.addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (this.explained.has(row.entityId)) this.explained.delete(row.entityId);
+        else this.explained.add(row.entityId);
+        toggle(this.explained.has(row.entityId));
+      });
+      return why;
+    }
+
+    buildControl(row, text, registry) {
+      const el = document.createElement("div");
+      el.className = "control";
+
+      const name = document.createElement("span");
+      name.className = "name";
+      name.textContent = row.name;
+      const note = document.createElement("div");
+      note.className = "note";
+      note.textContent = row.description;
+      note.hidden = !this.explained.has(row.entityId);
+      if (row.description) {
+        name.title = row.description;
+        name.appendChild(
+          this.explainButton(row, text, (open) => { note.hidden = !open; })
+        );
+      }
+
+      const widget = document.createElement("span");
+      widget.className = "widget";
+      el.append(name, widget, note);
+      registry.set(row.entityId, this.fillWidget(widget, row, text));
+      return el;
+    }
+
+    /** Build the widget itself and return how to keep it current. A widget the
+     *  user is holding is left alone: Home Assistant sends a new state while a
+     *  slider is being dragged, and writing it back would fight the thumb. */
+    fillWidget(container, row, text) {
+      const entityId = row.entityId;
+      const kind = widgetFor(entityId, (this.hass.states[entityId] || {}).attributes);
+      const send = (value) => {
+        container.dataset.pending = "1";
+        this.call(entityId, value);
+        setTimeout(() => { container.dataset.pending = "0"; }, 6000);
+      };
+
+      if (kind === "select") {
+        const select = document.createElement("select");
+        select.addEventListener("change", () => send(select.value));
+        container.appendChild(select);
+        return { update: () => {
+          const stateObj = this.hass.states[entityId];
+          const options = (stateObj && stateObj.attributes.options) || [];
+          if (select.options.length !== options.length ||
+              [...select.options].some((option, i) => option.value !== options[i])) {
+            select.innerHTML = "";
+            for (const option of options) {
+              const item = document.createElement("option");
+              item.value = option;
+              item.textContent = option;
+              select.appendChild(item);
+            }
+          }
+          if (document.activeElement !== select && stateObj) {
+            select.value = stateObj.state;
+            if (select.value === stateObj.state) container.dataset.pending = "0";
+          }
+          select.disabled = !stateObj || stateObj.state === "unavailable";
+        } };
+      }
+
+      if (kind === "toggle") {
+        const label = document.createElement("label");
+        label.className = "switch";
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        const track = document.createElement("span");
+        track.className = "track";
+        const knob = document.createElement("span");
+        knob.className = "knob";
+        input.addEventListener("change", () => send(input.checked));
+        label.append(input, track, knob);
+        container.appendChild(label);
+        return { update: () => {
+          const stateObj = this.hass.states[entityId];
+          if (document.activeElement !== input) input.checked = Boolean(stateObj && stateObj.state === "on");
+          input.disabled = !stateObj || stateObj.state === "unavailable";
+          if (stateObj && (stateObj.state === "on") === input.checked) container.dataset.pending = "0";
+        } };
+      }
+
+      if (kind === "button") {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = text.details;
+        button.addEventListener("click", () => send(null));
+        container.appendChild(button);
+        return { update: () => {} };
+      }
+
+      if (kind === "slider") {
+        const attrs = (this.hass.states[entityId] || {}).attributes || {};
+        const slider = document.createElement("input");
+        slider.type = "range";
+        slider.min = attrs.min;
+        slider.max = attrs.max;
+        slider.step = attrs.step || 1;
+        const reading = document.createElement("span");
+        reading.className = "reading";
+        slider.addEventListener("input", () => {
+          reading.textContent = withUnit(slider.value, attrs.unit_of_measurement);
+        });
+        slider.addEventListener("change", () => send(slider.value));
+        container.append(slider, reading);
+        return { update: () => {
+          const stateObj = this.hass.states[entityId];
+          if (!stateObj) return;
+          if (document.activeElement !== slider) {
+            slider.value = stateObj.state;
+            reading.textContent = formatState(stateObj, text);
+            if (String(slider.value) === String(stateObj.state)) container.dataset.pending = "0";
+          }
+          slider.disabled = stateObj.state === "unavailable";
+        } };
+      }
+
+      const attrs = (this.hass.states[entityId] || {}).attributes || {};
+      const field = document.createElement("input");
+      field.type = "number";
+      if (attrs.min !== undefined) field.min = attrs.min;
+      if (attrs.max !== undefined) field.max = attrs.max;
+      field.step = attrs.step || "any";
+      const unit = document.createElement("span");
+      unit.className = "reading";
+      unit.textContent = attrs.unit_of_measurement || "";
+      field.addEventListener("change", () => send(field.value));
+      container.append(field, unit);
+      return { update: () => {
+        const stateObj = this.hass.states[entityId];
+        if (!stateObj) return;
+        if (document.activeElement !== field) {
+          field.value = stateObj.state;
+          if (String(field.value) === String(stateObj.state)) container.dataset.pending = "0";
+        }
+        field.disabled = stateObj.state === "unavailable";
+      } };
+    }
+
+    /* ------------------------------------------------------------- graphs */
+
+    async renderGraphs(rows, text) {
+      const graphs = pickGraphs(rows);
+      const structure = graphs.map((graph) => `${graph.key}:${graph.entities.join(",")}`).join("|");
+      if (structure === this.graphSignature) {
+        for (const card of this.graphCards) card.hass = this.hass;
+        return;
+      }
+      this.graphSignature = structure;
+      this.graphCards = await this.fillGraphs(this.graphsBody, graphs, text);
+    }
+
+    /** Put Home Assistant's own history and statistics cards in a container.
+     *  They are reached the way every custom card reaches them; if that ever
+     *  fails the graphs are left out, since the page is useful without them. */
+    async fillGraphs(container, graphs, text) {
+      container.innerHTML = "";
+      if (!graphs.length) return [];
+      let helpers = null;
+      try {
+        helpers = window.loadCardHelpers ? await window.loadCardHelpers() : null;
+      } catch (err) {
+        helpers = null;
+      }
+      if (!helpers) return [];
+      const cards = [];
+      for (const graph of graphs) {
+        try {
+          const card = helpers.createCardElement(graphConfig(graph, text));
+          card.hass = this.hass;
+          container.appendChild(card);
+          cards.push(card);
+        } catch (err) {
+          // One graph the frontend cannot build must not take the others.
+        }
+      }
+      return cards;
+    }
+
+    /* --------------------------------------------------------- all values */
+
+    renderList(force = false, rows = null, text = null) {
+      if (!this.hass) return;
+      text = text || textFor(languageOf(this.hass));
+      const all = rows || collectRows(this.hass, this.deviceId);
+
       const current = signature(this.hass, all);
       if (!force && current === this.lastSignature) return;
       this.lastSignature = current;
-      const rows = all.filter((row) => matchesFilter(this.filter, row.name, row.description));
-      this.count.textContent = `${rows.length} / ${all.length}`;
+      const shown = all.filter((row) => matchesFilter(this.filter, row.name, row.description));
+      this.count.textContent = `${shown.length} / ${all.length}`;
 
       this.body.innerHTML = "";
-      if (!all.length || !rows.length) {
+      if (!all.length || !shown.length) {
         const empty = document.createElement("div");
         empty.className = "empty";
         empty.textContent = all.length ? text.none : text.empty;
@@ -261,7 +1255,7 @@ if (typeof customElements !== "undefined") {
       }
 
       for (const group of GROUP_ORDER) {
-        const members = rows.filter((row) => row.group === group);
+        const members = shown.filter((row) => row.group === group);
         if (!members.length) continue;
         const heading = document.createElement("h2");
         heading.textContent = text[group];
@@ -319,7 +1313,7 @@ if (typeof customElements !== "undefined") {
       const toggle = () => {
         if (this.open.has(row.entityId)) this.open.delete(row.entityId);
         else this.open.add(row.entityId);
-        this.render(true);
+        this.renderList(true);
       };
       el.addEventListener("click", toggle);
       el.addEventListener("keydown", (event) => {
@@ -332,6 +1326,20 @@ if (typeof customElements !== "undefined") {
     }
   }
 
+  function withUnit(value, unit) {
+    return unit ? `${value} ${unit}` : String(value);
+  }
+
+  function restoreTab() {
+    try {
+      const saved = window.localStorage.getItem(TAB_STORAGE);
+      if (saved && TAB_ORDER.includes(saved)) return saved;
+    } catch (err) {
+      // No storage: start on the overview, like a first visit.
+    }
+    return TAB_ORDER[0];
+  }
+
   class NibeEasyconfCard extends HTMLElement {
     constructor() {
       super();
@@ -339,14 +1347,24 @@ if (typeof customElements !== "undefined") {
     }
     setConfig(config) {
       this.view.deviceId = (config && config.device_id) || null;
+      const tabs = config && config.tabs;
+      this.view.tabs = Array.isArray(tabs) && tabs.length
+        ? TAB_ORDER.filter((tab) => tabs.includes(tab))
+        : TAB_ORDER;
+      this.view.built = false;
       this.view.lastSignature = null;
+      this.view.controlSignature = null;
+      this.view.graphSignature = null;
+      this.view.overviewSignature = null;
+      this.view.quickSignature = null;
+      this.view.overviewGraphSignature = null;
     }
     set hass(hass) {
       this.view.hass = hass;
       this.view.render();
     }
     getCardSize() {
-      return 12;
+      return 20;
     }
     static getStubConfig() {
       return {};
@@ -378,7 +1396,7 @@ if (typeof customElements !== "undefined") {
     window.customCards.push({
       type: "nibe-easyconf-card",
       name: "Nibe Local Easyconf",
-      description: "The heat pump's entities with the explanation for each.",
+      description: "The pump's controls, a few graphs, and every value with its explanation.",
     });
   }
 }

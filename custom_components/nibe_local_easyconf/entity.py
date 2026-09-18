@@ -8,6 +8,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN, platform_for
 from .coordinator import NibeCoordinator
 from .descriptions import describe, friendly_name
+from .translations_extra import entity_language
 
 
 class NibeRegisterEntity(CoordinatorEntity[NibeCoordinator]):
@@ -98,7 +99,7 @@ def async_add_register_entities(entry, platform: str, factory, async_add_entitie
     class it builds, so the selection lives here.
     """
     coordinator: NibeCoordinator = entry.runtime_data
-    language = entry.data.get("language", "sv")
+    language = entity_language(coordinator.hass.config.language, entry.data.get("language"))
     async_add_entities(
         factory(coordinator, register, coordinator.registers[register], language)
         for register in sorted(coordinator.discovery.present)

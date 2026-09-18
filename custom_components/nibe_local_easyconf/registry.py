@@ -29,6 +29,7 @@ from importlib.resources import files
 import json
 import logging
 
+from . import fseries
 from .discovery import function_code, modbus_address
 from .modbus import ModbusTransportError, NibeModbusClient
 from .official import LABELS, labels_for
@@ -80,7 +81,15 @@ def model_map(data_file: str) -> dict[int, dict]:
     relay setting on an S1155 and a calculated supply temperature on an F1255).
     """
     raw = (files("nibe.data") / f"{data_file}.json").read_text(encoding="utf-8")
-    return {int(key): value for key, value in json.loads(raw).items()}
+    registers = {int(key): value for key, value in json.loads(raw).items()}
+    # Registers the library's map for this model lacks but the pump answers,
+    # such as an exhaust air module's speed selector; see fseries.py.
+    for register, meta in fseries.EXTRA_REGISTERS.items():
+        registers.setdefault(register, dict(meta))
+    for register, patch in fseries.REGISTER_PATCHES.items():
+        if register in registers:
+            registers[register] = {**registers[register], **patch}
+    return registers
 
 
 async def async_union_map(hass) -> dict[int, dict]:

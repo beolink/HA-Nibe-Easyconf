@@ -5,6 +5,7 @@ import importlib
 from .conftest import PACKAGE
 
 descriptions = importlib.import_module(f"{PACKAGE}.descriptions")
+translations_extra = importlib.import_module(f"{PACKAGE}.translations_extra")
 
 
 def test_a_title_that_is_only_a_designation_still_gets_a_name():
@@ -90,3 +91,27 @@ def test_english_output_is_available():
     )
     assert "outdoor temperature" in text.lower()
     assert "utetemperatur" not in text.lower()
+
+
+# --------------------------------------------------------------- language
+
+
+def test_the_entities_speak_home_assistants_language():
+    """The complaint that prompted this: an installation set up in English and
+    later switched to Swedish had Swedish headings over English names."""
+    assert translations_extra.entity_language("sv", "en") == "sv"
+    assert translations_extra.entity_language("en", "sv") == "en"
+    # Regional spellings, and the language set-up stored as the fallback.
+    assert translations_extra.entity_language("de-DE", "sv") == "de"
+    assert translations_extra.entity_language("", "sv") == "sv"
+    # A language nobody has written words for is English, not half of one.
+    assert translations_extra.entity_language("nl", None) == "en"
+    assert translations_extra.entity_language(None, None) == "en"
+
+
+def test_a_language_without_words_falls_back_to_english():
+    meta = {"size": "s16", "factor": 10}
+    german = descriptions.describe("BT1 Outdoor Temperature", 40004, meta, language="de")
+    english = descriptions.describe("BT1 Outdoor Temperature", 40004, meta, language="en")
+    assert german == english
+    assert translations_extra.translate("Outdoor temperature", "de") == "Outdoor temperature"

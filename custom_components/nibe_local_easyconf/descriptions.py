@@ -18,7 +18,9 @@ from __future__ import annotations
 
 import re
 
+from .explanations import explain
 from .official import labels_for
+from .translations_extra import translate
 
 Bilingual = tuple[str, str]  # (svenska, English)
 
@@ -276,6 +278,14 @@ CONCEPTS: list[tuple[re.Pattern, Bilingual]] = [
 #: Common English phrases NIBE uses in titles, and their Swedish equivalent.
 #: Applied longest-first so "hot water top" wins over "hot water".
 TITLE_PHRASES: dict[str, str] = {
+    "Fan Mode": "Fläktläge",
+    "Fan speed current": "Fläktläge, aktuellt",
+    "Exhaust Fan speed normal": "Frånluftsfläkt, normal",
+    "Exhaust Fan speed 1": "Frånluftsfläkt, hastighet 1",
+    "Exhaust Fan speed 2": "Frånluftsfläkt, hastighet 2",
+    "Exhaust Fan speed 3": "Frånluftsfläkt, hastighet 3",
+    "Exhaust Fan speed 4": "Frånluftsfläkt, hastighet 4",
+    "FLM 1 accessory": "Frånluftsmodul FLM 1",
     "current outdoor temperature": "utetemperatur",
     "outdoor temperature": "utetemperatur",
     "degree minutes": "gradminuter",
@@ -367,7 +377,9 @@ _CODE_RE = re.compile(r"\b([A-Z]{2}\d{1,3})\b")
 
 
 def _pick(text: Bilingual, language: str) -> str:
-    return text[0] if language.startswith("sv") else text[1]
+    """The glossary holds Swedish and English; a third language is looked up in
+    translations_extra.py and falls back to the English wording."""
+    return text[0] if language.startswith("sv") else translate(text[1], language)
 
 
 def _prose(title: str) -> str:
@@ -413,12 +425,19 @@ def describe(
     scope = [c for c in codes if c in MODULES]
     sentences: list[str] = []
 
+    # 0. A value someone actually looks at has an explanation written for it in
+    #    explanations.py, and that says more than anything built from the title.
+    #    The range and the value table below still come from the register.
+    written = explain(title, language)
+    if written:
+        sentences.append(written)
+
     # 1. Lead with whatever NIBE actually wrote, translated when we recognise it.
-    if prose:
+    if prose and not written:
         sentences.append((_swedish_phrase(prose) if sv else None) or prose)
 
     # 2. Decode the designations into what is physically being measured.
-    if measured:
+    if measured and not written:
         what = _pick(COMPONENTS[measured], language)
         where = _scope_phrase(scope, language)
         if prose:
@@ -432,7 +451,7 @@ def describe(
                 sentences.append(f"{lead} {what}{where} ({measured})")
         else:
             sentences.append(f"{what}{where} ({measured})")
-    else:
+    elif not written:
         unknown = [c for c in codes if c not in MODULES]
         if unknown:
             code = unknown[0]
@@ -450,7 +469,7 @@ def describe(
             sentences.append(f"Avser {where}" if sv else f"Relates to {where}")
 
     # 3. Explain the underlying concept, when the title touches one.
-    for pattern, text in CONCEPTS:
+    for pattern, text in [] if written else CONCEPTS:
         if pattern.search(title):
             sentences.append(_pick(text, language))
             break

@@ -78,6 +78,7 @@ from .registry import (
 )
 from .scanner import FoundPump, async_find_pumps, async_identify
 from .serial import parse_serial, serial_from_hostname
+from .translations_extra import entity_language
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -386,7 +387,7 @@ class NibeConfigFlow(ConfigFlow, domain=DOMAIN):
             self._input[CONF_MODEL] = model
             self._input["model_label"] = MODEL_LABELS.get(model, "S-series")
             self._input[CONF_SCAN_INTERVAL] = int(user_input[CONF_SCAN_INTERVAL])
-            self._input["language"] = self.hass.config.language or "sv"
+            self._input["language"] = entity_language(self.hass.config.language)
             # Kept so the daily report can say what kind of machine this is
             # without re-probing. A closed set of slugs, never free text.
             self._input[CONF_TRAITS] = sorted(self._traits)
@@ -399,7 +400,7 @@ class NibeConfigFlow(ConfigFlow, domain=DOMAIN):
             }
             return self.async_create_entry(title=title, data=self._input)
 
-        language = self.hass.config.language or "sv"
+        language = entity_language(self.hass.config.language)
         # The serial's article number names the exact model, so it becomes the
         # default. The user can still override it - the table is not complete.
         parsed = parse_serial(self._serial)
@@ -584,6 +585,15 @@ class NibeConfigFlow(ConfigFlow, domain=DOMAIN):
         await client.start()
         try:
             result = await probe(client, fseries.default_registers(registers))
+            # The flags in that first pass say which accessories the pump has;
+            # their own registers are worth reading only then. Without this an
+            # exhaust air module's fan settings stay invisible, which is how
+            # register 47260 went missing on the development unit.
+            extra = fseries.accessory_registers(registers, result.values)
+            if extra:
+                more = await probe(client, extra)
+                result.values.update(more.values)
+                result.failed |= more.failed
             return result, registers, client.word_swap
         finally:
             await client.stop()
@@ -594,7 +604,7 @@ class NibeConfigFlow(ConfigFlow, domain=DOMAIN):
         assert self._product is not None and self._gateway_scan is not None
         result, registers, word_swap = self._gateway_scan
         discovery = gateway_discovery(registers, result)
-        language = self.hass.config.language or "sv"
+        language = entity_language(self.hass.config.language)
         reporting_titles = {registers[r].get("title", "") for r in discovery.reporting}
         traits = fseries.traits_for(self._product, reporting_titles)
 

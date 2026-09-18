@@ -237,6 +237,30 @@ content width you get two columns: narrow the window, keep Home Assistant's
 sidebar expanded (it takes its width from the content area), or zoom the
 browser in.
 
+### Explanations
+
+Every entity carries an explanation, shown on the NIBE page and in its
+attributes. For the values a person actually looks at or changes - all the
+controls and the readings that say how the pump is doing - the explanation is
+written out: what it is, what it does to the house, and what happens if you
+change it. The heating curve says to move it one step and wait a day; the
+degree minutes explain what the number counts and why it goes negative.
+
+They are written per family rather than per register, because an installation
+only shows the registers its own accessories bring: one house has an exhaust
+air module, the next a pool, a third eight climate systems. So the pool's start
+and stop temperatures, the ERS module's settings and the eighth climate
+system's room sensor are all explained here although no pump this was built
+against has them - a scan that finds an accessory brings explained values with
+it. That covers about seven eighths of the registers in NIBE's maps for both
+series, and a little more of the ones you can set.
+
+The rest is built from NIBE's own title and a glossary of designations, which
+is how a register NIBE documents as `(EB100-EP15-BT28)` still says what it
+measures. A register whose meaning could not be verified keeps that built text
+rather than a guess, and a service value from the pump's own electronics says
+that is what it is rather than being given an invented purpose.
+
 ### Alarms and values in words
 
 Alarm registers read as the alarm's text — *Inget larm*, or *Fel fasföljd alt.
@@ -345,12 +369,34 @@ NIBE's register documentation give its values, so it has no switch yet.
 ## The NIBE page
 
 Setting the integration up adds a **NIBE** entry to the sidebar on its own —
-nothing to configure. It lists the pump's enabled entities two to a row with
-room for the whole name, grouped the way the device page groups them, with a
-filter that searches names and explanations. Hover a row for its explanation;
-tap it and the explanation is written out underneath, along with NIBE's
-original title and the register number, because a hover text alone never
-reaches a phone or a screen reader.
+nothing to configure. The page has four tabs.
+
+**Overview.** What the pump is doing right now: the alarm, the modes it is
+running in and the day's coefficient of performance as chips; beside them the
+controls worth reaching for without going further - heating and hot water mode,
+holiday, the exhaust air module's fan - and the last day's temperatures as a
+graph. Under that, the key figures: the circuit's temperatures, the compressor,
+the energy counters and the year's coefficient of performance. Every one of
+them carries the same ⓘ as the controls do.
+
+**Controls.** Everything writable, as the thing it is: a dropdown for a mode, a
+slider for a setting with a range you can aim at, a field for one that runs from
+−3000 to 3000, a toggle for a switch. They are grouped by what they do to the
+house — heating, hot water, operation, fans and pumps — rather than by entity
+domain, and each keeps its explanation behind the ⓘ. A value written here goes
+straight to the pump; the page never waits for a dialog.
+
+**Performance.** The graphs in full: the circuit's temperatures and the
+compressor over the last day, the energy counters per day for a month, and the
+coefficient of performance. They are drawn by Home Assistant's own history and
+statistics cards, and a pump that reports none of it simply has no such tab.
+
+**All values**, last. The pump's enabled entities two to a row with room for the whole
+name, grouped the way the device page groups them, with a filter that searches
+names and explanations. Hover a row for its explanation; tap it and the
+explanation is written out underneath, along with NIBE's original title and the
+register number, because a hover text alone never reaches a phone or a screen
+reader.
 
 A sidebar panel rather than a generated dashboard, deliberately: Home Assistant
 keeps its dashboards collection in a local variable inside the Lovelace
@@ -365,6 +411,7 @@ registered automatically on storage-mode Lovelace:
 ```yaml
 type: custom:nibe-easyconf-card
 device_id: <optional, when you have more than one pump>
+tabs: [overview, controls, performance, values]   # optional, this is the default
 ```
 
 In YAML mode, add `/nibe_local_easyconf/nibe-easyconf-card.js` as a `module`

@@ -75,6 +75,7 @@ from .serial import parse_serial, serial_from_hostname
 from .stats import async_setup_stats, async_stop_stats
 from .stats_extra import ErrorCounter, build_extra
 from .storage import async_load, async_remove, async_save
+from .translations_extra import entity_language
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -223,7 +224,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool
 
     # Everything the entities read at construction time has to be in place
     # before the platforms are forwarded: names, and the device identity.
-    language = entry.data.get("language", "sv")
+    language = entity_language(hass.config.language, entry.data.get("language"))
     coordinator.entity_names = assign_names(
         registers, discovery.present, language, friendly_name
     )
@@ -326,7 +327,7 @@ async def _async_setup_gateway_entry(hass: HomeAssistant, entry: NibeConfigEntry
         _async_remove_moved_entities(
             hass, entry, registers, discovery.present, coordinator.default_enabled
         )
-        language = entry.data.get("language", "sv")
+        language = entity_language(hass.config.language, entry.data.get("language"))
         coordinator.entity_names = assign_names(
             registers, discovery.present, language, friendly_name
         )

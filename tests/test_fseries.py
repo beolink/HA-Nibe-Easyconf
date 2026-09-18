@@ -7,8 +7,6 @@ read through a Waveshare ESP32-S3-RS485-CAN running esphome-nibe.
 from __future__ import annotations
 
 import importlib
-from importlib.resources import files
-import json
 
 from nibe.heatpump import Model
 import pytest
@@ -17,12 +15,12 @@ from .conftest import PACKAGE
 
 fseries = importlib.import_module(f"{PACKAGE}.fseries")
 names = importlib.import_module(f"{PACKAGE}.names")
+registry = importlib.import_module(f"{PACKAGE}.registry")
 stats_extra = importlib.import_module(f"{PACKAGE}.stats_extra")
 
-F1255_MAP = {
-    int(key): value
-    for key, value in json.loads((files("nibe.data") / "f1155_f1255.json").read_text()).items()
-}
+#: The map as the integration builds it, which is the library's with the
+#: registers NIBE leaves out of its published list added (see fseries.py).
+F1255_MAP = registry.model_map("f1155_f1255")
 
 
 # ------------------------------------------------------------ the product message
@@ -228,3 +226,51 @@ def test_the_alarm_table_is_well_formed():
         assert english is None or (english and "  " not in english), (code, english)
         # A Home Assistant state holds at most 255 characters.
         assert len(swedish) <= 255 and len(english or "") <= 255, code
+
+
+# --------------------------------------------------------------- accessories
+
+
+def test_setup_reads_the_flags_that_say_which_accessories_are_fitted():
+    """Every register answers through the gateway, so the pump has to be asked
+    what it actually has before its accessories' registers mean anything."""
+    flags = fseries.flag_registers(F1255_MAP)
+    titles = {F1255_MAP[r]["title"] for r in flags}
+    assert "FLM 1 accessory" in titles and "Pool 1 accessory" in titles
+    assert set(flags) <= set(fseries.default_registers(F1255_MAP))
+
+
+def test_an_exhaust_air_module_brings_its_own_registers():
+    fitted = {r: "ON" for r in fseries.flag_registers(F1255_MAP)
+              if F1255_MAP[r]["title"] == "FLM 1 accessory"}
+    wanted = fseries.accessory_registers(F1255_MAP, fitted)
+    titles = {F1255_MAP[r]["title"] for r in wanted}
+    # The speed selector myUplink uses, which NIBE leaves out of its list.
+    assert 47260 in wanted
+    assert "Fan Mode" in titles
+    assert "Exhaust Fan speed normal" in titles
+    # Another module's registers are not read for this one.
+    assert not any(title.startswith("FLM 2") for title in titles)
+    # A pool the pump does not have stays unread.
+    assert not any(title.startswith("Pool") for title in titles)
+
+
+def test_nothing_extra_is_read_when_the_pump_has_no_accessories():
+    none_fitted = {r: "OFF" for r in fseries.flag_registers(F1255_MAP)}
+    assert fseries.accessory_registers(F1255_MAP, none_fitted) == []
+
+
+def test_an_accessorys_register_is_switched_on_when_it_answered():
+    """It is only read at all when its flag said the accessory is there."""
+    fan = F1255_MAP[47260]
+    assert fseries.is_default(fan, reporting=True)
+    assert not fseries.is_default(fan, reporting=False)
+
+
+def test_the_modules_fan_selector_is_a_choice_not_a_number():
+    """49280 takes the same values 43108 reports, but the library gives it no
+    labels, so it would have arrived as a number between nothing and nothing."""
+    fan = F1255_MAP[49280]
+    assert fan["mappings"] == F1255_MAP[43108]["mappings"]
+    assert (fan["min"], fan["max"]) == (0, 4)
+    assert fan["write"] is True
