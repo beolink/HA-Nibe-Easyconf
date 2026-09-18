@@ -655,6 +655,11 @@ if (typeof customElements !== "undefined") {
       line-height: 1.45; padding-bottom: 4px;
     }
     .graphs { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); }
+    /* The performance tab fills two columns itself, so each graph keeps its
+       own height and the next one follows directly under it. */
+    .graphs.flow { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+    .graphs.flow > .column { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+    @media (max-width: 900px) { .graphs.flow { grid-template-columns: 1fr; } }
     /* The overview reads left to right: what to change, and how it has run.
        Both boxes take the height of the taller one, so the row lines up. */
     .beside { display: grid; gap: 16px; align-items: stretch; margin-bottom: 16px;
@@ -796,7 +801,7 @@ if (typeof customElements !== "undefined") {
       // Performance
       this.performancePanel = document.createElement("div");
       this.graphsBody = document.createElement("div");
-      this.graphsBody.className = "graphs";
+      this.graphsBody.className = "graphs flow";
       this.performancePanel.appendChild(this.graphsBody);
 
       // All values
@@ -1239,17 +1244,30 @@ if (typeof customElements !== "undefined") {
         helpers = null;
       }
       if (!helpers) return [];
+      // Two columns filled by hand rather than by the grid: a grid row is as
+      // tall as its tallest card, which would leave a day of temperatures
+      // stretched out beside a taller graph instead of letting the next one up.
+      const flow = container.classList.contains("flow");
+      const columns = [];
+      if (flow) {
+        for (let i = 0; i < Math.min(2, graphs.length); i += 1) {
+          const column = document.createElement("div");
+          column.className = "column";
+          container.appendChild(column);
+          columns.push(column);
+        }
+      }
       const cards = [];
-      for (const graph of graphs) {
+      graphs.forEach((graph, index) => {
         try {
           const card = helpers.createCardElement(graphConfig(graph, text));
           card.hass = this.hass;
-          container.appendChild(card);
+          (columns.length ? columns[index % columns.length] : container).appendChild(card);
           cards.push(card);
         } catch (err) {
           // One graph the frontend cannot build must not take the others.
         }
-      }
+      });
       return cards;
     }
 

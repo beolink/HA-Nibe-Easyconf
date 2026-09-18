@@ -388,6 +388,16 @@ def test_an_explanation_that_arrives_late_still_gets_its_i():
     assert "this.remember(collectRows(this.hass, this.deviceId))" in source
 
 
+def test_the_performance_graphs_keep_their_own_heights():
+    """A grid row is as tall as its tallest card, which left a day of
+    temperatures stretched out beside a taller graph. The tab fills two columns
+    itself instead, so the next graph follows directly underneath."""
+    source = CARD.read_text(encoding="utf-8")
+    assert 'this.graphsBody.className = "graphs flow"' in source
+    assert ".graphs.flow > .column { display: flex; flex-direction: column;" in source
+    assert "columns[index % columns.length]" in source
+
+
 def test_the_tabs_end_with_every_value():
     tabs = _run("console.log(JSON.stringify(c.TAB_ORDER))")
     assert tabs[0] == "overview"
