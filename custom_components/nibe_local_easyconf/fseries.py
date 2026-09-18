@@ -31,6 +31,8 @@ import re
 
 from nibe.heatpump import Model, Series
 
+from .const import is_accessory_flag
+
 #: Model name -> nibe Model, for every F-series model the library maps.
 F_SERIES_MODELS: dict[str, Model] = {
     name: model for name, model in Model.__members__.items() if model.series is Series.F
@@ -235,9 +237,18 @@ def accessory_for(title: str) -> Accessory | None:
 
 
 def flag_registers(registers: dict[int, dict]) -> list[int]:
-    """The registers that say which accessories the pump has."""
+    """Every register where the pump says whether an accessory is registered.
+
+    More than the accessories in ACCESSORIES, which are the ones that bring
+    registers of their own: a pump also answers for its room units, its extra
+    climate systems and its boiler control, and "no" is half the answer.
+    """
     flags = {accessory.flag for accessory in ACCESSORIES}
-    return sorted(r for r, meta in registers.items() if meta.get("title") in flags)
+    return sorted(
+        register
+        for register, meta in registers.items()
+        if (title := meta.get("title") or "") in flags or is_accessory_flag(title)
+    )
 
 
 def fitted_accessories(registers: dict[int, dict], values: dict[int, object]) -> list[Accessory]:
@@ -345,7 +356,11 @@ def is_default(meta: dict, reporting: bool) -> bool:
     title = meta.get("title") or ""
     if meta.get("type") == "date" or not reporting:
         return False
-    return title in DEFAULT_TITLES or accessory_for(title) is not None
+    return (
+        title in DEFAULT_TITLES
+        or is_accessory_flag(title)
+        or accessory_for(title) is not None
+    )
 
 
 # -- words -------------------------------------------------------------------

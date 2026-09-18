@@ -392,9 +392,10 @@ coefficient of performance. They are drawn by Home Assistant's own history and
 statistics cards, and a pump that reports none of it simply has no such tab.
 
 **All values**, last. It opens with **accessories registered**: what the pump
-answers about its own modules - a pool, an exhaust air module, a room unit, the
-gateway's own settings - the ones it says no to as well, since that is half the
-answer. The pump's enabled entities two to a row with room for the whole
+answers about its own modules - a pool, an exhaust air module, a room unit, an
+extra climate system, a boiler control - the ones it says no to as well, since
+that is half the answer. NIBE has no register for MODBUS 40 itself; that these
+values arrive at all is the word that it is switched on in menu 5.2. The pump's enabled entities two to a row with room for the whole
 name, grouped the way the device page groups them, with a filter that searches
 names and explanations. Hover a row for its explanation; tap it and the
 explanation is written out underneath, along with NIBE's original title and the

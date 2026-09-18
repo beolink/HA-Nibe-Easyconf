@@ -1774,7 +1774,7 @@ EXPLANATIONS: list[tuple[re.Pattern[str], tuple[str, str]]] = [
     ),
     (
         re.compile(r"available compressors|docked compressors|used compressors|installed \("
-                   r"|serial index|has one phase|protection mode|^blocked$|^activate$|^opt\b",
+                   r"|serial index|has one phase|protection mode|^blocked$|^activate$",
                    re.I),
         (
             "Uppgift om vad som finns installerat och får användas i anläggningen - "
@@ -1977,6 +1977,69 @@ EXPLANATIONS: list[tuple[re.Pattern[str], tuple[str, str]]] = [
             "force, whether extra cooling may be taken, what is holding the "
             "compressor back, or how long the immersion heater has worked on the "
             "hot water.",
+        ),
+    ),
+    # ------------------------------------------------- the accessory flags
+    (
+        re.compile(r"modbus ?40", re.I),
+        (
+            "Inställningar för MODBUS 40, tillbehöret som låter pumpen tala med "
+            "omvärlden - här via gatewayen som den här integrationen pratar med. "
+            "Att registren svarar är i sig beskedet att MODBUS 40 är valt i "
+            "pumpens meny 5.2; någon egen ja-eller-nej-flagga för tillbehöret "
+            "finns inte. LOG.SET är listan över värden pumpen skickar av sig "
+            "själv, utan att bli tillfrågad.",
+            "Settings for MODBUS 40, the accessory that lets the pump talk to the "
+            "outside world - here through the gateway this integration speaks to. "
+            "That these registers answer at all is the word that MODBUS 40 is "
+            "chosen in the pump's menu 5.2; there is no yes-or-no flag of its own "
+            "for it. LOG.SET is the list of values the pump sends unasked.",
+        ),
+    ),
+    (
+        re.compile(r"^opt\b|opt (boiler|rel|hyster|state|version)|aux block opt", re.I),
+        (
+            "OPT, styrningen av en extern panna - olja, gas eller pellets. Pumpen "
+            "startar pannan när dess egen värme inte räcker och blandar in "
+            "pannans värme i systemet, i stället för att gå på elpatronen.",
+            "OPT, the control of an external boiler - oil, gas or pellets. The "
+            "pump starts the boiler when its own heat is not enough and blends "
+            "the boiler's heat into the system, rather than falling back on the "
+            "immersion heater.",
+        ),
+    ),
+    (
+        re.compile(r"sms ?40", re.I),
+        (
+            "Tillbehöret SMS 40, som låter pumpen styras med textmeddelanden från "
+            "en telefon. Det användes innan pumparna fick nätverk.",
+            "The SMS 40 accessory, which lets the pump be controlled by text "
+            "messages from a phone. It was how one reached a pump before they had "
+            "networks.",
+        ),
+    ),
+    (
+        re.compile(r"hpac|brine shunt|köldbärarshunt", re.I),
+        (
+            "En kylmodul mellan köldbäraren och värmesystemet: shunten blandar den "
+            "svala vätskan från borrhålet i kretsen så att huset kan kylas utan "
+            "att kompressorn behöver gå.",
+            "A cooling module between the brine and the heating system: the mixing "
+            "valve blends the cool liquid from the borehole into the circuit so "
+            "the house can be cooled without the compressor running.",
+        ),
+    ),
+    (
+        re.compile(r"\baccessory\b", re.I),
+        (
+            "Säger om det här tillbehöret är registrerat i pumpens egen meny. Ett "
+            "nej är lika mycket ett svar som ett ja: pumpen visar bara "
+            "inställningar för de tillbehör den vet om, och letar man efter en "
+            "funktion som saknas är det ofta här den börjar.",
+            "Says whether this accessory is registered in the pump's own menu. A "
+            "no is as much of an answer as a yes: the pump only shows settings for "
+            "the accessories it knows about, and a function somebody is looking "
+            "for and cannot find often begins here.",
         ),
     ),
 ]

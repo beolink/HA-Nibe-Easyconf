@@ -103,11 +103,19 @@ def test_every_default_register_gets_a_short_name():
         assert names.short_name(title, "en") is not None, title
 
 
-def test_setup_reads_about_a_minutes_worth_of_registers():
+def test_setup_reads_a_minute_and_a_halfs_worth_of_registers():
+    """A register costs about a second through the gateway, and the scan runs
+    while somebody waits at the dialog. The usual values are half of it; the
+    other half is every flag that says whether an accessory is registered,
+    which is read once and answers what the pump has."""
     registers = fseries.default_registers(F1255_MAP)
-    assert 30 <= len(registers) <= 60
+    assert 30 <= len(registers) <= 90
     assert registers == sorted(registers)
     assert 40004 in registers and 43005 in registers
+    # The flags, whatever the pump answers: a pool it does not have is an
+    # answer too.
+    for flag in (48088, 48071, 47302, 47365, 48828, 47352):
+        assert flag in registers
 
 
 def test_a_register_without_a_reading_stays_off():

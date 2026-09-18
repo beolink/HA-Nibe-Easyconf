@@ -134,6 +134,20 @@ NON_DEFAULT: Final = tuple(
 
 _CODE_RE: Final = re.compile(r"\b([A-Z]{2}\d{1,3})\b")
 
+#: Where the pump says whether an accessory is registered in its own menu. NIBE
+#: ends every one of those titles with "accessory"; the room units and the
+#: boiler control are the exceptions, and they are named here. A flag that says
+#: no is as much of an answer as one that says yes, so they are all enabled and
+#: gathered on the page under "accessories registered".
+ACCESSORY_FLAG: Final = re.compile(
+    r"\baccessory$|^rmu system \d$|^opt$|^system \d \(rmu\)$|modbus ?40", re.I
+)
+
+
+def is_accessory_flag(title: str) -> bool:
+    """Whether this register is one of those answers."""
+    return bool(ACCESSORY_FLAG.search(title or ""))
+
 
 def is_core_register(title: str, meta: dict) -> bool:
     """Whether this register earns an entity that is enabled out of the box.
@@ -143,6 +157,10 @@ def is_core_register(title: str, meta: dict) -> bool:
     expensive, so everything else is registered disabled and can be switched on
     from the entity settings.
     """
+    # Before the rest: a pool or a second climate system the pump does not have
+    # is exactly what the flag is there to say.
+    if is_accessory_flag(title):
+        return True
     if any(pattern.search(title) for pattern in NON_DEFAULT):
         return False
     codes = set(_CODE_RE.findall(title))

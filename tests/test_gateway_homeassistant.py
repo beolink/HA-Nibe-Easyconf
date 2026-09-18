@@ -173,9 +173,10 @@ async def test_typing_in_the_gateway_adds_the_pump(hass):
     placeholders = result["description_placeholders"]
     assert placeholders["product"] == "NIBE F1255-16 CU"
     assert placeholders["firmware"] == "9721"
-    # 43 registers worth showing, plus the ten flags that say which accessories
-    # the pump has; this one reports none, so nothing more is read.
-    assert (placeholders["probed"], placeholders["reporting"]) == ("53", "40")
+    # 43 registers worth showing, plus every flag that says whether an accessory
+    # is registered; this pump answers one of them, and has nothing fitted, so
+    # nothing more is read.
+    assert (placeholders["probed"], placeholders["reporting"]) == ("78", "41")
 
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"name": "", "scan_interval": 60}
@@ -604,3 +605,25 @@ async def test_every_entity_carries_an_explanation(hass, freezer):
     assert without == []
     heating_mode_state = hass.states.get(_heating_mode(hass, entry))
     assert "kurvförskjutning" in heating_mode_state.attributes["description"]
+
+
+async def test_a_register_this_version_wants_is_switched_back_on(hass, freezer):
+    """Home Assistant reads "enabled by default" once, when the entity is first
+    registered. A version that starts showing a register - the accessory flags
+    - would otherwise leave every installation that already has the entity with
+    it switched off. What this integration switched off, it switches on again.
+    """
+    entry = await _set_up(hass, freezer)
+    flag = _entity_id(hass, entry, 48852)  # Modbus40 Word Swap, which answers here
+    registry = er.async_get(hass)
+    assert registry.async_get(flag).disabled_by is None
+
+    # As an older version left it, and as a user who wants it gone leaves it.
+    registry.async_update_entity(flag, disabled_by=er.RegistryEntryDisabler.INTEGRATION)
+    mine = _entity_id(hass, entry, 47041)
+    registry.async_update_entity(mine, disabled_by=er.RegistryEntryDisabler.USER)
+
+    await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert registry.async_get(flag).disabled_by is None
+    assert registry.async_get(mine).disabled_by is er.RegistryEntryDisabler.USER

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -100,12 +101,38 @@ def async_add_register_entities(entry, platform: str, factory, async_add_entitie
     """
     coordinator: NibeCoordinator = entry.runtime_data
     language = entity_language(coordinator.hass.config.language, entry.data.get("language"))
-    async_add_entities(
-        factory(coordinator, register, coordinator.registers[register], language)
+    wanted = [
+        register
         for register in sorted(coordinator.discovery.present)
         if register in coordinator.registers
         and platform_for(coordinator.registers[register]) == platform
+    ]
+    _async_switch_on_new_defaults(entry, coordinator, platform, wanted)
+    async_add_entities(
+        factory(coordinator, register, coordinator.registers[register], language)
+        for register in wanted
     )
+
+
+def _async_switch_on_new_defaults(entry, coordinator, platform: str, registers) -> None:
+    """Switch on entities this integration once switched off and now wants.
+
+    Home Assistant only reads `entity_registry_enabled_default` when an entity
+    is first registered, so a version that starts showing a register - the
+    accessory flags, say - would leave every installation that already has it
+    with the entity switched off, and no way to know it was there. One this
+    integration switched off is this integration's to switch on again; one the
+    user switched off is left alone.
+    """
+    registry = er.async_get(coordinator.hass)
+    for register in registers:
+        meta = coordinator.registers[register]
+        if not coordinator.default_enabled(register, meta):
+            continue
+        entity_id = registry.async_get_entity_id(platform, DOMAIN, f"{entry.entry_id}-{register}")
+        existing = registry.async_get(entity_id) if entity_id else None
+        if existing is not None and existing.disabled_by is er.RegistryEntryDisabler.INTEGRATION:
+            registry.async_update_entity(entity_id, disabled_by=None)
 
 
 def device_info(coordinator: NibeCoordinator) -> DeviceInfo:
