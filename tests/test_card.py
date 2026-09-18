@@ -371,6 +371,23 @@ def test_every_value_on_the_page_carries_its_explanation():
     assert "explainButton(row, text, (open) => { note.hidden = !open; })" in source
 
 
+def test_an_explanation_that_arrives_late_still_gets_its_i():
+    """An unavailable entity carries no attributes, so a card built during a
+    restart has no explanations. The structure counts them, so it is built
+    again when they arrive, and the page remembers the ones it has seen."""
+    marks = _run(
+        """const quiet = [{entityId: "sensor.bt1", name: "Ute", description: ""}];
+        const loud = [{entityId: "sensor.bt1", name: "Ute", description: "Mäter ute."}];
+        console.log(JSON.stringify([c.structureOf(quiet), c.structureOf(loud)]))"""
+    )
+    assert marks == ["sensor.bt1", "sensor.bt1!"]
+    source = CARD.read_text(encoding="utf-8")
+    # The explanation is kept over the entity's quiet spells.
+    assert "this.descriptions.set(row.entityId, row.description)" in source
+    assert 'row.description = this.descriptions.get(row.entityId) || ""' in source
+    assert "this.remember(collectRows(this.hass, this.deviceId))" in source
+
+
 def test_the_tabs_end_with_every_value():
     tabs = _run("console.log(JSON.stringify(c.TAB_ORDER))")
     assert tabs[0] == "overview"

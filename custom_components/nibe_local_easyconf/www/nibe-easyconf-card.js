@@ -488,6 +488,13 @@ function ids(rows) {
   return rows.map((row) => row.entityId);
 }
 
+/** The same ids, marking which rows carry an explanation. A card built while
+ *  its entities were unavailable - right after a restart, say - has none, and
+ *  has to be built again once they arrive, or it keeps its missing ⓘ. */
+function structureOf(rows) {
+  return rows.map((row) => row.entityId + (row.description ? "!" : "")).join(",");
+}
+
 /** A graph as a Home Assistant card configuration. Counters are drawn from the
  *  long-term statistics, which is the only place a year of them survives; the
  *  rest come from the recorder's own history. */
@@ -556,7 +563,7 @@ if (typeof module !== "undefined") {
     textFor, groupOf, formatState, matchesFilter, collectRows, stripDeviceName,
     signature, controlGroupOf, controlRows, widgetFor, pickGraphs, graphConfig,
     languageOf,
-    pickByPatterns, serviceFor, pickOverview, pickQuickControls, hasNumber,
+    pickByPatterns, serviceFor, pickOverview, pickQuickControls, hasNumber, structureOf,
     GROUP_ORDER, CONTROL_GROUP_ORDER, TAB_ORDER, DOMAIN,
   };
 }
@@ -705,6 +712,8 @@ if (typeof customElements !== "undefined") {
       this.built = false;
       this.lastSignature = null;
       this.controlSignature = null;
+      //: entity id -> explanation, kept over an entity's quiet spells.
+      this.descriptions = new Map();
       this.graphSignature = null;
       this.overviewSignature = null;
       this.quickSignature = null;
@@ -841,12 +850,24 @@ if (typeof customElements !== "undefined") {
       this.hass.callService(call.domain, call.service, call.data);
     }
 
+    /** An entity that is unavailable carries no attributes at all, so its
+     *  explanation goes with it - and the page would drop the ⓘ for as long as
+     *  the pump is quiet. An explanation never changes, so the last one seen is
+     *  kept and handed back. */
+    remember(rows) {
+      for (const row of rows) {
+        if (row.description) this.descriptions.set(row.entityId, row.description);
+        else row.description = this.descriptions.get(row.entityId) || "";
+      }
+      return rows;
+    }
+
     render() {
       if (!this.hass) return;
       if (!this.built) this.build();
       const text = textFor(languageOf(this.hass));
       this.input.placeholder = text.filter;
-      const rows = collectRows(this.hass, this.deviceId);
+      const rows = this.remember(collectRows(this.hass, this.deviceId));
       this.heading.textContent = this.deviceNames() || text.title;
 
       for (const [tab, button] of this.tabButtons) {
@@ -879,7 +900,7 @@ if (typeof customElements !== "undefined") {
     renderOverview(rows, text) {
       const picked = pickOverview(rows);
       const structure = [
-        ids(picked.status).join(","), ids(picked.readings).join(","), ids(picked.cop).join(","),
+        structureOf(picked.status), structureOf(picked.readings), ids(picked.cop).join(","),
       ].join("|");
       this.statusHeading.textContent = text.now;
       this.quickHeading.textContent = text.quick;
@@ -943,7 +964,7 @@ if (typeof customElements !== "undefined") {
      *  for the same entity, and each has to update its own. */
     renderQuickControls(rows, text) {
       const controls = pickQuickControls(rows);
-      const structure = ids(controls).join("|");
+      const structure = structureOf(controls);
       if (structure !== this.quickSignature) {
         this.quickSignature = structure;
         this.quickWidgets.clear();
@@ -1005,7 +1026,7 @@ if (typeof customElements !== "undefined") {
 
     renderControls(rows, text) {
       const controls = controlRows(rows);
-      const structure = ids(controls).join("|");
+      const structure = structureOf(controls);
       if (structure !== this.controlSignature) {
         this.controlSignature = structure;
         this.buildControls(controls, text);
@@ -1237,7 +1258,7 @@ if (typeof customElements !== "undefined") {
     renderList(force = false, rows = null, text = null) {
       if (!this.hass) return;
       text = text || textFor(languageOf(this.hass));
-      const all = rows || collectRows(this.hass, this.deviceId);
+      const all = rows || this.remember(collectRows(this.hass, this.deviceId));
 
       const current = signature(this.hass, all);
       if (!force && current === this.lastSignature) return;
