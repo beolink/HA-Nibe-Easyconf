@@ -472,5 +472,8 @@ def test_the_overview_puts_the_controls_beside_the_graph():
     source = CARD.read_text(encoding="utf-8")
     assert 'this.overviewRow.className = "beside"' in source
     assert "this.overviewRow.append(this.quickCard, this.overviewGraphs)" in source
-    assert ".beside { display: grid; gap: 16px; align-items: stretch; margin-bottom: 16px;" in source
+    assert (
+        ".beside { display: grid; gap: 16px; align-items: stretch; margin-bottom: 16px;"
+        in source
+    )
     assert ".beside > .graphs > * { height: 100%; }" in source
