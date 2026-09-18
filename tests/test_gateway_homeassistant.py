@@ -586,3 +586,21 @@ async def test_diagnostics_do_not_assume_modbus(hass, freezer):
     diagnostics = await async_get_config_entry_diagnostics(hass, entry)
     assert diagnostics["connection"]["type"] == "nibegw"
     assert diagnostics["polling"]["subscribed"] > 0
+
+
+async def test_every_entity_carries_an_explanation(hass, freezer):
+    """The dashboard draws its blue "i" from the entity's own description. An
+    entity without one is a value on the page that nothing explains - including
+    the two controls this integration adds itself."""
+    entry = await _set_up(hass, freezer)
+    mine = [
+        state
+        for state in hass.states.async_all()
+        if state.entity_id.startswith(("sensor.", "select.", "switch.", "number.", "button."))
+        and ("modbus_register" in state.attributes or "basis" in state.attributes)
+    ]
+    assert len(mine) > 40
+    without = [s.entity_id for s in mine if not s.attributes.get("description")]
+    assert without == []
+    heating_mode_state = hass.states.get(_heating_mode(hass, entry))
+    assert "kurvförskjutning" in heating_mode_state.attributes["description"]

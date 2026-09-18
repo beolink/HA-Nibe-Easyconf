@@ -17,6 +17,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from . import heating_mode
 from .const import PLATFORM_SELECT
 from .entity import NibeRegisterEntity, async_add_register_entities, device_info
+from .explanations import explain_own
 from .storage import heating_mode_store
 
 _LOGGER = logging.getLogger(__name__)
@@ -98,6 +99,7 @@ class NibeHeatingModeSelect(CoordinatorEntity, SelectEntity):
         #: True while a mode is written, so its read-back is not taken for a
         #: change made by hand.
         self._writing = False
+        self._language = language
         self._attr_name = "Värmeläge" if language.startswith("sv") else "Heating mode"
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}-heating_mode"
         self._attr_device_info = device_info(coordinator)
@@ -176,6 +178,8 @@ class NibeHeatingModeSelect(CoordinatorEntity, SelectEntity):
                 for mode in heating_mode.MODES
             },
             "modbus_register": self.register,
+            # As for every other control on the page: no explanation, no "i".
+            "description": explain_own("heating_mode", self._language),
         }
 
     async def async_select_option(self, option: str) -> None:

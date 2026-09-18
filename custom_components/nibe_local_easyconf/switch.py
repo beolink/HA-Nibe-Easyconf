@@ -11,6 +11,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from . import hot_water_boost
 from .const import PLATFORM_SWITCH
 from .entity import NibeRegisterEntity, async_add_register_entities, device_info
+from .explanations import explain_own
 
 
 async def async_setup_entry(
@@ -53,6 +54,7 @@ class NibeHotWaterBoostSwitch(CoordinatorEntity, SwitchEntity):
     def __init__(self, coordinator, boost: hot_water_boost.Boost, language: str) -> None:
         super().__init__(coordinator)
         self._boost = boost
+        self._language = language
         self._attr_name = "Varmvattenboost" if language.startswith("sv") else "Hot water boost"
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}-hot_water_boost"
         self._attr_device_info = device_info(coordinator)
@@ -81,8 +83,13 @@ class NibeHotWaterBoostSwitch(CoordinatorEntity, SwitchEntity):
         return None if value is None else value != self._boost.off
 
     @property
-    def extra_state_attributes(self) -> dict[str, int]:
-        return {"modbus_register": self._boost.register}
+    def extra_state_attributes(self) -> dict:
+        # The dashboard reads the explanation off the entity, the same way it
+        # does for a register entity: a control without one gets no "i".
+        return {
+            "modbus_register": self._boost.register,
+            "description": explain_own("hot_water_boost", self._language),
+        }
 
     async def async_turn_on(self, **kwargs) -> None:
         await self.coordinator.async_write(self._boost.register, self._boost.on)
