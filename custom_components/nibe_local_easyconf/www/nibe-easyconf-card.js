@@ -48,6 +48,7 @@ const DOMAIN = "nibe_local_easyconf";
 
 const TEXT = {
   sv: {
+    accessories: "Registrerade tillbehör",
     sensor: "Mätvärden",
     control: "Styrning",
     config: "Inställningar",
@@ -80,6 +81,7 @@ const TEXT = {
     explain: "Förklaring",
   },
   de: {
+    accessories: "Registriertes Zubehör",
     sensor: "Messwerte",
     control: "Steuerung",
     config: "Einstellungen",
@@ -112,6 +114,7 @@ const TEXT = {
     explain: "Erklärung",
   },
   fr: {
+    accessories: "Accessoires enregistrés",
     sensor: "Mesures",
     control: "Commandes",
     config: "Réglages",
@@ -144,6 +147,7 @@ const TEXT = {
     explain: "Explication",
   },
   en: {
+    accessories: "Accessories registered",
     sensor: "Readings",
     control: "Controls",
     config: "Settings",
@@ -177,7 +181,14 @@ const TEXT = {
   },
 };
 
-const GROUP_ORDER = ["sensor", "control", "config", "diagnostic"];
+const GROUP_ORDER = ["accessories", "sensor", "control", "config", "diagnostic"];
+
+/** What the pump answers about its own accessories: the flags a scan reads to
+ *  know whether a pool, an exhaust air module or a room unit is fitted, and the
+ *  settings of the gateway it talks through. They stand together at the top of
+ *  the list, because "what is registered here" is a question of its own. */
+const ACCESSORY_PATTERN =
+  /\baccessory\b|\btillbehör\b|^rmu system|^opt$|modbus ?40|sms ?40|^ers [1-4]$|^hts [1-4]$/i;
 const TAB_ORDER = ["overview", "controls", "performance", "values"];
 const CONTROL_DOMAINS = ["select", "number", "switch", "button"];
 const CONTROL_GROUP_ORDER = ["heating", "hotwater", "operation", "air", "other"];
@@ -299,7 +310,10 @@ function textFor(language) {
 }
 
 /** Which section an entity belongs in, mirroring the device page's own. */
-function groupOf(entry, domain) {
+function groupOf(entry, domain, title) {
+  // Before the entity category, since NIBE's flags are configuration and would
+  // otherwise disappear among three hundred settings.
+  if (ACCESSORY_PATTERN.test(title || "")) return "accessories";
   if (entry && entry.entity_category === "diagnostic") return "diagnostic";
   if (entry && entry.entity_category === "config") return "config";
   if (CONTROL_DOMAINS.includes(domain)) return "control";
@@ -371,7 +385,7 @@ function collectRows(hass, deviceId) {
     const deviceName = device ? device.name_by_user || device.name : null;
     rows.push({
       entityId: entry.entity_id,
-      group: groupOf(entry, domain),
+      group: groupOf(entry, domain, attributes.nibe_title || ""),
       // Home Assistant prefixes the device name to every entity name; on a
       // page that is already about the pump it only pushes the value off.
       name: stripDeviceName(attributes.friendly_name || entry.entity_id, deviceName),
@@ -564,6 +578,7 @@ if (typeof module !== "undefined") {
     signature, controlGroupOf, controlRows, widgetFor, pickGraphs, graphConfig,
     languageOf,
     pickByPatterns, serviceFor, pickOverview, pickQuickControls, hasNumber, structureOf,
+    ACCESSORY_PATTERN,
     GROUP_ORDER, CONTROL_GROUP_ORDER, TAB_ORDER, DOMAIN,
   };
 }

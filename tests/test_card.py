@@ -398,6 +398,31 @@ def test_the_performance_graphs_keep_their_own_heights():
     assert "columns[index % columns.length]" in source
 
 
+def test_the_registered_accessories_stand_under_their_own_heading():
+    """What the pump answers about its own accessories is a question of its
+    own - a pool flag that says no is half the answer - so the flags are
+    gathered rather than left among three hundred settings."""
+    groups = _run(
+        """const entry = {entity_category: "config"};
+        console.log(JSON.stringify([
+          c.groupOf(entry, "switch", "Pool 1 accessory"),
+          c.groupOf(entry, "switch", "FLM 2 accessory"),
+          c.groupOf(entry, "switch", "MODBUS40 Disable LOG.SET"),
+          c.groupOf(entry, "select", "RMU System 1"),
+          c.groupOf(entry, "number", "Heat Curve S1"),
+          c.groupOf({entity_category: "diagnostic"}, "sensor", "Prio"),
+        ]))"""
+    )
+    assert groups == [
+        "accessories", "accessories", "accessories", "accessories", "config", "diagnostic",
+    ]
+    assert _run("console.log(JSON.stringify(c.GROUP_ORDER))")[0] == "accessories"
+    words = _run(
+        "console.log(JSON.stringify([c.textFor('sv').accessories, c.textFor('en').accessories]))"
+    )
+    assert words == ["Registrerade tillbehör", "Accessories registered"]
+
+
 def test_the_tabs_end_with_every_value():
     tabs = _run("console.log(JSON.stringify(c.TAB_ORDER))")
     assert tabs[0] == "overview"

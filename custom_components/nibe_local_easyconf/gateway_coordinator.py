@@ -66,18 +66,12 @@ def gateway_discovery(registers: dict[int, dict], result: ProbeResult) -> Discov
         for register, meta in registers.items()
         if meta.get("type") != "date" and meta.get("title") not in fseries.UNRELIABLE_TITLES
     }
-    # A flag that answered "no" is a module the pump does not have; leaving it
-    # reporting would put "FLM 4 accessory: off" on the page of every pump.
-    fitted = {accessory.flag for accessory in fseries.fitted_accessories(registers, result.values)}
-    silent_flags = {
-        register
-        for register, meta in registers.items()
-        if (title := meta.get("title")) in {a.flag for a in fseries.ACCESSORIES}
-        and title not in fitted
-    }
+    # Every flag stays, the ones that answered "no" as well: the page gathers
+    # them under "accessories registered", where a module the pump does not
+    # have is half the answer.
     return DiscoveryResult(
         present=present,
-        reporting=(result.reporting & present) - silent_flags,
+        reporting=result.reporting & present,
         absent=set(),
         probed=result.probed & present,
     )

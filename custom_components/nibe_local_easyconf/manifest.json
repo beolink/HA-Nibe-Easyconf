@@ -27,7 +27,7 @@
   "requirements": [
     "nibe>=2.24.0"
   ],
-  "version": "1.9.4",
+  "version": "1.9.5",
   "zeroconf": [
     {
       "type": "_esphomelib._tcp.local.",
