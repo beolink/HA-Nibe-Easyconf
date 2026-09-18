@@ -610,7 +610,7 @@ if (typeof customElements !== "undefined") {
       gap: 6px 12px; padding: 8px 0; border-bottom: 1px solid var(--divider-color, #eee);
     }
     .control:last-of-type { border-bottom: none; }
-    .control .name { color: var(--primary-text-color); overflow-wrap: anywhere; }
+    .control .name { color: var(--primary-text-color); overflow-wrap: break-word; min-width: 0; }
     .control .widget { display: flex; align-items: center; gap: 8px; justify-self: end; }
     .control .widget[data-pending="1"] { opacity: .5; }
     .control select, .control input[type="number"] {
@@ -650,7 +650,7 @@ if (typeof customElements !== "undefined") {
     .graphs { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); }
     /* The overview reads left to right: what to change, and how it has run.
        Both boxes take the height of the taller one, so the row lines up. */
-    .beside { display: grid; gap: 16px; align-items: stretch;
+    .beside { display: grid; gap: 16px; align-items: stretch; margin-bottom: 16px;
               grid-template-columns: minmax(280px, 1fr) minmax(0, 2fr); }
     .beside > * { min-width: 0; margin-bottom: 0; }
     .beside > .graphs { grid-template-columns: minmax(0, 1fr); }
