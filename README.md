@@ -108,6 +108,14 @@ reads and writes over UDP. This path was built and measured on an F1255-16
 through a Waveshare ESP32-S3-RS485-CAN running
 [esphome-nibe](https://github.com/elupus/esphome-nibe).
 
+An **SMO** or a **VVM** houses no compressor of its own: the heat pump stands
+outside, and NIBE puts the whole of it under the designation `EB101`. Its
+compressor frequency and state, its starts, its own outdoor sensor, the
+defrosting, the fan and the output it calculates are read by default on those
+models, so the machine making the heat is not the one part of the installation
+the page leaves out. Taken from NIBE's register maps rather than from a pump on
+the bench: the measurements here were made on an F1255.
+
 ### The gateway
 
 The gateway is a project of its own,

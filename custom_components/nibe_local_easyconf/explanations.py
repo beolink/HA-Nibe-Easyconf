@@ -2009,6 +2009,36 @@ EXPLANATIONS: list[tuple[re.Pattern[str], tuple[str, str]]] = [
         ),
     ),
     (
+        re.compile(r"\bbt28\b", re.I),
+        (
+            "Utetemperaturen mätt av värmepumpmodulens egen givare (BT28), vid "
+            "sidan av husets ordinarie utegivare. Den sitter där maskinen står, "
+            "så den kan skilja sig från husets - och det är den maskinen själv "
+            "räknar med.",
+            "The outdoor temperature measured by the heat pump module's own "
+            "sensor (BT28), beside the house's ordinary outdoor sensor. It sits "
+            "where the machine stands, so it can differ from the house's - and it "
+            "is the one the machine itself works from.",
+        ),
+    ),
+    (
+        re.compile(r"outdoor unit|utedel|f2040|f2120|f2050|\bams\b", re.I),
+        (
+            "Hör till utedelen - luft/vatten-värmepumpen som står ute och som "
+            "en SMO eller VVM styr. NIBE lägger hela den under beteckningen "
+            "EB101: kompressorns frekvens och tillstånd, dess egen utegivare, "
+            "avfrostningen, fläkten och den effekt den räknar ut att den "
+            "lämnar. Det är där värmen görs, och det är därför de läses av "
+            "sig själva på de modellerna.",
+            "Belongs to the outdoor unit - the air/water heat pump standing "
+            "outside, which an SMO or a VVM controls. NIBE puts the whole of it "
+            "under the designation EB101: the compressor's frequency and state, "
+            "its own outdoor sensor, the defrosting, the fan, and the output it "
+            "works out that it is giving. That is where the heat is made, which "
+            "is why these are read by default on those models.",
+        ),
+    ),
+    (
         re.compile(r"sms ?40", re.I),
         (
             "Tillbehöret SMS 40, som låter pumpen styras med textmeddelanden från "

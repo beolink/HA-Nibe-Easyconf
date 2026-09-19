@@ -295,3 +295,29 @@ def test_a_pump_that_counts_its_own_electricity_is_read_rather_than_estimated():
         assert fseries.is_default(f730[register], reporting=True)
     # The development unit has no such registers, so nothing is expected of it.
     assert not set(fseries.CONSUMED_ENERGY) & set(F1255_MAP)
+
+
+def test_the_outdoor_unit_is_read_on_the_models_that_control_one():
+    """An SMO or a VVM houses no compressor: the heat pump stands outside and
+    NIBE puts the whole of it under EB101. Defaults written for a pump with its
+    own compressor would show the house's side and nothing of the machine."""
+    for model in ("smo40", "smo20", "vvm225_vvm320_vvm325", "vvm310_vvm500"):
+        registers = registry.model_map(model)
+        scanned = set(fseries.default_registers(registers))
+        by_title = {meta.get("title"): reg for reg, meta in registers.items()}
+        for title in fseries.OUTDOOR_UNIT_TITLES:
+            register = by_title.get(title)
+            assert register is not None, f"{model}: {title}"
+            assert register in scanned, f"{model}: {title}"
+            assert fseries.is_default(registers[register], reporting=True)
+    # The development unit has its compressor inside and none of them.
+    assert not fseries.OUTDOOR_UNIT_TITLES & {
+        meta.get("title") for meta in F1255_MAP.values()
+    }
+
+
+def test_every_title_we_read_by_default_has_a_short_name():
+    """Including the ones that only exist on other models than this one."""
+    for title in fseries.DEFAULT_TITLES | fseries.OTHER_MODEL_TITLES:
+        assert names.short_name(title) is not None, title
+        assert names.short_name(title, "en") is not None, title

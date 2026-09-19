@@ -15,7 +15,18 @@ def test_a_title_that_is_only_a_designation_still_gets_a_name():
     assert "BT28" in name
     assert "temperatur" in name.lower()
 
+    # BT28 is one of the sensors explanations.py has words for, so the written
+    # explanation is what a designation-only title gets here.
     text = descriptions.describe(title, 31624, {"size": "s16", "factor": 10})
+    assert "BT28" in text
+    assert "utetemperatur" in text.lower()
+    assert text.endswith(".")
+
+
+def test_a_designation_nobody_wrote_about_is_built_from_its_parts():
+    """Where no explanation is written, the glossary still says what the
+    register measures and where: BP4 is the high pressure sensor."""
+    text = descriptions.describe("(EB100-EP15-BP4)", 31625, {"size": "s16", "factor": 10})
     assert "kompressormodulen" in text
     assert text.endswith(".")
 

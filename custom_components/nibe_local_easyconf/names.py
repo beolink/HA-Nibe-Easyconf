@@ -202,6 +202,19 @@ SHORT_NAMES: dict[str, tuple[str, str]] = {
     "Degree Minutes (16 bit)": ("Gradminuter", "Degree minutes"),
     "Degree Minutes (32 bit)": ("Gradminuter, 32 bitar", "Degree minutes, 32-bit"),
     "Prio": ("Prioritering", "Priority"),
+    # The outdoor unit of an SMO or a VVM, which NIBE puts under EB101.
+    "EB101-EP14 Actual Cpr Frequency Outdoor Unit": (
+        "Kompressorfrekvens",
+        "Compressor frequency",
+    ),
+    "EB101-EP14 Calculated Power Outdoor Unit": ("Avgiven effekt", "Heat output"),
+    "EB101-EP14-BT28 Outdoor Temp": ("Utetemp., utedel", "Outdoor temp., unit"),
+    "EB101-EP14 Defrosting Outdoor Unit": ("Avfrostning", "Defrosting"),
+    "EB101-EP14 Compressor State": ("Kompressorstatus", "Compressor state"),
+    "EB101-EP14 Compressor starts": ("Kompressorstarter", "Compressor starts"),
+    "EB101-EP14-BT12 Condensor Out": ("Kondensor ut (BT12)", "Condenser out (BT12)"),
+    "EB101-EP14-BT3 Return Temp.": ("Returledning, utedel", "Return, outdoor unit"),
+    "EB101 F2120 Fan Speed": ("Fläktvarvtal", "Fan speed"),
     # The F730 is the one F-series that counts its own electricity.
     "HP consumed energy due to heating": ("El, värme", "Electricity, heating"),
     "HP consumed energy due to hot water": ("El, varmvatten", "Electricity, hot water"),

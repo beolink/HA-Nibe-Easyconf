@@ -372,6 +372,26 @@ CONSUMED_TITLES: frozenset[str] = frozenset({
     "HP consumed energy due to ventilation",
 })
 
+#: The outdoor unit, on the models that control one instead of housing a
+#: compressor of their own: SMO 20, SMO 40 and every VVM. NIBE puts the whole
+#: air/water heat pump under EB101, and a set of defaults written for a pump
+#: with its own compressor reads nothing of it - an SMO 40 would show the
+#: house's side of the installation and nothing of the machine making the heat.
+OUTDOOR_UNIT_TITLES: frozenset[str] = frozenset({
+    "EB101-EP14 Actual Cpr Frequency Outdoor Unit",
+    "EB101-EP14 Calculated Power Outdoor Unit",
+    "EB101-EP14-BT28 Outdoor Temp",
+    "EB101-EP14 Defrosting Outdoor Unit",
+    "EB101-EP14 Compressor State",
+    "EB101-EP14 Compressor starts",
+    "EB101-EP14-BT12 Condensor Out",
+    "EB101-EP14-BT3 Return Temp.",
+    "EB101 F2120 Fan Speed",
+})
+
+#: Everything above that the development unit's own map does not carry.
+OTHER_MODEL_TITLES: frozenset[str] = CONSUMED_TITLES | OUTDOOR_UNIT_TITLES
+
 #: NIBE's own figures for the circulation pumps, watts at their lowest and at
 #: their highest speed, read from "Elektrisk data" in the installer manual: the
 #: brine pump (KB) first, then the heating medium pump (VB). A smaller pump has
@@ -449,7 +469,7 @@ def default_registers(registers: dict[int, dict]) -> list[int]:
     wanted = {
         register
         for register, meta in registers.items()
-        if (meta.get("title") or "") in DEFAULT_TITLES | CONSUMED_TITLES
+        if (meta.get("title") or "") in DEFAULT_TITLES | OTHER_MODEL_TITLES
     }
     return sorted(wanted | set(flag_registers(registers)))
 
@@ -465,7 +485,7 @@ def is_default(meta: dict, reporting: bool) -> bool:
         return False
     return (
         title in DEFAULT_TITLES
-        or title in CONSUMED_TITLES
+        or title in OTHER_MODEL_TITLES
         or is_accessory_flag(title)
         or accessory_for(title) is not None
     )
