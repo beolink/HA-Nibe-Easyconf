@@ -9,6 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from . import fseries
 from .const import PLATFORM_SENSOR
 from .coordinator import NibeCoordinator
 from .entity import NibeRegisterEntity, async_add_register_entities, device_info
@@ -26,6 +27,8 @@ async def async_setup_entry(
         async_add_entities([NibeManufacturedSensor(coordinator)])
     if coordinator.cop is not None:
         async_add_entities([NibeCopSensor(coordinator, span) for span in ("day", "year")])
+    if getattr(coordinator, "electricity", None) is not None:
+        async_add_entities([NibeCountedElectricitySensor(coordinator)])
 
 
 class NibeSensor(NibeRegisterEntity, SensorEntity):
@@ -108,6 +111,62 @@ class NibeManufacturedSensor(CoordinatorEntity[NibeCoordinator], SensorEntity):
             "article_number": serial.article,
             "iso_week": serial.iso_week,
             "day_of_year": serial.day_of_year,
+        }
+
+
+class NibeCountedElectricitySensor(CoordinatorEntity[NibeCoordinator], SensorEntity):
+    """The electricity an F-series pump has used, counted rather than measured.
+
+    power.py has how it is arrived at and what it is worth. The parts are kept
+    as attributes so the figure can be taken apart: a coefficient of
+    performance that looks wrong is usually one of them.
+    """
+
+    _attr_has_entity_name = True
+    _attr_device_class = SensorDeviceClass.ENERGY
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_native_unit_of_measurement = "kWh"
+    _attr_suggested_display_precision = 1
+    _attr_icon = "mdi:lightning-bolt-outline"
+
+    def __init__(self, coordinator: NibeCoordinator) -> None:
+        super().__init__(coordinator)
+        self._language = entity_language(
+            coordinator.hass.config.language, coordinator.config_entry.data.get("language")
+        )
+        sv = self._language.startswith("sv")
+        self._attr_name = "Förbrukad el (beräknad)" if sv else "Electricity used (counted)"
+        self._attr_unique_id = f"{coordinator.config_entry.entry_id}-counted-electricity"
+        self._attr_device_info = device_info(coordinator)
+
+    @property
+    def native_value(self) -> float:
+        return round(self.coordinator.electricity.kwh, 3)
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        counter = self.coordinator.electricity
+        parts = counter.parts
+        watts = self.coordinator.watts or {}
+        brine, medium = fseries.circulation_pumps(
+            self.coordinator.serial.size if self.coordinator.serial else None
+        )
+        return {
+            "description": explain_own("counted_electricity", self._language),
+            "compressor_kwh": round(parts.compressor, 3),
+            "additional_heat_kwh": round(parts.addition, 3),
+            "circulation_pumps_kwh": round(parts.pumps, 3),
+            "electronics_kwh": round(parts.electronics, 3),
+            "power_now_w": round(sum(watts.values()), 1) if watts else None,
+            # What the count rests on, so it can be judged rather than trusted.
+            "brine_pump_w": f"{brine[0]}-{brine[1]}",
+            "heat_medium_pump_w": f"{medium[0]}-{medium[1]}",
+            "electronics_w": fseries.ELECTRONICS_W,
+            "heat_delivered_kwh": (
+                None
+                if self.coordinator.energy_out is None
+                else round(self.coordinator.energy_out, 1)
+            ),
         }
 
 

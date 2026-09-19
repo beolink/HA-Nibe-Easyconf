@@ -423,6 +423,26 @@ def test_the_registered_accessories_stand_under_their_own_heading():
     assert words == ["Registrerade tillbehör", "Accessories registered"]
 
 
+def test_an_accessory_the_pump_has_reads_green_and_one_it_lacks_red():
+    """The point of the section is which is which, so the answer is coloured
+    rather than left as another word in a list."""
+    answers = _run(
+        """const flag = {group: "accessories"};
+        console.log(JSON.stringify([
+          c.accessoryAnswer(flag, {state: "on"}),
+          c.accessoryAnswer(flag, {state: "off"}),
+          c.accessoryAnswer(flag, {state: "Off"}),
+          c.accessoryAnswer(flag, {state: "Use LOG.SET"}),
+          c.accessoryAnswer(flag, {state: "unavailable"}),
+          c.accessoryAnswer({group: "sensor"}, {state: "on"}),
+        ]))"""
+    )
+    assert answers == ["found", "missing", "missing", "found", "", ""]
+    source = CARD.read_text(encoding="utf-8")
+    assert ".value.found { color: var(--success-color" in source
+    assert ".value.missing { color: var(--error-color" in source
+
+
 def test_the_tabs_end_with_every_value():
     tabs = _run("console.log(JSON.stringify(c.TAB_ORDER))")
     assert tabs[0] == "overview"

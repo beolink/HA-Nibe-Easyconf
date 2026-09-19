@@ -42,6 +42,7 @@ from .gateway import (
     Value,
     probe,
 )
+from .power import ElectricityCounter
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -103,6 +104,9 @@ class NibeGatewayCoordinator(DataUpdateCoordinator[dict[int, Value]]):
         self.discovery = discovery
         self.schedule = PollSchedule(float(scan_interval), registers)
         self._subscribed: set[int] = set()
+        #: Read whether or not an entity asks for them: what the electricity
+        #: meter below is built from.
+        self._internal: set[int] = set()
         #: How many entities read each register: the heat offset backs both its
         #: own number and the heating mode select.
         self._subscribers: Counter[int] = Counter()
@@ -113,9 +117,11 @@ class NibeGatewayCoordinator(DataUpdateCoordinator[dict[int, Value]]):
         self._flush_unsub: CALLBACK_TYPE | None = None
         #: Cumulative failed poll cycles, for the daily report.
         self.read_failures = 0
-        #: Not available through the gateway: the F-series keeps no lifetime
-        #: electricity counter, so there is nothing to divide the heat by.
         self.cop = None
+        #: The meter the pump does not have, built from the power it reports.
+        #: Set up by async_setup_entry when the pump's own heat meters answer;
+        #: without one there is nothing to divide, and no COP.
+        self.electricity: ElectricityCounter | None = None
         self.serial = None
         self.firmware: int | None = None
         self.entity_names: dict[int, str] = {}
@@ -131,13 +137,76 @@ class NibeGatewayCoordinator(DataUpdateCoordinator[dict[int, Value]]):
     def subscribed_count(self) -> int:
         return len(self._subscribed)
 
+    def start_counting(self, counter: ElectricityCounter) -> None:
+        """Take the meter, and keep what it is made of in the poll cycle.
+
+        The coefficient of performance cannot depend on which entities somebody
+        left switched on, so these registers are read whether or not one asks.
+        """
+        self.electricity = counter
+        self._internal = {
+            fseries.COMPRESSOR_POWER,
+            fseries.ADDITION_POWER,
+            fseries.HEAT_MEDIUM_PUMP_SPEED,
+            fseries.BRINE_PUMP_SPEED,
+            *fseries.HEAT_METERS,
+        } & set(self.registers)
+
+    @property
+    def heat_total(self) -> float | None:
+        """What the pump's own heat meters have counted, kWh.
+
+        Heating, hot water and the pool, added up. A meter that has not
+        answered yet is left out rather than counted as zero, which would drop
+        the total and look like the pump had run backwards.
+        """
+        readings = [
+            float(self._values[register])
+            for register in fseries.HEAT_METERS
+            if isinstance(self._values.get(register), (int, float))
+        ]
+        return sum(readings) if readings else None
+
+    @property
+    def watts(self) -> dict[str, float] | None:
+        """What each part of the pump is drawing right now.
+
+        The compressor and the immersion heater say so themselves; the two
+        circulation pumps are worked out from their speed and NIBE's figures
+        for this size of pump; the control system is a constant.
+        """
+        compressor = self._values.get(fseries.COMPRESSOR_POWER)
+        addition = self._values.get(fseries.ADDITION_POWER)
+        if not isinstance(compressor, (int, float)):
+            return None
+        brine_limits, medium_limits = fseries.circulation_pumps(
+            self.serial.size if self.serial else None
+        )
+        brine = self._values.get(fseries.BRINE_PUMP_SPEED)
+        medium = self._values.get(fseries.HEAT_MEDIUM_PUMP_SPEED)
+        return {
+            "compressor": float(compressor) * 1000,
+            "addition": float(addition) * 1000 if isinstance(addition, (int, float)) else 0.0,
+            "pumps": (
+                fseries.pump_watts(brine_limits, brine if isinstance(brine, (int, float)) else None)
+                + fseries.pump_watts(
+                    medium_limits, medium if isinstance(medium, (int, float)) else None
+                )
+            ),
+            "electronics": fseries.ELECTRONICS_W,
+        }
+
     @property
     def energy_out(self) -> float | None:
-        return None
+        """Heat delivered since this integration started counting, kWh."""
+        if self.electricity is None:
+            return None
+        return self.electricity.produced(self.heat_total)
 
     @property
     def energy_in(self) -> float | None:
-        return None
+        """Electricity used over the same span, kWh."""
+        return None if self.electricity is None else self.electricity.kwh
 
     def default_enabled(self, register: int, meta: dict) -> bool:
         return fseries.is_default(meta, register in self.discovery.reporting)
@@ -216,7 +285,7 @@ class NibeGatewayCoordinator(DataUpdateCoordinator[dict[int, Value]]):
     # -- polling -----------------------------------------------------------
 
     async def _async_update_data(self) -> dict[int, Value]:
-        wanted = set(self._subscribed)
+        wanted = self._subscribed | self._internal
         interval = self.update_interval.total_seconds() if self.update_interval else 60.0
         due = self.schedule.due(wanted, time.monotonic())
         if not due and time.monotonic() - self._last_request >= KEEPALIVE_INTERVAL:
@@ -251,7 +320,16 @@ class NibeGatewayCoordinator(DataUpdateCoordinator[dict[int, Value]]):
             self._values[register] = value
             self.schedule.seen(register, time.monotonic())
         self._reads_last_cycle = reads
+        self._count_electricity()
         return dict(self._values)
+
+    def _count_electricity(self) -> None:
+        """Add this cycle's power to the meter the pump does not have."""
+        if self.electricity is None:
+            return
+        watts = self.watts
+        if watts is not None:
+            self.electricity.sample(watts)
 
     # -- writing -----------------------------------------------------------
 

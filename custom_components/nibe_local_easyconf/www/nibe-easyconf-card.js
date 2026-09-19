@@ -320,6 +320,19 @@ function groupOf(entry, domain, title) {
   return "sensor";
 }
 
+/** Whether an accessory flag says the pump has that accessory. The flags are
+ *  switches, selects and the odd sensor, so the state is read as a word: what
+ *  is not a "no" is a "yes", which also colours a setting like the gateway's
+ *  word swap. Anything without a value yet is neither. */
+function accessoryAnswer(row, stateObj) {
+  if (!row || row.group !== "accessories") return "";
+  const state = String((stateObj && stateObj.state) || "").toLowerCase();
+  if (!state || state === "unavailable" || state === "unknown") return "";
+  return ["off", "av", "no", "nej", "0", "false", "aus", "non"].includes(state)
+    ? "missing"
+    : "found";
+}
+
 /** Which control group a writable row belongs to. */
 function controlGroupOf(row) {
   const haystack = `${(row && row.name) || ""} ${(row && row.nibeTitle) || ""}`;
@@ -578,7 +591,7 @@ if (typeof module !== "undefined") {
     signature, controlGroupOf, controlRows, widgetFor, pickGraphs, graphConfig,
     languageOf,
     pickByPatterns, serviceFor, pickOverview, pickQuickControls, hasNumber, structureOf,
-    ACCESSORY_PATTERN,
+    ACCESSORY_PATTERN, accessoryAnswer,
     GROUP_ORDER, CONTROL_GROUP_ORDER, TAB_ORDER, DOMAIN,
   };
 }
@@ -612,6 +625,8 @@ if (typeof customElements !== "undefined") {
       border: var(--ha-card-border-width, 0) solid var(--ha-card-border-color, transparent);
       padding: 14px 16px; margin-bottom: 16px;
     }
+    .value.found { color: var(--success-color, #2e7d32); font-weight: 500; }
+    .value.missing { color: var(--error-color, #db4437); }
     .chips { display: flex; flex-wrap: wrap; gap: 10px; }
     .chip {
       display: flex; gap: 8px; align-items: baseline; padding: 8px 14px; border-radius: 999px;
@@ -1342,7 +1357,12 @@ if (typeof customElements !== "undefined") {
 
       const value = document.createElement("span");
       value.className = "value";
-      value.textContent = formatState(this.hass.states[row.entityId], text);
+      const stateObj = this.hass.states[row.entityId];
+      value.textContent = formatState(stateObj, text);
+      // Green for an accessory the pump has, red for one it has not: the point
+      // of the section is which is which, at a glance.
+      const answer = accessoryAnswer(row, stateObj);
+      if (answer) value.classList.add(answer);
       el.append(name, value);
 
       if (this.open.has(row.entityId)) {

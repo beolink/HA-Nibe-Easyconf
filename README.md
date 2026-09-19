@@ -155,9 +155,10 @@ sensor on a pump that has none. So on the F-series:
   the F1155/F1255, a generator for other models and how to load them are in
   [Nibe F-series ModbusAdapter](https://github.com/beolink/Nibe-F-series-ModbusAdapter/blob/main/docs/logset.md).
 
-The device page shows the product message's model and software version.
-Through the gateway there is no coefficient of performance: the F-series keeps
-no electricity counter to divide by.
+The device page shows the product message's model and software version. The
+F-series keeps no electricity counter, so its coefficient of performance is
+built rather than read; see
+[counting what the F-series does not measure](#counting-what-the-f-series-does-not-measure).
 
 ## Which model is it?
 
@@ -301,6 +302,32 @@ CTC integration so the two are comparable:
   about a day after setup.
 - **COP, år** — over a rolling year. Until a year of samples exists it shows the
   lifetime figure, and its `basis` attribute says so.
+
+#### Counting what the F-series does not measure
+
+An F-series pump has no energy counters at all, which is why it had no COP. It
+does report the two things that use the electricity — what the compressor draws
+and what the immersion heater draws, in kilowatts — and how fast its two
+circulation pumps are running, and its own heat meters count the heat it has
+delivered. Adding the power up over time is what a meter does, and that is what
+*Förbrukad el (beräknad)* is:
+
+| Part | Where the figure comes from |
+|---|---|
+| Compressor | The inverter's own reading, register 43141 |
+| Immersion heater | The pump's own reading, register 43084 |
+| Circulation pumps | Their speed, and NIBE's watt figures for that size of pump: an F1255-16 brine pump runs 20–180 W, the 6 kW one 10–87 W. Power follows the cube of the speed |
+| Control system | 15 W, an estimate; NIBE publishes none |
+
+The compressor's figure is good, the pumps are a model and the electronics an
+estimate, so the total lands a few percent out — which is what a COP read to a
+tenth can carry. The sensor keeps each part as its own attribute, so a figure
+that looks wrong can be taken apart rather than believed. Both counters start
+from the same moment: the pump's heat meters have run since it was installed,
+so the heat is counted from where they stood when this one began.
+
+For an exact figure, put an electricity meter on the pump's circuit — nothing
+here stops a measured sensor being used beside it.
 
 The anonymous report is stricter than the sensor: it sends a yearly figure only
 once it really covers a year, since the lifetime figure under the yearly name
@@ -468,8 +495,9 @@ What is collected and why: <https://stats.rnet.se/integritet>
 
 ## Limitations
 
-- The F-series is supported through a NibeGW gateway, not yet through NIBE's
-  own MODBUS 40 accessory, and without a coefficient of performance; see
+- The F-series is supported through a NibeGW gateway rather than through NIBE's
+  own MODBUS 40 accessory, and its coefficient of performance rests on a counted
+  rather than a measured electricity figure; see
   [what is different](#what-is-different). About a quarter of its alarms have
   no English title, for the reason given under
   [alarms and values in words](#alarms-and-values-in-words).

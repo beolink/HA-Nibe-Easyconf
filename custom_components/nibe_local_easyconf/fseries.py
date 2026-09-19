@@ -339,6 +339,71 @@ DEFAULT_TITLES: frozenset[str] = frozenset({
 #: by default; "Degree Minutes (16 bit)" carries the same number.
 UNRELIABLE_TITLES: frozenset[str] = frozenset({"Degree Minutes (32 bit)"})
 
+# -- what the pump costs and what it delivers --------------------------------
+# The F-series keeps no electricity meter, so there is nothing to divide the
+# heat by - which is why it had no coefficient of performance. It does report
+# what the compressor and the immersion heater draw right now, and how fast its
+# two circulation pumps are running, and its own heat meters count the heat it
+# has delivered. Adding the power up over time gives the kilowatt hours the
+# meter would have shown.
+
+#: Power the pump reports, in kilowatts.
+COMPRESSOR_POWER: int = 43141
+ADDITION_POWER: int = 43084
+#: The circulation pumps' speed, in percent.
+HEAT_MEDIUM_PUMP_SPEED: int = 43437
+BRINE_PUMP_SPEED: int = 43439
+#: The pump's own heat meters, in kilowatt hours: heating, hot water, pool.
+HEAT_METERS: tuple[int, ...] = (44300, 44298, 44304)
+
+#: NIBE's own figures for the circulation pumps, watts at their lowest and at
+#: their highest speed, read from "Elektrisk data" in the installer manual: the
+#: brine pump (KB) first, then the heating medium pump (VB). A smaller pump has
+#: smaller circulation pumps, so they are given per size.
+CIRCULATION_PUMPS: dict[int, tuple[tuple[int, int], tuple[int, int]]] = {
+    6: ((10, 87), (2, 63)),
+    12: ((3, 180), (2, 60)),
+    16: ((20, 180), (10, 87)),
+}
+
+#: The control system, the display and the relays, which run whatever else is
+#: happening. NIBE publishes no figure for it; this is what an F-series draws
+#: with both pumps stopped, and it is small enough that being a few watts out
+#: moves a yearly coefficient of performance by about a hundredth.
+ELECTRONICS_W: float = 15.0
+
+
+def circulation_pumps(size: str | int | None) -> tuple[tuple[int, int], tuple[int, int]]:
+    """The two circulation pumps' watt figures for a pump of this size.
+
+    An unknown size gets the middle of NIBE's range rather than nothing: the
+    pumps are a few percent of what the compressor draws, so a size that the
+    serial did not name is better served by a good guess than by zero.
+    """
+    known = CIRCULATION_PUMPS
+    try:
+        kilowatts = int(size)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return known[12]
+    if kilowatts in known:
+        return known[kilowatts]
+    return known[min(known, key=lambda each: abs(each - kilowatts))]
+
+
+def pump_watts(limits: tuple[int, int], speed: float | None) -> float:
+    """What a circulation pump draws at that speed.
+
+    A pump's power follows the cube of its speed, and NIBE's two figures are
+    the ends of it. One that stands still draws nothing at all.
+    """
+    if speed is None:
+        return 0.0
+    share = max(0.0, min(float(speed), 100.0)) / 100.0
+    if share <= 0:
+        return 0.0
+    low, high = limits
+    return low + (high - low) * share**3
+
 
 def default_registers(registers: dict[int, dict]) -> list[int]:
     """The registers setup reads first: the usual ones, and the flags that say

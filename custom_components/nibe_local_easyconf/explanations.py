@@ -2061,6 +2061,27 @@ OWN_EXPLANATIONS: dict[str, tuple[str, str]] = {
         "heating to the hours when electricity is cheap; normal is the offset the "
         "pump stood at when the mode was first used.",
     ),
+    "counted_electricity": (
+        "Elen värmepumpen har använt, räknad i stället för mätt. F-serien har "
+        "ingen egen elmätare, men den rapporterar vad kompressorn och "
+        "elpatronen drar just nu, och hur fort de två cirkulationspumparna "
+        "går. Effekten summeras över tiden precis som en mätare gör, med "
+        "NIBE:s egna wattsiffror för pumparna och ett påslag för styrsystemet. "
+        "Kompressorns siffra kommer från invertern och är god; pumparna är en "
+        "modell och elektroniken en uppskattning, så helheten ligger några "
+        "procent fel. Attributen visar varje del för sig. Vill man ha det exakt "
+        "sätter man en elmätare på pumpens krets.",
+        "The electricity the pump has used, counted rather than measured. The "
+        "F-series has no meter of its own, but it reports what the compressor "
+        "and the immersion heater draw right now, and how fast its two "
+        "circulation pumps are running. The power is added up over time the "
+        "way a meter does, using NIBE's own watt figures for the pumps and an "
+        "allowance for the control system. The compressor's figure comes from "
+        "the inverter and is good; the pumps are a model and the electronics an "
+        "estimate, so the whole is a few percent out. The attributes show each "
+        "part on its own. For an exact figure, put a meter on the pump's "
+        "circuit.",
+    ),
     "hot_water_boost": (
         "Slår på en engångshöjning av varmvattnet, samma sak som tillfällig lyx "
         "i pumpens meny. Pumpen laddar beredaren extra varm en gång och går "

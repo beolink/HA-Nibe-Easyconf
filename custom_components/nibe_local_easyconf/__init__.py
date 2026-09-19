@@ -70,6 +70,7 @@ from .gateway_coordinator import NibeGatewayCoordinator, gateway_discovery
 from .history import async_import_history
 from .modbus import ModbusTransportError, NibeModbusClient
 from .names import assign_names
+from .power import STORAGE_VERSION as POWER_STORAGE_VERSION, ElectricityCounter
 from .registry import async_model_map, async_union_map
 from .serial import parse_serial, serial_from_hostname
 from .stats import async_setup_stats, async_stop_stats
@@ -238,29 +239,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool
     # The coefficient of performance, from the pump's two lifetime energy
     # counters. Set up before the platforms so the COP sensors have it.
     if {ENERGY_OUT_REGISTER, ENERGY_IN_REGISTER} <= discovery.present:
-        coordinator.cop = CopTracker(
-            Store(hass, COP_STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}.cop")
-        )
-        await coordinator.cop.async_load()
-
-        async def _record_cop(_now=None) -> None:
-            await coordinator.cop.async_record(coordinator.energy_out, coordinator.energy_in)
-
-        await _record_cop()
-        entry.async_on_unload(
-            async_track_time_interval(hass, _record_cop, COP_SAMPLE_INTERVAL)
-        )
-
-        # Earlier history of the same counters, if Home Assistant recorded any
-        # (myUplink, for one, does). Once, after startup, when the recorder is
-        # certain to be up; the service runs it again on request.
-        if coordinator.cop.history is None:
-
-            async def _import(_hass: HomeAssistant) -> None:
-                if await async_import_history(hass, coordinator, DOMAIN):
-                    coordinator.async_update_listeners()
-
-            entry.async_on_unload(async_at_started(hass, _import))
+        await _async_set_up_cop(hass, entry, coordinator, import_history=True)
 
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -336,6 +315,22 @@ async def _async_setup_gateway_entry(hass: HomeAssistant, entry: NibeConfigEntry
         )
         coordinator.firmware = entry.data.get(CONF_FIRMWARE)
         await coordinator.async_config_entry_first_refresh()
+
+        # The electricity meter the F-series does not have, built from the
+        # power it reports, and with it the coefficient of performance. The
+        # pump's own heat meters are the other half; without them, or without
+        # the compressor's power, there is nothing to divide.
+        heat_meters = set(fseries.HEAT_METERS) & discovery.reporting
+        if heat_meters and fseries.COMPRESSOR_POWER in discovery.reporting:
+            counter = ElectricityCounter(
+                Store(hass, POWER_STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}.power")
+            )
+            await counter.async_load()
+            coordinator.start_counting(counter)
+            entry.async_on_unload(
+                async_track_time_interval(hass, _save_counter(counter), POWER_SAVE_INTERVAL)
+            )
+            await _async_set_up_cop(hass, entry, coordinator, import_history=False)
     except BaseException:
         await client.stop()
         raise
@@ -350,6 +345,56 @@ async def _async_setup_gateway_entry(hass: HomeAssistant, entry: NibeConfigEntry
         hass, _async_follow_software_version(hass, entry, coordinator), f"{DOMAIN} product message"
     )
     return True
+
+
+#: How often the counted kilowatt hours are written down. Often enough that a
+#: restart loses minutes rather than hours, seldom enough to be kind to the
+#: disk; what happens in between is carried by the last reading, which is
+#: stored with them.
+POWER_SAVE_INTERVAL = timedelta(minutes=5)
+
+
+def _save_counter(counter: ElectricityCounter):
+    """A callback that writes the counted kilowatt hours down."""
+
+    async def _save(_now=None) -> None:
+        await counter.async_save()
+
+    return _save
+
+
+async def _async_set_up_cop(
+    hass: HomeAssistant, entry: NibeConfigEntry, coordinator, *, import_history: bool
+) -> None:
+    """Start the coefficient of performance for a pump that has both figures.
+
+    Set up before the platforms, so the COP sensors find it. `import_history`
+    is for the S-series only: its counters have been running since the pump was
+    installed, and Home Assistant may have recorded them before this
+    integration existed. The F-series counts from today, so there is nothing
+    earlier to find.
+    """
+    coordinator.cop = CopTracker(
+        Store(hass, COP_STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}.cop")
+    )
+    await coordinator.cop.async_load()
+
+    async def _record_cop(_now=None) -> None:
+        await coordinator.cop.async_record(coordinator.energy_out, coordinator.energy_in)
+
+    await _record_cop()
+    entry.async_on_unload(async_track_time_interval(hass, _record_cop, COP_SAMPLE_INTERVAL))
+
+    if import_history and coordinator.cop.history is None:
+        # Earlier history of the same counters, if Home Assistant recorded any
+        # (myUplink, for one, does). Once, after startup, when the recorder is
+        # certain to be up; the service runs it again on request.
+
+        async def _import(_hass: HomeAssistant) -> None:
+            if await async_import_history(hass, coordinator, DOMAIN):
+                coordinator.async_update_listeners()
+
+        entry.async_on_unload(async_at_started(hass, _import))
 
 
 async def _async_follow_software_version(
@@ -466,6 +511,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> boo
         # Only here, never from an on-unload callback: those also run when a
         # set-up attempt fails, and the report has to survive that.
         await async_stop_stats(hass, entry, DOMAIN)
+        # The kilowatt hours counted since the last write, so a restart picks
+        # up where the pump left off rather than five minutes behind it.
+        counter = getattr(coordinator, "electricity", None)
+        if counter is not None:
+            await counter.async_save()
         await coordinator.async_close()
         still_loaded = [
             other
@@ -484,6 +534,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     _FAILURES.pop(entry.entry_id, None)
     await async_remove(hass, entry.entry_id)
     await Store(hass, COP_STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}.cop").async_remove()
+    await Store(hass, POWER_STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}.power").async_remove()
 
 
 async def _async_reload_on_options(hass: HomeAssistant, entry: NibeConfigEntry) -> None:

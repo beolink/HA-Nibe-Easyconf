@@ -36,7 +36,7 @@ from pytest_homeassistant_custom_component.common import (
     async_fire_time_changed,
 )
 
-from custom_components.nibe_local_easyconf import gateway as gateway_module
+from custom_components.nibe_local_easyconf import fseries, gateway as gateway_module
 from custom_components.nibe_local_easyconf.const import DOMAIN, platform_for
 
 from .test_gateway import FakeNibeGW
@@ -325,9 +325,12 @@ async def test_set_up_shows_the_default_registers_that_report(hass, freezer):
     # The long tail exists, switched off; dates do not exist at all.
     assert registry.async_get(_entity_id(hass, entry, 49291)).disabled_by is not None
     assert _entity_id(hass, entry, 48044) is None
-    # No COP through the gateway: the F-series has no electricity counter.
+    # The F-series has no electricity counter of its own, so the integration
+    # builds one out of the power the pump reports; with the pump's own heat
+    # meters as the other half, the coefficient of performance follows.
     entities = er.async_entries_for_config_entry(registry, entry.entry_id)
-    assert not [entity for entity in entities if "cop" in entity.unique_id]
+    assert len([entity for entity in entities if "cop" in entity.unique_id]) == 2
+    assert entry.runtime_data.electricity is not None
 
 
 async def test_value_tables_and_alarms_read_the_f_series_way(hass, freezer):
@@ -627,3 +630,28 @@ async def test_a_register_this_version_wants_is_switched_back_on(hass, freezer):
     await hass.async_block_till_done()
     assert registry.async_get(flag).disabled_by is None
     assert registry.async_get(mine).disabled_by is er.RegistryEntryDisabler.USER
+
+
+async def test_the_f_series_gets_a_coefficient_of_performance(hass, freezer):
+    """It has no electricity meter, so the integration counts what the pump
+    reports drawing and divides the heat its own meters have delivered."""
+    entry = await _set_up(hass, freezer)
+    coordinator = entry.runtime_data
+    assert coordinator.electricity is not None
+    # Both halves are read whether or not an entity asks for them.
+    assert fseries.COMPRESSOR_POWER in coordinator._internal
+    assert set(fseries.HEAT_METERS) & coordinator._internal
+
+    watts = coordinator.watts
+    assert watts is not None
+    assert watts["electronics"] == fseries.ELECTRONICS_W
+    # The two circulation pumps, from their speed and NIBE's figures.
+    assert watts["pumps"] >= 0
+
+    day = hass.states.get("sensor.nibe_f1255_16_cu_varmefaktor_cop_dygn")
+    assert day is not None
+    counted = hass.states.get("sensor.nibe_f1255_16_cu_forbrukad_el_beraknad")
+    assert counted is not None
+    assert counted.attributes["unit_of_measurement"] == "kWh"
+    assert "compressor_kwh" in counted.attributes
+    assert counted.attributes["description"]
