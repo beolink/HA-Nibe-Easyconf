@@ -109,12 +109,13 @@ def test_setup_reads_a_minute_and_a_halfs_worth_of_registers():
     other half is every flag that says whether an accessory is registered,
     which is read once and answers what the pump has."""
     registers = fseries.default_registers(F1255_MAP)
-    assert 30 <= len(registers) <= 90
+    assert 30 <= len(registers) <= 95
     assert registers == sorted(registers)
     assert 40004 in registers and 43005 in registers
     # The flags, whatever the pump answers: a pool it does not have is an
-    # answer too.
-    for flag in (48088, 48071, 47302, 47365, 48828, 47352):
+    # answer too. Three of them NIBE names without the word "accessory": the
+    # hot water comfort module and the two external energy meters.
+    for flag in (48088, 48071, 47302, 47365, 48828, 47352, 48120, 48930, 49297):
         assert flag in registers
 
 

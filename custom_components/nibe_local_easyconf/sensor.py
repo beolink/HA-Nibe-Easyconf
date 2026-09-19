@@ -148,9 +148,7 @@ class NibeCountedElectricitySensor(CoordinatorEntity[NibeCoordinator], SensorEnt
         counter = self.coordinator.electricity
         parts = counter.parts
         watts = self.coordinator.watts or {}
-        brine, medium = fseries.circulation_pumps(
-            self.coordinator.serial.size if self.coordinator.serial else None
-        )
+        brine, medium = self.coordinator.pump_watt_limits
         return {
             "description": explain_own("counted_electricity", self._language),
             "compressor_kwh": round(parts.compressor, 3),

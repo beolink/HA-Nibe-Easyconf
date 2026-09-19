@@ -373,17 +373,39 @@ CIRCULATION_PUMPS: dict[int, tuple[tuple[int, int], tuple[int, int]]] = {
 ELECTRONICS_W: float = 15.0
 
 
-def circulation_pumps(size: str | int | None) -> tuple[tuple[int, int], tuple[int, int]]:
+#: "F1255-16 CU", "NIBE F1155-6": the kilowatts follow the hyphen.
+_SIZE_RE = re.compile(r"-\s*(\d{1,2})\b")
+
+
+def pump_size(*hints: object) -> int | None:
+    """How many kilowatts this pump is, from the first hint that says so.
+
+    The serial names the size on the models NIBE lists, and the product message
+    carries it in its name for the rest - the development unit's serial does
+    not resolve, while its product message reads "F1255-16 CU".
+    """
+    for hint in hints:
+        if isinstance(hint, (int, float)):
+            return int(hint)
+        text = str(hint or "").strip()
+        if text.isdigit():
+            return int(text)
+        found = _SIZE_RE.search(text)
+        if found:
+            return int(found.group(1))
+    return None
+
+
+def circulation_pumps(*hints: object) -> tuple[tuple[int, int], tuple[int, int]]:
     """The two circulation pumps' watt figures for a pump of this size.
 
     An unknown size gets the middle of NIBE's range rather than nothing: the
-    pumps are a few percent of what the compressor draws, so a size that the
-    serial did not name is better served by a good guess than by zero.
+    pumps are a few percent of what the compressor draws, so a size nothing
+    named is better served by a good guess than by zero.
     """
     known = CIRCULATION_PUMPS
-    try:
-        kilowatts = int(size)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
+    kilowatts = pump_size(*hints)
+    if kilowatts is None:
         return known[12]
     if kilowatts in known:
         return known[kilowatts]

@@ -140,7 +140,11 @@ _CODE_RE: Final = re.compile(r"\b([A-Z]{2}\d{1,3})\b")
 #: no is as much of an answer as one that says yes, so they are all enabled and
 #: gathered on the page under "accessories registered".
 ACCESSORY_FLAG: Final = re.compile(
-    r"\baccessory$|^rmu system \d$|^opt$|^system \d \(rmu\)$|modbus ?40", re.I
+    r"\baccessory$|^rmu system \d$|^opt$|^system \d \(rmu\)$|modbus ?40"
+    # NIBE leaves the word off a few of them: the hot water comfort accessory
+    # with its own heater, and the two external energy meters.
+    r"|^hw comfort$|^eme ?\d+ activated$",
+    re.I,
 )
 
 

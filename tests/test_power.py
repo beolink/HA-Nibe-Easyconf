@@ -53,7 +53,17 @@ def test_the_pumps_follow_nibes_own_figures_for_the_size():
     assert fseries.pump_watts(big_brine, 50) == pytest.approx(40.0)
 
 
-def test_a_size_the_serial_did_not_name_gets_the_middle_one():
+def test_the_size_is_taken_from_whatever_names_it():
+    """The development unit's serial does not resolve to a size; its product
+    message reads "F1255-16 CU", and that is where the 16 comes from."""
+    assert fseries.pump_size(None, "F1255-16 CU") == 16
+    assert fseries.pump_size(None, "NIBE F1155-6") == 6
+    assert fseries.pump_size("12") == 12
+    assert fseries.pump_size(None, None) is None
+    assert fseries.circulation_pumps(None, "F1255-16 CU") == fseries.CIRCULATION_PUMPS[16]
+
+
+def test_a_size_nothing_named_gets_the_middle_one():
     assert fseries.circulation_pumps(None) == fseries.CIRCULATION_PUMPS[12]
     assert fseries.circulation_pumps("CU") == fseries.CIRCULATION_PUMPS[12]
     # A size NIBE does not list is served by the nearest one it does.

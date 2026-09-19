@@ -176,7 +176,7 @@ async def test_typing_in_the_gateway_adds_the_pump(hass):
     # 43 registers worth showing, plus every flag that says whether an accessory
     # is registered; this pump answers one of them, and has nothing fitted, so
     # nothing more is read.
-    assert (placeholders["probed"], placeholders["reporting"]) == ("78", "41")
+    assert (placeholders["probed"], placeholders["reporting"]) == ("81", "41")
 
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"name": "", "scan_interval": 60}

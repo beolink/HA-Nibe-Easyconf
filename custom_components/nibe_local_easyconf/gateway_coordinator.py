@@ -153,6 +153,20 @@ class NibeGatewayCoordinator(DataUpdateCoordinator[dict[int, Value]]):
         } & set(self.registers)
 
     @property
+    def pump_watt_limits(self) -> tuple[tuple[int, int], tuple[int, int]]:
+        """NIBE's watt figures for this pump's circulation pumps.
+
+        The size comes from the serial when NIBE lists that article, and from
+        the product message's name otherwise.
+        """
+        data = self.config_entry.data
+        return fseries.circulation_pumps(
+            self.serial.size if self.serial else None,
+            data.get("product"),
+            data.get("model_label"),
+        )
+
+    @property
     def heat_total(self) -> float | None:
         """What the pump's own heat meters have counted, kWh.
 
@@ -179,9 +193,7 @@ class NibeGatewayCoordinator(DataUpdateCoordinator[dict[int, Value]]):
         addition = self._values.get(fseries.ADDITION_POWER)
         if not isinstance(compressor, (int, float)):
             return None
-        brine_limits, medium_limits = fseries.circulation_pumps(
-            self.serial.size if self.serial else None
-        )
+        brine_limits, medium_limits = self.pump_watt_limits
         brine = self._values.get(fseries.BRINE_PUMP_SPEED)
         medium = self._values.get(fseries.HEAT_MEDIUM_PUMP_SPEED)
         return {
