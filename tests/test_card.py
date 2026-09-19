@@ -357,6 +357,33 @@ def test_the_day_stands_on_the_chip_and_the_year_among_the_key_figures():
     status, readings = picked
     assert status == ["sensor.cop_day"]
     assert readings[0] == "sensor.cop_year"
+
+
+def test_the_span_that_always_has_a_figure_stands_among_the_key_figures():
+    """The rolling year waits for a year of samples; the pump's whole life is
+    counted from the day it was installed and is there at once."""
+    picked = _run(
+        """const rows = [
+          {entityId: "sensor.cop_day", name: "COP, dygn", isCop: true, copSpan: "day",
+           state: "3.12"},
+          {entityId: "sensor.cop_year", name: "COP, år", isCop: true, copSpan: "year",
+           state: "unknown"},
+          {entityId: "sensor.cop_life", name: "COP, livstid", isCop: true,
+           copSpan: "lifetime", state: "4.18"},
+        ];
+        const p = c.pickOverview(rows);
+        const graphs = c.pickGraphs(rows).filter(g => g.key === "cop");
+        console.log(JSON.stringify([
+          p.status.map(r => r.entityId),
+          p.readings.map(r => r.entityId),
+          graphs.length ? graphs[0].entities : [],
+        ]))"""
+    )
+    status, readings, graphed = picked
+    assert status == ["sensor.cop_day"]
+    assert readings == ["sensor.cop_life"]
+    # The graph is of the two spans that move; a lifetime line barely does.
+    assert graphed == ["sensor.cop_day", "sensor.cop_year"]
     source = CARD.read_text(encoding="utf-8")
     assert "copCard" not in source
 

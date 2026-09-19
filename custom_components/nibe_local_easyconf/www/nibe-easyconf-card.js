@@ -282,7 +282,12 @@ function pickOverview(rows) {
     : cop.slice().sort((a, b) => Number(hasNumber(b)) - Number(hasNumber(a))).slice(0, 1);
   const status = alarm.concat(modes, chip);
   const rest = cop.filter((row) => !status.includes(row));
-  const readings = rest.concat(
+  // Of the longer spans, the one that always has a figure: the whole lifetime,
+  // which an S-series pump has counted since it was installed. The rolling
+  // year waits for a year of samples, and stands on the performance tab and in
+  // the list until it has them.
+  const lifetime = rest.filter((row) => row.copSpan === "lifetime");
+  const readings = (lifetime.length ? lifetime : rest).concat(
     pickByPatterns(
       rows.filter((row) => !status.includes(row) && !rest.includes(row)),
       READING_PATTERNS,
@@ -493,7 +498,9 @@ function pickGraphs(rows) {
     graphs.push({ key: "compressor", title: "graphCompressor", entities: ids(compressor) });
   }
 
-  const cop = rows.filter((row) => row.isCop).slice(0, 2);
+  // The day against the year: two spans that move. The lifetime figure is a
+  // near-flat line and belongs among the key figures rather than in a graph.
+  const cop = rows.filter((row) => row.isCop && row.copSpan !== "lifetime").slice(0, 2);
   if (cop.length) {
     graphs.push({ key: "cop", title: "graphCop", entities: ids(cop), statistic: "mean" });
   }

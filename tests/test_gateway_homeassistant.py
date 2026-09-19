@@ -329,7 +329,7 @@ async def test_set_up_shows_the_default_registers_that_report(hass, freezer):
     # builds one out of the power the pump reports; with the pump's own heat
     # meters as the other half, the coefficient of performance follows.
     entities = er.async_entries_for_config_entry(registry, entry.entry_id)
-    assert len([entity for entity in entities if "cop" in entity.unique_id]) == 2
+    assert len([entity for entity in entities if "cop" in entity.unique_id]) == 3
     assert entry.runtime_data.electricity is not None
 
 

@@ -26,7 +26,9 @@ async def async_setup_entry(
     if coordinator.serial is not None and coordinator.serial.manufactured:
         async_add_entities([NibeManufacturedSensor(coordinator)])
     if coordinator.cop is not None:
-        async_add_entities([NibeCopSensor(coordinator, span) for span in ("day", "year")])
+        async_add_entities(
+            [NibeCopSensor(coordinator, span) for span in ("day", "year", "lifetime")]
+        )
     if getattr(coordinator, "electricity", None) is not None:
         async_add_entities([NibeCountedElectricitySensor(coordinator)])
 
@@ -192,10 +194,22 @@ class NibeCopSensor(CoordinatorEntity[NibeCoordinator], SensorEntity):
         # Short, because it stands on a chip beside its value. The word
         # värmefaktor lives in the explanation, where someone searching for it
         # will still find the sensor: the page's filter reads both.
+        #
+        # The longest span is the pump's whole life on the S-series, which
+        # counts its own kilowatt hours, and everything this integration has
+        # counted on the F-series, which does not. Naming it for what it is on
+        # each keeps the figure from claiming more than it covers.
+        counted_here = getattr(coordinator, "is_gateway", False)
         self._attr_name = {
             "day": "COP, dygn" if sv else "COP, day",
             "year": "COP, år" if sv else "COP, year",
+            "lifetime": (
+                ("COP, sedan start" if sv else "COP, since start")
+                if counted_here
+                else ("COP, livstid" if sv else "COP, lifetime")
+            ),
         }[span]
+        self._counted_here = counted_here
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}-cop-{span}"
         self._attr_device_info = device_info(coordinator)
 
@@ -204,6 +218,8 @@ class NibeCopSensor(CoordinatorEntity[NibeCoordinator], SensorEntity):
         out, consumed = self.coordinator.energy_out, self.coordinator.energy_in
         if self._span == "day":
             return tracker.result_day(out, consumed)
+        if self._span == "lifetime":
+            return tracker.result_lifetime(out, consumed)
         return tracker.result(out, consumed)
 
     @property
@@ -212,11 +228,24 @@ class NibeCopSensor(CoordinatorEntity[NibeCoordinator], SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict:
-        attributes = self._result().as_attributes(self._language)
+        result = self._result()
+        attributes = result.as_attributes(self._language)
         # Which span this figure stands on, as a word rather than as a name:
-        # the dashboard tells the two apart without reading Swedish.
+        # the dashboard tells them apart without reading Swedish.
         attributes["span"] = self._span
-        attributes["description"] = explain_own(f"cop_{self._span}", self._language)
+        if self._counted_here and result.basis == "lifetime":
+            # The pump's heat meters have run since it was installed, but the
+            # electricity is counted from the day this integration began.
+            attributes["basis"] = (
+                "sedan mätningen började"
+                if self._language.startswith("sv")
+                else "since counting began"
+            )
+        attributes["description"] = explain_own(
+            f"cop_{self._span}_gateway" if self._counted_here and self._span == "lifetime"
+            else f"cop_{self._span}",
+            self._language,
+        )
         history = self.coordinator.cop.history
         if history and history.get("production"):
             # Where the samples before installation came from, so a yearly

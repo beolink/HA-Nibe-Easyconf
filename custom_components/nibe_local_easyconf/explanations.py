@@ -2101,6 +2101,31 @@ OWN_EXPLANATIONS: dict[str, tuple[str, str]] = {
         "less than a year, since hot water and defrosting weigh heavier over a "
         "short span.",
     ),
+    "cop_lifetime": (
+        "Värmefaktorn över pumpens hela liv, räknad ur dess egna räknare för "
+        "producerad värme och förbrukad el. Den behöver ingen väntetid - den "
+        "finns första dagen - men den rör sig långsamt och säger mer om "
+        "anläggningen i stort än om den här vintern. Vill man jämföra år mot "
+        "år är det årsvärdet som gäller.",
+        "The coefficient of performance over the pump's whole life, from its "
+        "own counters for heat delivered and electricity used. It needs no "
+        "waiting - it is there the first day - but it moves slowly and says "
+        "more about the installation as a whole than about this winter. To "
+        "compare one year with another, the yearly figure is the one.",
+    ),
+    "cop_lifetime_gateway": (
+        "Värmefaktorn över hela den tid den här integrationen har räknat. "
+        "F-serien har ingen elmätare, så elen räknas fram ur effekten pumpen "
+        "rapporterar och startar den dag integrationen installerades; pumpens "
+        "egna värmemätare mäts från samma stund, så de två talen täcker samma "
+        "sträcka. Den blir mer värd ju längre den har fått räkna.",
+        "The coefficient of performance over everything this integration has "
+        "counted. The F-series has no electricity meter, so the electricity is "
+        "worked out from the power the pump reports and starts the day the "
+        "integration was installed; the pump's own heat meters are measured "
+        "from the same moment, so the two figures cover the same stretch. It is "
+        "worth more the longer it has been counting.",
+    ),
     "cop_year": (
         "Värmefaktorn över ett helt år, vilket är det tal som går att jämföra "
         "med andra anläggningar: hela året räknat, med både kalla dygn och "

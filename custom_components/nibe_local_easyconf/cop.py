@@ -240,6 +240,30 @@ class CopTracker:
             round(delta_in, 1),
         )
 
+    def result_lifetime(
+        self, energy_out: float | None, energy_in: float | None
+    ) -> CopResult:
+        """The figure over everything the counters have counted.
+
+        The one span that needs no waiting: an S-series pump has counted since
+        it was installed, so this figure is there the first day. It moves
+        slowly and says little about this winter, which is what the rolling
+        year is for - but it is always an answer.
+        """
+        if energy_out is None or energy_in is None:
+            return CopResult(None, "lifetime", 0)
+        span = 0
+        if self._samples:
+            oldest = min(self._samples)
+            span = (date.today() - date.fromisoformat(oldest)).days
+        return CopResult(
+            _ratio(energy_out, energy_in),
+            "lifetime",
+            span,
+            round(energy_out, 1),
+            round(energy_in, 1),
+        )
+
     def result(
         self,
         energy_out: float | None,

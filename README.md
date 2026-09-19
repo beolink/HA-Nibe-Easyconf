@@ -309,6 +309,12 @@ CTC integration so the two are comparable:
   about a day after setup.
 - **COP, år** — over a rolling year. Until a year of samples exists it shows the
   lifetime figure, and its `basis` attribute says so.
+- **COP, livstid** — over everything the counters have counted, which on an
+  S-series pump is since it was installed. The one span that needs no waiting,
+  so it is the figure the overview shows; the rolling year is the one to
+  compare between years, and stands on the performance tab until it has a year
+  behind it. On the F-series it is named *COP, sedan start*, because there the
+  electricity is counted from the day this integration was installed.
 
 #### Counting what the F-series does not measure
 

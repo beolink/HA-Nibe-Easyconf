@@ -245,3 +245,16 @@ def test_a_sample_a_few_days_past_a_year_still_counts():
     today = date(2026, 11, 20)
     run(tracker.async_record(159264.7, 37592.7, today=today - timedelta(days=370)))
     assert tracker.result(200468.0, 47932.6, today=today).basis == "year"
+
+
+def test_the_lifetime_figure_needs_no_waiting(cop):
+    """The one span that is there the first day: what the pump's own counters
+    have counted since it was installed."""
+    tracker = cop.CopTracker(FakeStore())
+    result = tracker.result_lifetime(201062.0, 48080.7)
+    assert result.value == 4.18
+    assert result.basis == "lifetime"
+    assert (result.energy_out, result.energy_in) == (201062.0, 48080.7)
+    # Below the floor there is nothing to divide by yet.
+    assert tracker.result_lifetime(40.0, 10.0).value is None
+    assert tracker.result_lifetime(None, 10.0).value is None
