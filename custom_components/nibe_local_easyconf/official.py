@@ -98,6 +98,44 @@ AUX_RELAY: dict[int, Bilingual] = {
     22: ("EB102-QN10", "EB102-QN10"),
 }
 
+#: What the pump is working on, and what its parts report doing. NIBE uses the
+#: same tables across both series, but publishes them only on some registers:
+#: the F-series maps carry them (43086 Prio, 43427 compressor state, 43431 and
+#: 43433 pump state, 43555 hot water comfort shunt, 47138 heat medium pump
+#: mode) while the S-series' own equivalents come with no table at all, which
+#: left them reading as bare numbers. The symbol names in NIBE's Modbus list
+#: pair them up - eU8StatePrio, eU8StateCpr, eU8StateHmp, eU8StateBp,
+#: eU8StateHwcomfortShunt, eU8OpmodeHmp - and on the development unit the two
+#: series agree value for value: with the compressor stopped, 31029 reads "off"
+#: in words and 33805 reads 10.
+PRIORITY: dict[int, Bilingual] = {
+    10: ("av", "off"),
+    20: ("varmvatten", "hot water"),
+    30: ("värme", "heating"),
+    40: ("pool", "pool"),
+    41: ("pool 2", "pool 2"),
+    50: ("överföring", "transfer"),
+    60: ("kyla", "cooling"),
+}
+COMPRESSOR_STATE: dict[int, Bilingual] = {
+    20: ("stoppad", "stopped"),
+    40: ("startar", "starting"),
+    60: ("går", "running"),
+    100: ("stoppar", "stopping"),
+}
+PUMP_STATE: dict[int, Bilingual] = {
+    10: ("av", "off"),
+    15: ("startar", "starting"),
+    20: ("på", "on"),
+    40: ("10-dygnsläge", "10-day mode"),
+    80: ("kalibrering", "calibration"),
+}
+OPERATING_MODE: dict[int, Bilingual] = {
+    0: ("auto", "auto"),
+    1: ("manuellt", "manual"),
+    2: ("endast tillsats", "additional heat only"),
+}
+
 #: Register -> value -> (svenska, English), as NIBE's register table has them.
 LABELS: dict[int, dict[int, Bilingual]] = {
     # --- readings --------------------------------------------------------
@@ -109,8 +147,18 @@ LABELS: dict[int, dict[int, Bilingual]] = {
     31806: {0: ("av", "off"), 1: ("aktiv", "active"), 2: ("passiv", "passive")},  # Avfrostning
     31792: {0: ("av", "off"), 1: ("aktiv", "active"), 2: ("passiv", "passive")},
     31778: {0: ("av", "off"), 1: ("aktiv", "active"), 2: ("passiv", "passive")},
-    31029: {10: ("av", "off"), 20: ("varmvatten", "hot water"), 30: ("värme", "heating"),
-            40: ("pool", "pool"), 60: ("kyla", "cooling")},  # Driftprioritering
+    31029: PRIORITY,                                      # Status, eU8StatePrio
+    33805: PRIORITY,                                      # Driftprioritering
+    42744: OPERATING_MODE,                                # Driftläge, eU8Opmode
+    31095: COMPRESSOR_STATE,                              # Driftläge kompressor
+    31440: COMPRESSOR_STATE,                              # Kompressorstatus EB102
+    31485: COMPRESSOR_STATE,                              # Kompressorstatus EB101
+    31530: COMPRESSOR_STATE,                              # Kompressorstatus EB100
+    31097: PUMP_STATE,                                    # VB-pump, läge
+    31099: PUMP_STATE,                                    # KB-pump, läge
+    31130: {10: ("shunt av", "shunt off"), 20: ("shunt öppen", "shunt open"),
+            30: ("shunt stängd", "shunt closed")},        # VV-komfort, shunt
+    31131: {0: OFF, 1: ON},                               # VV-komfort, tillsats
     32196: {0: ("inget larm", "no alarm"), 1: ("aktivt larm", "alarm active")},  # Aktivt larm
     31067: {0: OFF, 1: ON},                               # Extern VB-pump GP10
     31064: {0: OFF, 1: ON},                               # Varmvattencirkulation GP11
@@ -128,8 +176,9 @@ LABELS: dict[int, dict[int, Bilingual]] = {
     # --- settings ----------------------------------------------------------
     40057: {0: ("litet", "small"), 1: ("medel", "medium"), 2: ("stort", "large"),
             3: ("används inte", "not used"), 4: ("smart control", "smart control")},
-    40238: {0: ("auto", "auto"), 1: ("manuellt", "manual"),
-            2: ("endast tillsats", "additional heat only")},  # Driftläge
+    40238: OPERATING_MODE,                                # Driftläge, externt satt
+    40096: {10: ("intermittent", "intermittent"), 20: ("kontinuerlig", "continuous"),
+            30: ("ekonomi", "economy"), 40: ("auto", "auto")},  # VB-pump, läge
     40097: {10: ("intermittent", "intermittent"), 20: ("kontinuerlig", "continuous"),
             30: ("10 dagar kontinuerlig", "10 days continuous")},  # Driftläge köldbärarpump
     40854: {0: ("auto", "auto"), 1: ("manuellt", "manual")},  # Driftläge värmebärarpump

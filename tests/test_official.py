@@ -90,3 +90,20 @@ def test_nibes_table_reaches_the_register_map():
 
 def test_nibes_table_wins_over_the_librarys():
     assert registry.union_map()[32197]["mappings"] == {"0": "Heating", "1": "Hot water"}
+
+
+def test_the_state_registers_read_as_words():
+    """NIBE publishes these tables on the F-series and leaves the S-series'
+    own registers without one, so they read as bare numbers: priority 10,
+    compressor 20, pump 10. The tables are NIBE's own, paired by the symbol
+    names in its Modbus list, and the two series agree value for value."""
+    assert official.labels_for(33805, "sv")["10"] == "Av"
+    assert official.labels_for(33805, "en")["30"] == "Heating"
+    # The register that already answered in words says the same thing.
+    assert official.labels_for(31029, "sv") == official.labels_for(33805, "sv")
+    assert official.labels_for(42744, "sv")["0"] == "Auto"
+    assert official.labels_for(31095, "en")["20"] == "Stopped"
+    assert official.labels_for(31097, "sv")["10"] == "Av"
+    assert official.labels_for(31530, "sv") == official.labels_for(31095, "sv")
+    assert official.labels_for(40096, "sv")["40"] == "Auto"
+    assert official.labels_for(31130, "en")["30"] == "Shunt closed"
