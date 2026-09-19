@@ -202,6 +202,11 @@ SHORT_NAMES: dict[str, tuple[str, str]] = {
     "Degree Minutes (16 bit)": ("Gradminuter", "Degree minutes"),
     "Degree Minutes (32 bit)": ("Gradminuter, 32 bitar", "Degree minutes, 32-bit"),
     "Prio": ("Prioritering", "Priority"),
+    # Two accessories report a bare "Status". Naming them after the accessory
+    # leaves the pump's own status alone, without a register number to tell
+    # them apart: OPT controls an external boiler, ACS is the cooling module.
+    "Status (OPT)": ("Pannans status", "Boiler status"),
+    "Status (ACS)": ("Kylmodulens status", "Cooling module status"),
     "Alarm": ("Larmkod", "Alarm code"),
     "Alarm Reset": ("Återställ larm", "Reset alarm"),
     "Compressor Frequency, Actual": ("Kompressorfrekvens", "Compressor frequency"),
@@ -275,11 +280,20 @@ def assign_names(
     setting = "ställ" if language.startswith("sv") else "set"
 
     names: dict[int, str] = {}
+    #: Registers named in REGISTER_NAMES keep that name whatever else clashes
+    #: with it. The name was chosen for this register knowing the others, so
+    #: the disambiguation belongs to them: "Status" is what the pump is doing,
+    #: and it should not wear a register number because an accessory also
+    #: reports a status.
+    pinned: set[int] = set()
     for register in present:
         meta = registers.get(register)
         if meta is None:
             continue
         title = meta.get("title", str(register))
+        curated = REGISTER_NAMES.get((register, title))
+        if curated is not None:
+            pinned.add(register)
         names[register] = short_name(title, language, register) or fallback(title, language)
 
     groups: dict[str, list[int]] = defaultdict(list)
@@ -299,6 +313,8 @@ def assign_names(
         # ambiguous after that.
         one_setting = len(writable) == 1
         for register in clashing:
+            if register in pinned:
+                continue
             distinct = sorted(codes[register] - shared)
             if distinct:
                 names[register] = f"{name} ({distinct[-1]})"
@@ -315,6 +331,10 @@ def assign_names(
         seen[name].append(register)
     for name, clashing in seen.items():
         if len(clashing) > 1:
-            for register in clashing:
+            # All of them pinned would leave two identical names, which the
+            # curated table must not do; short of that, the pinned one keeps
+            # the plain name.
+            unpinned = [r for r in clashing if r not in pinned]
+            for register in unpinned or clashing:
                 names[register] = f"{name} ({register})"
     return names

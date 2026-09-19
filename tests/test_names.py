@@ -84,6 +84,13 @@ def test_the_register_that_answers_in_words_is_the_status():
     assert assigned[31029] == "Status"
     assert assigned[33805] == "Prioritering"
     assert _assign(registers, "en")[31029] == "Status"
+    # And it keeps the plain name even when an accessory reports a status of
+    # its own: the name was chosen for this register knowing the others, so
+    # the disambiguation belongs to them.
+    with_accessory = {**registers, 30341: _meta("Status (EQ1)")}
+    assigned = _assign(with_accessory)
+    assert assigned[31029] == "Status"
+    assert assigned[30341] == "Status (EQ1)"
     # The F-series spells the same thing "Prio".
     assert _assign({43086: _meta("Prio")})[43086] == "Status"
 
