@@ -648,7 +648,7 @@ async def test_the_f_series_gets_a_coefficient_of_performance(hass, freezer):
     # The two circulation pumps, from their speed and NIBE's figures.
     assert watts["pumps"] >= 0
 
-    day = hass.states.get("sensor.nibe_f1255_16_cu_varmefaktor_cop_dygn")
+    day = hass.states.get("sensor.nibe_f1255_16_cu_cop_dygn")
     assert day is not None
     counted = hass.states.get("sensor.nibe_f1255_16_cu_forbrukad_el_beraknad")
     assert counted is not None

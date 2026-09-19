@@ -19,6 +19,18 @@ people who meet them went looking and are better served by NIBE's full wording.
 
 from __future__ import annotations
 
+#: (register, NIBE title) -> (svenska, English), for the few registers whose
+#: title alone is not enough. NIBE gives two registers on the S-series the same
+#: title "Priority": one answers in words - off, hot water, heat, pool, cooling
+#: - and is what the pump is doing right now, the other is a bare number. The
+#: worded one is named for what it says rather than for the register it is, and
+#: the number keeps the title's own name. Keyed by both, so an address that
+#: means something else on another model is untouched.
+REGISTER_NAMES: dict[tuple[int, str], tuple[str, str]] = {
+    (31029, "Priority"): ("Status", "Status"),
+    (43086, "Prio"): ("Status", "Status"),
+}
+
 #: NIBE title -> (svenska, English). Every entry is at most 24 characters.
 SHORT_NAMES: dict[str, tuple[str, str]] = {
     # --- temperatures ---------------------------------------------------
@@ -222,9 +234,15 @@ SHORT_NAMES: dict[str, tuple[str, str]] = {
 MAX_LENGTH = 24
 
 
-def short_name(title: str, language: str = "sv") -> str | None:
-    """The curated short name for a title, or None if there is none."""
-    names = SHORT_NAMES.get(title)
+def short_name(title: str, language: str = "sv", register: int | None = None) -> str | None:
+    """The curated short name for a title, or None if there is none.
+
+    A register named in REGISTER_NAMES wins over its title: two registers can
+    carry the same title and mean different things.
+    """
+    names = REGISTER_NAMES.get((register, title)) if register is not None else None
+    if names is None:
+        names = SHORT_NAMES.get(title)
     if names is None:
         return None
     return names[0] if language.startswith("sv") else names[1]
@@ -262,7 +280,7 @@ def assign_names(
         if meta is None:
             continue
         title = meta.get("title", str(register))
-        names[register] = short_name(title, language) or fallback(title, language)
+        names[register] = short_name(title, language, register) or fallback(title, language)
 
     groups: dict[str, list[int]] = defaultdict(list)
     for register, name in names.items():

@@ -189,11 +189,12 @@ class NibeCopSensor(CoordinatorEntity[NibeCoordinator], SensorEntity):
             coordinator.hass.config.language, coordinator.config_entry.data.get("language")
         )
         sv = self._language.startswith("sv")
-        # Swedish calls it värmefaktor as often as COP, and someone searching
-        # the page for either word should find it.
+        # Short, because it stands on a chip beside its value. The word
+        # värmefaktor lives in the explanation, where someone searching for it
+        # will still find the sensor: the page's filter reads both.
         self._attr_name = {
-            "day": "Värmefaktor (COP), dygn" if sv else "COP, day",
-            "year": "Värmefaktor (COP), år" if sv else "COP, year",
+            "day": "COP, dygn" if sv else "COP, day",
+            "year": "COP, år" if sv else "COP, year",
         }[span]
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}-cop-{span}"
         self._attr_device_info = device_info(coordinator)
