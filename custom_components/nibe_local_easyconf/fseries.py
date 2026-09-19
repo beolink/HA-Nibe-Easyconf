@@ -354,7 +354,23 @@ ADDITION_POWER: int = 43084
 HEAT_MEDIUM_PUMP_SPEED: int = 43437
 BRINE_PUMP_SPEED: int = 43439
 #: The pump's own heat meters, in kilowatt hours: heating, hot water, pool.
+#: The same three registers on every F-series map that has them, which is all
+#: of them except the F370/F470 and the SMO 20.
 HEAT_METERS: tuple[int, ...] = (44300, 44298, 44304)
+
+#: What the pump says it has used, in kilowatt hours: heating, hot water,
+#: ventilation. Only the F730 publishes these - every other F-series map has no
+#: electricity counter at all, which is what power.py exists for. Where they
+#: are, they are the measurement and our count is not needed.
+CONSUMED_ENERGY: tuple[int, ...] = (41850, 41848, 41846)
+
+#: The same three by title, since DEFAULT_TITLES is checked against the
+#: development unit's map and these are not on it.
+CONSUMED_TITLES: frozenset[str] = frozenset({
+    "HP consumed energy due to heating",
+    "HP consumed energy due to hot water",
+    "HP consumed energy due to ventilation",
+})
 
 #: NIBE's own figures for the circulation pumps, watts at their lowest and at
 #: their highest speed, read from "Elektrisk data" in the installer manual: the
@@ -430,7 +446,11 @@ def pump_watts(limits: tuple[int, int], speed: float | None) -> float:
 def default_registers(registers: dict[int, dict]) -> list[int]:
     """The registers setup reads first: the usual ones, and the flags that say
     which accessories the pump has."""
-    wanted = {r for r, meta in registers.items() if meta.get("title") in DEFAULT_TITLES}
+    wanted = {
+        register
+        for register, meta in registers.items()
+        if (meta.get("title") or "") in DEFAULT_TITLES | CONSUMED_TITLES
+    }
     return sorted(wanted | set(flag_registers(registers)))
 
 
@@ -445,6 +465,7 @@ def is_default(meta: dict, reporting: bool) -> bool:
         return False
     return (
         title in DEFAULT_TITLES
+        or title in CONSUMED_TITLES
         or is_accessory_flag(title)
         or accessory_for(title) is not None
     )

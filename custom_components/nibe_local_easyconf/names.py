@@ -202,6 +202,10 @@ SHORT_NAMES: dict[str, tuple[str, str]] = {
     "Degree Minutes (16 bit)": ("Gradminuter", "Degree minutes"),
     "Degree Minutes (32 bit)": ("Gradminuter, 32 bitar", "Degree minutes, 32-bit"),
     "Prio": ("Prioritering", "Priority"),
+    # The F730 is the one F-series that counts its own electricity.
+    "HP consumed energy due to heating": ("El, värme", "Electricity, heating"),
+    "HP consumed energy due to hot water": ("El, varmvatten", "Electricity, hot water"),
+    "HP consumed energy due to ventilation": ("El, ventilation", "Electricity, vent."),
     # Two accessories report a bare "Status". Naming them after the accessory
     # leaves the pump's own status alone, without a register number to tell
     # them apart: OPT controls an external boiler, ACS is the cooling module.

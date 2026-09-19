@@ -361,15 +361,20 @@ async def _async_setup_gateway_entry(hass: HomeAssistant, entry: NibeConfigEntry
         # pump's own heat meters are the other half; without them, or without
         # the compressor's power, there is nothing to divide.
         heat_meters = set(fseries.HEAT_METERS) & discovery.reporting
-        if heat_meters and fseries.COMPRESSOR_POWER in discovery.reporting:
-            counter = ElectricityCounter(
-                Store(hass, POWER_STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}.power")
-            )
-            await counter.async_load()
+        own_electricity = set(fseries.CONSUMED_ENERGY) & discovery.reporting
+        if heat_meters and (own_electricity or fseries.COMPRESSOR_POWER in discovery.reporting):
+            counter = None
+            if not own_electricity:
+                # The pump does not count its own electricity; the power it
+                # reports is added up instead. See power.py.
+                counter = ElectricityCounter(
+                    Store(hass, POWER_STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}.power")
+                )
+                await counter.async_load()
+                entry.async_on_unload(
+                    async_track_time_interval(hass, _save_counter(counter), POWER_SAVE_INTERVAL)
+                )
             coordinator.start_counting(counter)
-            entry.async_on_unload(
-                async_track_time_interval(hass, _save_counter(counter), POWER_SAVE_INTERVAL)
-            )
             await _async_set_up_cop(hass, entry, coordinator, import_history=False)
     except BaseException:
         await client.stop()

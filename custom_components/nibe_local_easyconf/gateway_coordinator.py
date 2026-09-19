@@ -119,6 +119,7 @@ class NibeGatewayCoordinator(DataUpdateCoordinator[dict[int, Value]]):
         self.read_failures = 0
         self.cop = None
         self._heat_meters: list[int] = []
+        self._consumed_meters: list[int] = []
         #: The meter the pump does not have, built from the power it reports.
         #: Set up by async_setup_entry when the pump's own heat meters answer;
         #: without one there is nothing to divide, and no COP.
@@ -138,11 +139,14 @@ class NibeGatewayCoordinator(DataUpdateCoordinator[dict[int, Value]]):
     def subscribed_count(self) -> int:
         return len(self._subscribed)
 
-    def start_counting(self, counter: ElectricityCounter) -> None:
-        """Take the meter, and keep what it is made of in the poll cycle.
+    def start_counting(self, counter: ElectricityCounter | None) -> None:
+        """Take the figures a coefficient of performance divides.
 
-        The coefficient of performance cannot depend on which entities somebody
-        left switched on, so these registers are read whether or not one asks.
+        The heat comes from the pump's own meters. So does the electricity on
+        the one model that counts it, the F730; everywhere else `counter` adds
+        up the power the pump reports instead. Either way these registers are
+        read whether or not an entity asks for them: the figure cannot depend
+        on which entities somebody left switched on.
         """
         self.electricity = counter
         #: The heat meters this pump answers, decided once. The total is the
@@ -154,12 +158,19 @@ class NibeGatewayCoordinator(DataUpdateCoordinator[dict[int, Value]]):
             for register in fseries.HEAT_METERS
             if register in self.discovery.reporting
         ]
+        #: The pump's own electricity counters, where it has them.
+        self._consumed_meters = [
+            register
+            for register in fseries.CONSUMED_ENERGY
+            if register in self.discovery.reporting
+        ]
         self._internal = {
             fseries.COMPRESSOR_POWER,
             fseries.ADDITION_POWER,
             fseries.HEAT_MEDIUM_PUMP_SPEED,
             fseries.BRINE_PUMP_SPEED,
             *self._heat_meters,
+            *self._consumed_meters,
         } & set(self.registers)
 
     @property
@@ -219,15 +230,33 @@ class NibeGatewayCoordinator(DataUpdateCoordinator[dict[int, Value]]):
         }
 
     @property
+    def consumed_total(self) -> float | None:
+        """What the pump says it has used, kWh, on a model that counts it."""
+        readings = [self._values.get(register) for register in self._consumed_meters]
+        if not readings or not all(isinstance(value, (int, float)) for value in readings):
+            return None
+        return sum(float(value) for value in readings)
+
+    @property
     def energy_out(self) -> float | None:
-        """Heat delivered since this integration started counting, kWh."""
+        """Heat delivered, kWh.
+
+        Over the pump's whole life when it counts its own electricity too, and
+        since this integration began counting when it does not: the two figures
+        a coefficient of performance divides have to cover the same span.
+        """
+        total = self.heat_total
+        if self._consumed_meters:
+            return total
         if self.electricity is None:
             return None
-        return self.electricity.produced(self.heat_total)
+        return self.electricity.produced(total)
 
     @property
     def energy_in(self) -> float | None:
         """Electricity used over the same span, kWh."""
+        if self._consumed_meters:
+            return self.consumed_total
         return None if self.electricity is None else self.electricity.kwh
 
     def default_enabled(self, register: int, meta: dict) -> bool:

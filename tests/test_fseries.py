@@ -283,3 +283,15 @@ def test_the_modules_fan_selector_is_a_choice_not_a_number():
     assert fan["mappings"] == F1255_MAP[43108]["mappings"]
     assert (fan["min"], fan["max"]) == (0, 4)
     assert fan["write"] is True
+
+
+def test_a_pump_that_counts_its_own_electricity_is_read_rather_than_estimated():
+    """Only the F730 publishes what it has used. Where those registers are,
+    they are the measurement and the count in power.py is not needed."""
+    f730 = registry.model_map("f730")
+    registers = fseries.default_registers(f730)
+    for register in fseries.CONSUMED_ENERGY:
+        assert register in registers, register
+        assert fseries.is_default(f730[register], reporting=True)
+    # The development unit has no such registers, so nothing is expected of it.
+    assert not set(fseries.CONSUMED_ENERGY) & set(F1255_MAP)

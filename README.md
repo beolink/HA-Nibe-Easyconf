@@ -318,8 +318,12 @@ CTC integration so the two are comparable:
 
 #### Counting what the F-series does not measure
 
-An F-series pump has no energy counters at all, which is why it had no COP. It
-does report the two things that use the electricity — what the compressor draws
+An F-series pump has no electricity counter, which is why it had no COP. Its
+own heat meters do count what it has delivered, and one model - the F730 -
+counts the electricity too, in three registers for heating, hot water and
+ventilation; where those are, they are read and nothing is estimated. On every
+other F-series the electricity is counted here instead: the pump reports the
+two things that use it — what the compressor draws
 and what the immersion heater draws, in kilowatts — and how fast its two
 circulation pumps are running, and its own heat meters count the heat it has
 delivered. Adding the power up over time is what a meter does, and that is what
