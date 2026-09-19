@@ -77,6 +77,11 @@ class ElectricityCounter:
         self.parts = Parts()
         #: The heat meters' sum when counting began, kWh.
         self.heat_baseline: float | None = None
+        #: What this counter stood at in the same moment. The two figures a
+        #: coefficient of performance divides have to cover the same span, so
+        #: whenever the heat mark moves - the first reading, or a pump whose
+        #: meters were reset in service - the electricity is marked with it.
+        self.electricity_baseline: float = 0.0
         self._last: tuple[float, dict[str, float]] | None = None
 
     # -- persistence --------------------------------------------------------
@@ -94,6 +99,7 @@ class ElectricityCounter:
         )
         baseline = data.get("heat_baseline")
         self.heat_baseline = None if baseline is None else float(baseline)
+        self.electricity_baseline = float(data.get("electricity_baseline", 0.0))
         stamp, watts = data.get("last_stamp"), data.get("last_watts")
         if stamp is not None and isinstance(watts, dict):
             # Counting continues across the restart: the pump kept running.
@@ -104,6 +110,7 @@ class ElectricityCounter:
             {
                 "parts": asdict(self.parts),
                 "heat_baseline": self.heat_baseline,
+                "electricity_baseline": self.electricity_baseline,
                 "last_stamp": None if self._last is None else self._last[0],
                 "last_watts": None if self._last is None else self._last[1],
             }
@@ -132,8 +139,8 @@ class ElectricityCounter:
 
     @property
     def kwh(self) -> float:
-        """Electricity used since counting began."""
-        return self.parts.total
+        """Electricity used over the span the delivered heat also covers."""
+        return max(0.0, self.parts.total - self.electricity_baseline)
 
     def produced(self, heat_total: float | None) -> float | None:
         """Heat delivered since counting began, from the pump's own meters.
@@ -141,10 +148,21 @@ class ElectricityCounter:
         The first reading sets the mark the rest are measured from. A pump
         whose meters have been reset - a service visit, a new controller -
         reads lower than its mark, and the mark moves with it rather than
-        turning the delivered heat negative.
+        turning the delivered heat negative. The electricity is marked in the
+        same moment, so the two always cover the same span.
         """
         if heat_total is None:
             return None
-        if self.heat_baseline is None or heat_total < self.heat_baseline:
+        if self.heat_baseline is None:
             self.heat_baseline = heat_total
+            self.electricity_baseline = self.parts.total
+        elif heat_total < self.heat_baseline:
+            _LOGGER.info(
+                "The pump's heat meters read %.1f kWh, below the %.1f they stood at when "
+                "counting began; counting both figures from here instead",
+                heat_total,
+                self.heat_baseline,
+            )
+            self.heat_baseline = heat_total
+            self.electricity_baseline = self.parts.total
         return heat_total - self.heat_baseline

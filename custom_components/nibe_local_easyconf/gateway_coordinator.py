@@ -118,6 +118,7 @@ class NibeGatewayCoordinator(DataUpdateCoordinator[dict[int, Value]]):
         #: Cumulative failed poll cycles, for the daily report.
         self.read_failures = 0
         self.cop = None
+        self._heat_meters: list[int] = []
         #: The meter the pump does not have, built from the power it reports.
         #: Set up by async_setup_entry when the pump's own heat meters answer;
         #: without one there is nothing to divide, and no COP.
@@ -144,12 +145,21 @@ class NibeGatewayCoordinator(DataUpdateCoordinator[dict[int, Value]]):
         left switched on, so these registers are read whether or not one asks.
         """
         self.electricity = counter
+        #: The heat meters this pump answers, decided once. The total is the
+        #: sum of all of them or nothing: a sum missing one meter is smaller
+        #: than the last, which would look like the pump had run backwards and
+        #: move the mark the delivered heat is measured from.
+        self._heat_meters = [
+            register
+            for register in fseries.HEAT_METERS
+            if register in self.discovery.reporting
+        ]
         self._internal = {
             fseries.COMPRESSOR_POWER,
             fseries.ADDITION_POWER,
             fseries.HEAT_MEDIUM_PUMP_SPEED,
             fseries.BRINE_PUMP_SPEED,
-            *fseries.HEAT_METERS,
+            *self._heat_meters,
         } & set(self.registers)
 
     @property
@@ -170,16 +180,16 @@ class NibeGatewayCoordinator(DataUpdateCoordinator[dict[int, Value]]):
     def heat_total(self) -> float | None:
         """What the pump's own heat meters have counted, kWh.
 
-        Heating, hot water and the pool, added up. A meter that has not
-        answered yet is left out rather than counted as zero, which would drop
-        the total and look like the pump had run backwards.
+        Heating, hot water and the pool, added up - all of them or none. Each
+        costs a second through the gateway, so after a restart they arrive one
+        by one, and a sum of the ones that have arrived would be smaller than
+        the last: the heat delivered since counting began is measured from a
+        mark, and a total that dips moves that mark.
         """
-        readings = [
-            float(self._values[register])
-            for register in fseries.HEAT_METERS
-            if isinstance(self._values.get(register), (int, float))
-        ]
-        return sum(readings) if readings else None
+        readings = [self._values.get(register) for register in self._heat_meters]
+        if not readings or not all(isinstance(value, (int, float)) for value in readings):
+            return None
+        return sum(float(value) for value in readings)
 
     @property
     def watts(self) -> dict[str, float] | None:

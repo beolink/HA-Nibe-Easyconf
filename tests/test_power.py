@@ -143,9 +143,10 @@ def test_a_clock_that_went_backwards_starts_a_new_line():
 def test_the_count_survives_a_restart():
     store = FakeStore()
     counter = power.ElectricityCounter(store)
+    # The heat meters answer in the first cycle, as they do on a real pump.
+    counter.produced(500.0)
     for minute in range(0, 61, 10):
         counter.sample({"compressor": 1000.0}, now=minute * 60)
-    counter.produced(500.0)
     asyncio.run(counter.async_save())
 
     after = power.ElectricityCounter(store)
@@ -172,3 +173,30 @@ def test_a_heat_meter_that_was_reset_does_not_turn_the_heat_negative():
     counter.produced(897.5)
     assert counter.produced(12.0) == 0  # a new controller, counting afresh
     assert counter.produced(15.0) == pytest.approx(3.0)
+
+
+def test_both_figures_cover_the_same_span():
+    """A coefficient of performance divides two numbers; they have to be about
+    the same stretch of time. The first heat reading marks both."""
+    counter = power.ElectricityCounter(FakeStore())
+    counter.sample({"compressor": 1000.0}, now=0)
+    counter.sample({"compressor": 1000.0}, now=600)   # a tenth of an hour
+    assert counter.kwh == pytest.approx(1000 * 600 / 3_600_000)
+
+    # The heat meters answer for the first time only now.
+    assert counter.produced(900.0) == 0
+    assert counter.kwh == 0
+    counter.sample({"compressor": 1000.0}, now=1200)
+    assert counter.kwh == pytest.approx(1000 * 600 / 3_600_000)
+    assert counter.produced(901.0) == pytest.approx(1.0)
+
+
+def test_a_meter_reset_marks_both_figures_again():
+    counter = power.ElectricityCounter(FakeStore())
+    counter.produced(900.0)
+    counter.sample({"compressor": 3000.0}, now=0)
+    counter.sample({"compressor": 3000.0}, now=600)
+    assert counter.kwh > 0
+    # A service visit leaves the pump counting afresh.
+    assert counter.produced(3.0) == 0
+    assert counter.kwh == 0
