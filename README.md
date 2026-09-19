@@ -88,8 +88,15 @@ comes up empty.
 Whichever route, it then scans the registers — about a minute, once — and shows
 what it found before asking which model to name the device after.
 
-The scan result is cached, so restarts are instant. After a firmware update or
-fitting an accessory, call the **`nibe_local_easyconf.rescan_registers`** service.
+The scan result is cached, so restarts are instant. It is read again on its own
+after an update of this integration, because what is worth reading is the
+integration's opinion as much as the pump's: a release that starts reading
+registers it did not read before would otherwise only show them on
+installations set up after it. If the pump happens to be quiet at that moment
+the scan from before is kept, and the next start tries again.
+
+After a firmware update or fitting an accessory, call the
+**`nibe_local_easyconf.rescan_registers`** service.
 
 ## F-series through a NibeGW gateway
 

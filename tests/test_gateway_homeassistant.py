@@ -655,3 +655,54 @@ async def test_the_f_series_gets_a_coefficient_of_performance(hass, freezer):
     assert counted.attributes["unit_of_measurement"] == "kWh"
     assert "compressor_kwh" in counted.attributes
     assert counted.attributes["description"]
+
+
+async def test_an_update_of_the_integration_reads_the_registers_again(hass, freezer):
+    """What is worth reading is this integration's opinion as much as the
+    pump's. A release that starts reading registers it did not read before -
+    the accessory flags - would otherwise only show them on installations set
+    up after it, so a scan made by an older version is made again."""
+    from custom_components.nibe_local_easyconf import storage
+
+    entry = await _set_up(hass, freezer)
+    fake = FakeNibeGW.instances[-1]
+
+    # A restart on the same version reads nothing at setup: the scan stands.
+    fake.reads.clear()
+    await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    settled = len(fake.reads)
+
+    # As an installation upgraded from an older release looks.
+    await storage.async_save(
+        hass, entry.entry_id, entry.runtime_data.discovery, "1.0.0"
+    )
+    fake = FakeNibeGW.instances[-1]
+    fake.reads.clear()
+    await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert len(FakeNibeGW.instances[-1].reads) > settled + 40
+    assert await storage.async_saved_version(hass, entry.entry_id) != "1.0.0"
+
+
+async def test_a_pump_that_goes_quiet_during_that_scan_keeps_its_entities(hass, freezer):
+    """The scan after an update must not cost an installation its entities if
+    the gateway happens to be quiet: the scan from before still describes the
+    pump, and the next start tries again."""
+    from custom_components.nibe_local_easyconf import storage
+
+    entry = await _set_up(hass, freezer)
+    before = set(entry.runtime_data.discovery.reporting)
+    await storage.async_save(hass, entry.entry_id, entry.runtime_data.discovery, "1.0.0")
+
+    with patch(
+        "custom_components.nibe_local_easyconf.probe",
+        side_effect=gateway_module.GatewayError("the gateway is quiet"),
+    ):
+        await hass.config_entries.async_reload(entry.entry_id)
+        await hass.async_block_till_done()
+
+    assert entry.state is ConfigEntryState.LOADED
+    assert set(entry.runtime_data.discovery.reporting) == before
+    # The version is not marked as scanned, so the next start tries again.
+    assert await storage.async_saved_version(hass, entry.entry_id) == "1.0.0"

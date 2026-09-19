@@ -75,7 +75,7 @@ from .registry import async_model_map, async_union_map
 from .serial import parse_serial, serial_from_hostname
 from .stats import async_setup_stats, async_stop_stats
 from .stats_extra import ErrorCounter, build_extra
-from .storage import async_load, async_remove, async_save
+from .storage import async_load, async_remove, async_save, async_saved_version
 from .translations_extra import entity_language
 
 _LOGGER = logging.getLogger(__name__)
@@ -164,15 +164,22 @@ async def _async_arm_statistics(hass: HomeAssistant, entry: NibeConfigEntry) -> 
 
 
 async def _async_cached_discovery(
-    hass: HomeAssistant, entry: ConfigEntry
-) -> DiscoveryResult | None:
-    """The register scan from an earlier start, or the one setup just did.
+    hass: HomeAssistant, entry: ConfigEntry, version: str | None = None
+) -> tuple[DiscoveryResult | None, bool]:
+    """The register scan from an earlier start, and whether it is out of date.
 
     On the first start after setup the config flow's scan is adopted, then
     moved out of the config entry so it is not carried around in
     core.config_entries on every future start.
+
+    A scan made by an older version of this integration is stale: what is worth
+    reading is this integration's opinion as much as the pump's, and a release
+    that starts reading registers it did not read before would otherwise only
+    show them on installations set up after it. The caller scans again, and
+    falls back to this one if the pump does not answer just then.
     """
     discovery = await async_load(hass, entry.entry_id)
+    stale = discovery is not None and await async_saved_version(hass, entry.entry_id) != version
     if discovery is None and "discovery" in entry.data:
         cached = entry.data["discovery"]
         probed = cached.get("probed")
@@ -182,10 +189,10 @@ async def _async_cached_discovery(
             absent=set(cached.get("absent", [])),
             probed=None if probed is None else set(probed),
         )
-        await async_save(hass, entry.entry_id, discovery)
+        await async_save(hass, entry.entry_id, discovery, version)
         remaining = {k: v for k, v in entry.data.items() if k != "discovery"}
         hass.config_entries.async_update_entry(entry, data=remaining)
-    return discovery
+    return discovery, stale
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool:
@@ -205,15 +212,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool
         raise ConfigEntryNotReady(str(err)) from err
 
     registers = await async_union_map(hass)
-    discovery = await _async_cached_discovery(hass, entry)
+    version = str((await async_get_integration(hass, DOMAIN)).version)
+    cached, stale = await _async_cached_discovery(hass, entry, version)
+    discovery = None if stale else cached
     if discovery is None:
-        _LOGGER.info("No cached register scan; probing %s", entry.data[CONF_HOST])
+        _LOGGER.info(
+            "%s; reading the registers of %s",
+            "The integration was updated" if stale else "No cached register scan",
+            entry.data[CONF_HOST],
+        )
         try:
             discovery = await RegisterDiscovery(client).run(registers)
         except ModbusTransportError as err:
-            await client.close()
-            raise ConfigEntryNotReady(str(err)) from err
-        await async_save(hass, entry.entry_id, discovery)
+            if cached is None:
+                await client.close()
+                raise ConfigEntryNotReady(str(err)) from err
+            # The pump is quiet at this moment; the scan from before is still
+            # true about the pump, and the next start tries again.
+            _LOGGER.warning("Could not read the registers again (%s); keeping the last scan", err)
+            discovery = cached
+        else:
+            await async_save(hass, entry.entry_id, discovery, version)
     _LOGGER.debug("Register discovery for %s: %s", entry.title, discovery.summary())
 
     coordinator = NibeCoordinator(
@@ -290,12 +309,33 @@ async def _async_setup_gateway_entry(hass: HomeAssistant, entry: NibeConfigEntry
         ) from err
 
     try:
-        discovery = await _async_cached_discovery(hass, entry)
+        version = str((await async_get_integration(hass, DOMAIN)).version)
+        cached, stale = await _async_cached_discovery(hass, entry, version)
+        discovery = None if stale else cached
         if discovery is None:
-            _LOGGER.info("No cached register scan; reading the defaults through %s", client.host)
-            result = await probe(client, fseries.default_registers(registers))
-            discovery = gateway_discovery(registers, result)
-            await async_save(hass, entry.entry_id, discovery)
+            # Every register costs about a second through the gateway, so this
+            # is a minute and a half - once, after an update that may have
+            # widened what is worth reading.
+            _LOGGER.info(
+                "%s; reading the defaults through %s",
+                "The integration was updated" if stale else "No cached register scan",
+                client.host,
+            )
+            try:
+                result = await probe(client, fseries.default_registers(registers))
+            except (GatewayError, OSError, NibeException) as err:
+                if cached is None:
+                    raise
+                # A gateway that goes quiet during the scan must not cost the
+                # pump its entities: the scan from before still describes it,
+                # and the next start tries again.
+                _LOGGER.warning(
+                    "Could not read the registers again (%s); keeping the last scan", err
+                )
+                discovery = cached
+            else:
+                discovery = gateway_discovery(registers, result)
+                await async_save(hass, entry.entry_id, discovery, version)
         _LOGGER.debug("Register discovery for %s: %s", entry.title, discovery.summary())
 
         coordinator = NibeGatewayCoordinator(
@@ -554,7 +594,8 @@ def _register_services(hass: HomeAssistant) -> None:
         for entry in entries:
             coordinator: NibeCoordinator = entry.runtime_data
             result = await coordinator.async_rescan()
-            await async_save(hass, entry.entry_id, result)
+            version = str((await async_get_integration(hass, DOMAIN)).version)
+            await async_save(hass, entry.entry_id, result, version)
             # Newly discovered registers need entities, which are created at
             # platform setup, so reload the entry to pick them up.
             hass.async_create_task(hass.config_entries.async_reload(entry.entry_id))
