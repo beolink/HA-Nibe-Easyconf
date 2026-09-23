@@ -375,7 +375,20 @@ async def _async_setup_gateway_entry(hass: HomeAssistant, entry: NibeConfigEntry
                     async_track_time_interval(hass, _save_counter(counter), POWER_SAVE_INTERVAL)
                 )
             coordinator.start_counting(counter)
-            await _async_set_up_cop(hass, entry, coordinator, import_history=False)
+            if counter is not None and not counter.counting_heat:
+                # The pump answers its heat meters and never moves them; see
+                # power.py. Three figures that can never be worked out are
+                # worse than none, so they are left out until it does.
+                _LOGGER.warning(
+                    "%s answers its heat meters but has not moved them through %.0f kWh of "
+                    "electricity, so it is not measuring the heat it delivers and there is "
+                    "nothing to divide. NIBE's energy metering needs a flow meter (EMK 300 "
+                    "or EMK 500); with one fitted, restart to get the COP sensors",
+                    entry.title,
+                    counter.kwh,
+                )
+            else:
+                await _async_set_up_cop(hass, entry, coordinator, import_history=False)
     except BaseException:
         await client.stop()
         raise

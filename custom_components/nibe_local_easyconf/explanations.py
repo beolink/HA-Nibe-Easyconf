@@ -1981,6 +1981,21 @@ EXPLANATIONS: list[tuple[re.Pattern[str], tuple[str, str]]] = [
     ),
     # ------------------------------------------------- the accessory flags
     (
+        re.compile(r"preset flow|inställt flöde|flow dt|flöde.*\bdt\b", re.I),
+        (
+            "Vad pumpen räknar med för flöde i värmebärarkretsen, och vilken "
+            "temperaturskillnad den arbetar med. Den använder dem för att räkna "
+            "ut hur många kilowattimmar värme den lämnat - utan ett flöde, mätt "
+            "eller angivet, står värmemätarna stilla och någon värmefaktor går "
+            "inte att räkna fram.",
+            "What flow the pump assumes in the heating circuit, and what "
+            "temperature difference it is working with. It uses them to work out "
+            "how many kilowatt hours of heat it has delivered - without a flow, "
+            "measured or given, the heat meters stand still and no coefficient of "
+            "performance can be worked out.",
+        ),
+    ),
+    (
         re.compile(r"modbus ?40", re.I),
         (
             "Inställningar för MODBUS 40, tillbehöret som låter pumpen tala med "
@@ -2090,6 +2105,19 @@ OWN_EXPLANATIONS: dict[str, tuple[str, str]] = {
         "temperature. The mode exists for an energy manager that wants to move "
         "heating to the hours when electricity is cheap; normal is the offset the "
         "pump stood at when the mode was first used.",
+    ),
+    "heat_not_counted": (
+        "Pumpen räknar inte värmen den levererar. Registren för värmemängd "
+        "finns och svarar, men siffran rör sig aldrig: NIBE:s energimätning "
+        "kräver en flödesmätare (EMK 300 eller EMK 500), och utan den finns "
+        "ingenting att dela elen med. Därför saknas värmefaktorn här. Elen "
+        "räknas ändå, och duger till energipanelen.",
+        "The pump does not measure the heat it delivers. The heat meter "
+        "registers are there and answer, but the figure never moves: NIBE's "
+        "energy metering needs a flow meter (an EMK 300 or EMK 500), and "
+        "without one there is nothing to divide the electricity by. That is why "
+        "there is no coefficient of performance here. The electricity is counted "
+        "all the same, and is good for the energy dashboard.",
     ),
     "counted_electricity": (
         "Elen värmepumpen har använt, räknad i stället för mätt. F-serien har "

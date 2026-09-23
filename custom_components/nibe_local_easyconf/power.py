@@ -45,6 +45,14 @@ MAX_TRAPEZOID_S = 900.0
 #: would quietly bend the yearly figure.
 MAX_GAP_S = 6 * 3600.0
 
+#: Electricity counted before the pump's silence about delivered heat is taken
+#: as an answer. The registers exist on every F-series map of this generation,
+#: but not every pump maintains them: the development unit answers 650.7 and
+#: 246.8 kWh and has stood on those figures through four days and 25 kWh of
+#: compressor. NIBE's energy metering needs a flow meter - the EMK 300 or 500 -
+#: and without one there is nothing to divide, whatever the registers say.
+HEAT_SILENCE_KWH = 10.0
+
 
 @dataclass
 class Parts:
@@ -82,6 +90,8 @@ class ElectricityCounter:
         #: whenever the heat mark moves - the first reading, or a pump whose
         #: meters were reset in service - the electricity is marked with it.
         self.electricity_baseline: float = 0.0
+        #: Whether the pump's heat meters have ever moved since counting began.
+        self.heat_moved = False
         self._last: tuple[float, dict[str, float]] | None = None
 
     # -- persistence --------------------------------------------------------
@@ -100,6 +110,7 @@ class ElectricityCounter:
         baseline = data.get("heat_baseline")
         self.heat_baseline = None if baseline is None else float(baseline)
         self.electricity_baseline = float(data.get("electricity_baseline", 0.0))
+        self.heat_moved = bool(data.get("heat_moved", False))
         stamp, watts = data.get("last_stamp"), data.get("last_watts")
         if stamp is not None and isinstance(watts, dict):
             # Counting continues across the restart: the pump kept running.
@@ -111,6 +122,7 @@ class ElectricityCounter:
                 "parts": asdict(self.parts),
                 "heat_baseline": self.heat_baseline,
                 "electricity_baseline": self.electricity_baseline,
+                "heat_moved": self.heat_moved,
                 "last_stamp": None if self._last is None else self._last[0],
                 "last_watts": None if self._last is None else self._last[1],
             }
@@ -142,6 +154,19 @@ class ElectricityCounter:
         """Electricity used over the span the delivered heat also covers."""
         return max(0.0, self.parts.total - self.electricity_baseline)
 
+    @property
+    def counting_heat(self) -> bool:
+        """Whether the pump's heat meters are counting at all.
+
+        They answer on every pump of this generation; they are maintained on
+        rather fewer. Until enough electricity has gone by there is nothing to
+        conclude - a pump that has not run has delivered nothing either - but a
+        meter that stands still through ten kilowatt hours of compressor is not
+        measuring, and a coefficient of performance divided by it would be a
+        figure waiting for a day that never comes.
+        """
+        return self.heat_moved or self.kwh < HEAT_SILENCE_KWH
+
     def produced(self, heat_total: float | None) -> float | None:
         """Heat delivered since counting began, from the pump's own meters.
 
@@ -153,6 +178,8 @@ class ElectricityCounter:
         """
         if heat_total is None:
             return None
+        if self.heat_baseline is not None and heat_total != self.heat_baseline:
+            self.heat_moved = True
         if self.heat_baseline is None:
             self.heat_baseline = heat_total
             self.electricity_baseline = self.parts.total

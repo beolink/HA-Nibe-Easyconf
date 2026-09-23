@@ -282,6 +282,11 @@ DEFAULT_TITLES: frozenset[str] = frozenset({
     # the pump's own heat meters, both sets: see HEAT_METERS
     "Heat Meter - Heat Cpr and Add - Total system",
     "Heat Meter - HW Cpr and Add - Total system",
+    # what the heat meters rest on: the flow the pump measures or is told to
+    # assume, and the temperature difference it works with
+    "preset flow clim. sys.",
+    "Heat Medium Flow dT Actual",
+    "Heat Medium Flow dT Set Point",
     # temperatures
     "BT1 Outdoor Temperature",
     "BT1 Average",

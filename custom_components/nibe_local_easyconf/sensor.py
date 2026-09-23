@@ -151,8 +151,15 @@ class NibeCountedElectricitySensor(CoordinatorEntity[NibeCoordinator], SensorEnt
         parts = counter.parts
         watts = self.coordinator.watts or {}
         brine, medium = self.coordinator.pump_watt_limits
+        counting_heat = counter.counting_heat
         return {
-            "description": explain_own("counted_electricity", self._language),
+            "description": explain_own(
+                "counted_electricity" if counting_heat else "heat_not_counted",
+                self._language,
+            ),
+            # Whether the other half of a coefficient of performance exists on
+            # this pump at all; see power.py.
+            "pump_counts_heat": counting_heat,
             "compressor_kwh": round(parts.compressor, 3),
             "additional_heat_kwh": round(parts.addition, 3),
             "circulation_pumps_kwh": round(parts.pumps, 3),
