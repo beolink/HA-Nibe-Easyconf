@@ -36,7 +36,11 @@ from pytest_homeassistant_custom_component.common import (
     async_fire_time_changed,
 )
 
-from custom_components.nibe_local_easyconf import fseries, gateway as gateway_module
+from custom_components.nibe_local_easyconf import (
+    fseries,
+    gateway as gateway_module,
+    power,
+)
 from custom_components.nibe_local_easyconf.const import DOMAIN, platform_for
 
 from .test_gateway import FakeNibeGW
@@ -706,3 +710,33 @@ async def test_a_pump_that_goes_quiet_during_that_scan_keeps_its_entities(hass, 
     assert set(entry.runtime_data.discovery.reporting) == before
     # The version is not marked as scanned, so the next start tries again.
     assert await storage.async_saved_version(hass, entry.entry_id) == "1.0.0"
+
+
+async def test_a_pump_that_does_not_measure_heat_gets_no_cop_sensors(hass, freezer):
+    """The heat meter registers answer on every F-series of this generation and
+    are maintained on rather fewer: the development unit has stood on 650.7 kWh
+    through days of compressor. Three figures that can never be worked out are
+    worse than none, so they are not created - and any left from an earlier
+    version are taken away rather than left unavailable for ever."""
+    entry = await _set_up(hass, freezer)
+    registry = er.async_get(hass)
+    assert entry.runtime_data.cop is not None
+    assert registry.async_get_entity_id("sensor", DOMAIN, f"{entry.entry_id}-cop-day")
+
+    # As a pump that answers its meters and never moves them looks, once
+    # enough electricity has gone by to make that an answer.
+    counter = entry.runtime_data.electricity
+    counter.heat_moved = False
+    counter.parts.compressor = power.HEAT_SILENCE_KWH + 5
+    counter.electricity_baseline = 0.0
+    await counter.async_save()
+
+    await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.runtime_data.cop is None
+    assert registry.async_get_entity_id("sensor", DOMAIN, f"{entry.entry_id}-cop-day") is None
+    # The electricity is still counted, and says why there is no COP.
+    counted = hass.states.get("sensor.nibe_f1255_16_cu_forbrukad_el_beraknad")
+    assert counted is not None
+    assert counted.attributes["pump_counts_heat"] is False
+    assert "flödesmätare" in counted.attributes["description"]

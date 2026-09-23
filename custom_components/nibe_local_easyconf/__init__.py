@@ -8,7 +8,7 @@ import socket
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT, CONF_SCAN_INTERVAL
-from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
+from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse, callback
 from homeassistant.exceptions import ConfigEntryError, ConfigEntryNotReady
 from homeassistant.helpers import (
     config_validation as cv,
@@ -387,6 +387,7 @@ async def _async_setup_gateway_entry(hass: HomeAssistant, entry: NibeConfigEntry
                     entry.title,
                     counter.kwh,
                 )
+                _async_remove_cop_entities(hass, entry)
             else:
                 await _async_set_up_cop(hass, entry, coordinator, import_history=False)
     except BaseException:
@@ -419,6 +420,21 @@ def _save_counter(counter: ElectricityCounter):
         await counter.async_save()
 
     return _save
+
+
+@callback
+def _async_remove_cop_entities(hass: HomeAssistant, entry: NibeConfigEntry) -> None:
+    """Take away the coefficient of performance sensors of a pump that cannot
+    have one. Left behind they would sit unavailable for ever, which says less
+    than nothing; they are registered again the day the pump starts counting.
+    """
+    registry = er.async_get(hass)
+    for span in ("day", "year", "lifetime"):
+        entity_id = registry.async_get_entity_id(
+            "sensor", DOMAIN, f"{entry.entry_id}-cop-{span}"
+        )
+        if entity_id is not None:
+            registry.async_remove(entity_id)
 
 
 async def _async_set_up_cop(
