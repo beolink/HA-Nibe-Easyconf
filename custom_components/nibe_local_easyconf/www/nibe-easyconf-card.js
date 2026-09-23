@@ -213,16 +213,23 @@ const CONTROL_RULES = [
 //: matched by several spellings, since the S- and F-series maps word their
 //: registers differently.
 const STATUS_PATTERNS = [
-  /^prio$|driftprioritering|priority/i,
+  // What the pump is doing, by the name it was given: NIBE titles two S-series
+  // registers "Priority" and only one of them answers in words, so matching
+  // the title would put the other on the chip. See names.REGISTER_NAMES.
+  /^status$|driftprioritering/i,
   /värmeläge|heating mode/i,
   /driftläge|operating mode/i,
   /varmvattenläge|hot ?water mode/i,
 ];
 
 const READING_PATTERNS = [
+  // The temperature the house is about, on a pump that has a room sensor. The
+  // S-series answers it as an average per climate system, so both spellings -
+  // and anchored, because "alarm action, lower room temperature" is a switch.
+  /\(BT50\)|^BT50\b|^room average temp|^rumstemperatur/i,
   /BT1 Outdoor|outdoor temperature|utetemperatur/i,
-  /BT2 Supply|supply line|framledning/i,
-  /BT3 Return|return line|returledning/i,
+  /BT2 Supply|^supply line|^framledning/i,
+  /BT3 Return|^return line|^returledning/i,
   /calc\.? supply|beräknad framledning|calculated supply/i,
   /BT7 HW|hot water top|varmvatten topp/i,
   /BT6 HW|hot water charging|varmvattenladdning/i,
@@ -445,15 +452,27 @@ function controlRows(rows) {
 /** The first row matching each pattern, at most `limit`, never twice.
  *  Patterns are matched against NIBE's title first, since that is the same
  *  wording on every installation, and then the user-visible name. */
+/** How many component designations a title carries. A pump names the same
+ *  reading twice - "Return line (BT3)" for the house's return and "Return line
+ *  (EB100-BT3)" for the compressor module's - and the one with fewer
+ *  designations is the one the house is about. */
+function qualifiers(row) {
+  return ((row && row.nibeTitle) || "").match(/\b[A-Z]{2}\d{1,3}\b/g)?.length || 0;
+}
+
 function pickByPatterns(rows, patterns, limit) {
   const picked = [];
   for (const pattern of patterns) {
     if (picked.length >= limit) break;
-    const hit = rows.find(
+    const matches = rows.filter(
       (row) =>
         !picked.includes(row) &&
         (pattern.test(row.nibeTitle || "") || pattern.test(row.name || ""))
     );
+    // Least qualified first, and among equals the order they came in.
+    const hit = matches.length > 1
+      ? matches.reduce((best, row) => (qualifiers(row) < qualifiers(best) ? row : best))
+      : matches[0];
     if (hit) picked.push(hit);
   }
   return picked;
@@ -463,9 +482,10 @@ function pickByPatterns(rows, patterns, limit) {
 //: the F-series, "Current outdoor temperature (BT1)" on the S-series - so each
 //: line is matched by several spellings, most wanted first.
 const TEMPERATURE_PATTERNS = [
+  /\(BT50\)|^BT50\b|^room average temp|^rumstemperatur/i,
   /BT1 Outdoor|outdoor temperature|utetemperatur/i,
-  /BT2 Supply|supply line|framledning/i,
-  /BT3 Return|return line|returledning/i,
+  /BT2 Supply|^supply line|^framledning/i,
+  /BT3 Return|^return line|^returledning/i,
   /BT7 HW|hot water top|varmvatten topp/i,
   /BT6 HW|hot water charging|varmvattenladdning/i,
   /BT10 Brine|brine in|köldbärare in/i,

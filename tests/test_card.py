@@ -251,8 +251,10 @@ const rows = [
 def test_graphs_are_picked_from_what_the_pump_reports():
     graphs = _run(GRAPH_ROWS + "console.log(JSON.stringify(c.pickGraphs(rows)))")
     assert [g["key"] for g in graphs] == ["temps", "compressor", "cop", "energy"]
-    # The room sensor is a temperature too, but the graph is about the circuit.
-    assert graphs[0]["entities"] == ["sensor.bt1", "sensor.bt2", "sensor.bt3"]
+    # The room the house is heated for comes first, then the circuit.
+    assert graphs[0]["entities"] == [
+        "sensor.bt50", "sensor.bt1", "sensor.bt2", "sensor.bt3",
+    ]
     assert graphs[1]["entities"] == ["sensor.freq", "number.dm"]
     assert graphs[2]["entities"] == ["sensor.cop_day"]
     assert graphs[3]["entities"] == ["sensor.out", "sensor.in"]
@@ -323,9 +325,10 @@ def test_the_overview_leads_with_the_alarm_and_the_mode():
         # How well it is working is part of "right now" too.
         "sensor.cop_day",
     ]
-    # The readings are the circuit, and never repeat what the status shows.
-    assert [row["entityId"] for row in picked["readings"]][:3] == [
-        "sensor.bt1", "sensor.bt2", "sensor.bt3",
+    # The readings are the room and the circuit, and never repeat what the
+    # status shows.
+    assert [row["entityId"] for row in picked["readings"]][:4] == [
+        "sensor.bt50", "sensor.bt1", "sensor.bt2", "sensor.bt3",
     ]
     assert "sensor.prio" not in [row["entityId"] for row in picked["readings"]]
     assert [row["entityId"] for row in picked["cop"]] == ["sensor.cop_day"]
@@ -468,6 +471,67 @@ def test_an_accessory_the_pump_has_reads_green_and_one_it_lacks_red():
     source = CARD.read_text(encoding="utf-8")
     assert ".value.found { color: var(--success-color" in source
     assert ".value.missing { color: var(--error-color" in source
+
+
+def test_the_room_is_among_the_key_figures_and_the_graph():
+    """The temperature the house is actually about. The S-series answers it as
+    an average per climate system; "alarm action, lower room temperature" is a
+    switch and must not take its place."""
+    picked = _run(
+        """const rows = [
+          {entityId: "switch.alarm_room", name: "Vid larm: sänk rum",
+           nibeTitle: "Alarm action, lower room temperature"},
+          {entityId: "sensor.room", name: "Rumstemperatur, medel",
+           nibeTitle: "Room average temp. clim. system 1 (BT50)",
+           deviceClass: "temperature", stateClass: "measurement", state: "19.4"},
+          {entityId: "sensor.bt1", name: "Utetemperatur",
+           nibeTitle: "Current outdoor temperature (BT1)",
+           deviceClass: "temperature", stateClass: "measurement", state: "8.1"},
+        ];
+        const p = c.pickOverview(rows);
+        const temps = c.pickGraphs(rows).find(g => g.key === "temps");
+        console.log(JSON.stringify([p.readings.map(r => r.entityId), temps.entities]))"""
+    )
+    readings, graphed = picked
+    assert readings[0] == "sensor.room"
+    assert "switch.alarm_room" not in readings
+    assert graphed[0] == "sensor.room"
+
+
+def test_the_house_comes_before_the_module():
+    """A pump names the same reading twice: "Return line (BT3)" for the house
+    and "Return line (EB100-BT3)" for the compressor module. The one with fewer
+    designations is the one the overview is about."""
+    picked = _run(
+        """const rows = [
+          {entityId: "sensor.return_module", name: "Retur, kompressormodul",
+           nibeTitle: "Return line (EB100-BT3)", deviceClass: "temperature"},
+          {entityId: "sensor.return", name: "Returledning (BT3)",
+           nibeTitle: "Return line (BT3)", deviceClass: "temperature"},
+          {entityId: "sensor.calc", name: "Beräknad framledning",
+           nibeTitle: "Calc. supply S1", deviceClass: "temperature"},
+          {entityId: "sensor.supply", name: "Framledning (30006)",
+           nibeTitle: "Supply line (BT2)", deviceClass: "temperature"},
+        ];
+        console.log(JSON.stringify(c.pickOverview(rows).readings.map(r => r.entityId)))"""
+    )
+    # The supply line before the supply temperature the curve asked for, and
+    # the house's return before the module's.
+    assert picked[:3] == ["sensor.supply", "sensor.return", "sensor.calc"]
+
+
+def test_the_chip_shows_the_status_that_answers_in_words():
+    """NIBE titles two S-series registers "Priority"; only one answers in
+    words, and it is the one named Status. Matching the title alone would put
+    the bare number on the chip."""
+    picked = _run(
+        """const rows = [
+          {entityId: "sensor.prio_raw", name: "Prioritering", nibeTitle: "Priority"},
+          {entityId: "sensor.status", name: "Status", nibeTitle: "Priority"},
+        ];
+        console.log(JSON.stringify(c.pickOverview(rows).status.map(r => r.entityId)))"""
+    )
+    assert picked == ["sensor.status"]
 
 
 def test_the_tabs_end_with_every_value():
