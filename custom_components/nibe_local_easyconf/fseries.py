@@ -279,6 +279,9 @@ def accessory_registers(registers: dict[int, dict], values: dict[int, object]) -
 #: One that does not report a value at setup - a room sensor, a cooling
 #: circuit, current sensors - stays switched off like everything else.
 DEFAULT_TITLES: frozenset[str] = frozenset({
+    # the pump's own heat meters, both sets: see HEAT_METERS
+    "Heat Meter - Heat Cpr and Add - Total system",
+    "Heat Meter - HW Cpr and Add - Total system",
     # temperatures
     "BT1 Outdoor Temperature",
     "BT1 Average",
@@ -354,9 +357,14 @@ ADDITION_POWER: int = 43084
 HEAT_MEDIUM_PUMP_SPEED: int = 43437
 BRINE_PUMP_SPEED: int = 43439
 #: The pump's own heat meters, in kilowatt hours: heating, hot water, pool.
-#: The same three registers on every F-series map that has them, which is all
-#: of them except the F370/F470 and the SMO 20.
-HEAT_METERS: tuple[int, ...] = (44300, 44298, 44304)
+#: NIBE keeps two sets - one for the whole system and one per compressor module
+#: - and not every pump maintains both: the development unit answers the module
+#: set with figures that never move. The system set is tried first and the
+#: module set stands behind it; both are read, so which one a pump keeps is
+#: visible rather than guessed.
+HEAT_METERS_SYSTEM: tuple[int, ...] = (42439, 42437, 42443)
+HEAT_METERS_MODULE: tuple[int, ...] = (44300, 44298, 44304)
+HEAT_METERS: tuple[int, ...] = HEAT_METERS_SYSTEM + HEAT_METERS_MODULE
 
 #: What the pump says it has used, in kilowatt hours: heating, hot water,
 #: ventilation. Only the F730 publishes these - every other F-series map has no

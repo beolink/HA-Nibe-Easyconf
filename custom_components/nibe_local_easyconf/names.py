@@ -237,6 +237,8 @@ SHORT_NAMES: dict[str, tuple[str, str]] = {
     "Int. el.add. Power": ("Elpatron, effekt", "Immersion power"),
     "Tot. op.time add.": ("Elpatron, drifttid", "Immersion run time"),
     "Tot. HW op.time add.": ("Elpatron VV, drifttid", "Immersion HW run time"),
+    "Heat Meter - HW Cpr and Add - Total system": ("Producerat VV, syst.", "Hot water, system"),
+    "Heat Meter - Heat Cpr and Add - Total system": ("Producerad värme, syst.", "Heat, system"),
     "Heat Meter - HW Cpr and Add EP14": ("Producerat VV", "Hot water produced"),
     "Heat Meter - Heat Cpr and Add EP14": ("Producerad värme", "Heat produced"),
     "Heat Meter - Cooling Cpr EP14": ("Producerad kyla", "Cooling produced"),

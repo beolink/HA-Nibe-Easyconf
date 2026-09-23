@@ -149,13 +149,20 @@ class NibeGatewayCoordinator(DataUpdateCoordinator[dict[int, Value]]):
         on which entities somebody left switched on.
         """
         self.electricity = counter
-        #: The heat meters this pump answers, decided once. The total is the
-        #: sum of all of them or nothing: a sum missing one meter is smaller
-        #: than the last, which would look like the pump had run backwards and
-        #: move the mark the delivered heat is measured from.
+        #: The heat meters this pump answers, decided once. NIBE keeps a set
+        #: for the whole system and one per compressor module, and a pump that
+        #: answers both does not necessarily keep both up to date; the system
+        #: set is the one to divide by when it is there. The total is the sum
+        #: of a whole set or nothing: a sum missing one meter is smaller than
+        #: the last, which would look like the pump had run backwards and move
+        #: the mark the delivered heat is measured from.
         self._heat_meters = [
             register
-            for register in fseries.HEAT_METERS
+            for register in fseries.HEAT_METERS_SYSTEM
+            if register in self.discovery.reporting
+        ] or [
+            register
+            for register in fseries.HEAT_METERS_MODULE
             if register in self.discovery.reporting
         ]
         #: The pump's own electricity counters, where it has them.
@@ -169,7 +176,7 @@ class NibeGatewayCoordinator(DataUpdateCoordinator[dict[int, Value]]):
             fseries.ADDITION_POWER,
             fseries.HEAT_MEDIUM_PUMP_SPEED,
             fseries.BRINE_PUMP_SPEED,
-            *self._heat_meters,
+            *fseries.HEAT_METERS,
             *self._consumed_meters,
         } & set(self.registers)
 

@@ -321,3 +321,15 @@ def test_every_title_we_read_by_default_has_a_short_name():
     for title in fseries.DEFAULT_TITLES | fseries.OTHER_MODEL_TITLES:
         assert names.short_name(title) is not None, title
         assert names.short_name(title, "en") is not None, title
+
+
+def test_the_system_heat_meters_come_before_the_module_ones():
+    """NIBE keeps two sets, and a pump that answers both does not necessarily
+    keep both up to date: the development unit's module meters stand still
+    while it heats. Both are read; the system set is the one divided by."""
+    assert fseries.HEAT_METERS_SYSTEM[0] == 42439
+    assert fseries.HEAT_METERS_MODULE[0] == 44300
+    assert set(fseries.HEAT_METERS) == set(fseries.HEAT_METERS_SYSTEM + fseries.HEAT_METERS_MODULE)
+    scanned = set(fseries.default_registers(F1255_MAP))
+    for register in (42439, 42437, 44300, 44298):
+        assert register in scanned, register
