@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import importlib
 
-from .conftest import PACKAGE
+from .conftest import PACKAGE, SOURCE
 
 names = importlib.import_module(f"{PACKAGE}.names")
 descriptions = importlib.import_module(f"{PACKAGE}.descriptions")
@@ -98,3 +98,23 @@ def test_the_register_that_answers_in_words_is_the_status():
 def test_unique_names_stay_untouched():
     registers = {30002: _meta("Current outdoor temperature (BT1)")}
     assert _assign(registers)[30002] == "Utetemperatur"
+
+
+def test_the_brand_folder_holds_nibes_own_mark():
+    """Taken from Home Assistant's own brand catalogue, where NIBE's mark is
+    published for the core nibe_heatpump integration: 256 and 512 pixels square
+    for the icon, and the wordmark beside it. The page and, once the brand is
+    registered, the integrations page wear them."""
+    import struct
+
+    brand = SOURCE / "brand"
+    sizes = {}
+    for name in ("icon.png", "icon@2x.png", "logo.png", "logo@2x.png"):
+        data = (brand / name).read_bytes()
+        assert data[:8] == b"\x89PNG\r\n\x1a\n", name
+        sizes[name] = struct.unpack(">II", data[16:24])
+    assert sizes["icon.png"] == (256, 256)
+    assert sizes["icon@2x.png"] == (512, 512)
+    # The wordmark is wide, and twice as wide again at 2x.
+    assert sizes["logo.png"][0] > sizes["logo.png"][1]
+    assert sizes["logo@2x.png"][0] == sizes["logo.png"][0] * 2 + 1

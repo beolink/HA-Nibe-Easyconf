@@ -33,6 +33,12 @@ _LOGGER = logging.getLogger(__name__)
 
 CARD_URL = f"/{DOMAIN}/nibe-easyconf-card.js"
 CARD_FILE = Path(__file__).parent / "www" / "nibe-easyconf-card.js"
+#: NIBE's own mark, as Home Assistant publishes it for the core nibe_heatpump
+#: integration. The page wears it beside the pump's name so the page looks like
+#: what it is about; the sidebar cannot, since Home Assistant's own sidebar
+#: takes an icon's name rather than a picture.
+ICON_URL = f"/{DOMAIN}/icon.png"
+ICON_FILE = Path(__file__).parent / "brand" / "icon.png"
 PANEL_URL_PATH = "nibe-easyconf"
 PANEL_ELEMENT = "nibe-easyconf-panel"
 
@@ -48,7 +54,10 @@ async def async_register_frontend(hass: HomeAssistant, version: str) -> None:
 
     try:
         await hass.http.async_register_static_paths(
-            [StaticPathConfig(CARD_URL, str(CARD_FILE), False)]
+            [
+                StaticPathConfig(CARD_URL, str(CARD_FILE), False),
+                StaticPathConfig(ICON_URL, str(ICON_FILE), True),
+            ]
         )
     except (RuntimeError, ValueError) as err:
         # Already served from an earlier load in this process.

@@ -534,6 +534,16 @@ def test_the_chip_shows_the_status_that_answers_in_words():
     assert picked == ["sensor.status"]
 
 
+def test_the_page_wears_nibes_own_mark():
+    """A page about someone's heat pump should look like what it is about. The
+    mark is served by the integration from its brand folder, and a missing file
+    leaves the heading standing on its own rather than a broken image."""
+    source = CARD.read_text(encoding="utf-8")
+    assert 'mark.src = `/${DOMAIN}/icon.png`' in source
+    assert 'mark.addEventListener("error"' in source
+    assert ".head .mark {" in source
+
+
 def test_the_tabs_end_with_every_value():
     tabs = _run("console.log(JSON.stringify(c.TAB_ORDER))")
     assert tabs[0] == "overview"

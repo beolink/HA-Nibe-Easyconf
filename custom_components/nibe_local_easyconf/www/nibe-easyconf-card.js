@@ -629,7 +629,8 @@ if (typeof customElements !== "undefined") {
   const STYLE = `
     :host { display: block; }
     .wrap { padding: 16px; max-width: 1600px; margin: 0 auto; }
-    .head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; }
+    .head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+    .head .mark { width: 28px; height: 28px; flex: none; }
     h1 { font-size: 1.4rem; font-weight: 500; margin: 4px 0; color: var(--primary-text-color); }
     h3 { font-size: .95rem; font-weight: 500; margin: 0 0 8px; color: var(--primary-text-color); }
     .tabs {
@@ -800,8 +801,16 @@ if (typeof customElements !== "undefined") {
 
       const head = document.createElement("div");
       head.className = "head";
+      // NIBE's own mark, served by the integration from its brand folder. A
+      // page about someone's heat pump should look like what it is about; if
+      // the file is ever missing, the heading stands on its own.
+      const mark = document.createElement("img");
+      mark.className = "mark";
+      mark.src = `/${DOMAIN}/icon.png`;
+      mark.alt = "";
+      mark.addEventListener("error", () => { mark.hidden = true; });
       this.heading = document.createElement("h1");
-      head.appendChild(this.heading);
+      head.append(mark, this.heading);
 
       this.tabBar = document.createElement("div");
       this.tabBar.className = "tabs";

@@ -421,7 +421,9 @@ NIBE's register documentation give its values, so it has no switch yet.
 ## The NIBE page
 
 Setting the integration up adds a **NIBE** entry to the sidebar on its own —
-nothing to configure. The page has four tabs.
+nothing to configure. The page carries NIBE's own mark beside the pump's name;
+the sidebar entry keeps a heat pump icon, because Home Assistant's sidebar
+takes an icon's name rather than a picture. The page has four tabs.
 
 **Overview.** What the pump is doing right now: the alarm, the modes it is
 running in and the day's coefficient of performance as chips; beside them the
@@ -552,3 +554,9 @@ What is collected and why: <https://stats.rnet.se/integritet>
 Register maps come from the [`nibe`](https://github.com/yozik04/nibe) library
 (LGPL-3.0), declared as a dependency in `manifest.json` and installed by Home
 Assistant. No LGPL code is copied into this repository.
+
+NIBE and NIBE's mark belong to NIBE Energy Systems. The files in
+`custom_components/nibe_local_easyconf/brand/` are the ones Home Assistant
+publishes for its own `nibe_heatpump` integration, and they are used here for
+the same purpose: to show which make of pump a page is about. This project is
+not made by, endorsed by or affiliated with NIBE.
