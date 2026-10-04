@@ -36,9 +36,11 @@ CARD_FILE = Path(__file__).parent / "www" / "nibe-easyconf-card.js"
 #: NIBE's own mark, as Home Assistant publishes it for the core nibe_heatpump
 #: integration. The page wears it beside the pump's name so the page looks like
 #: what it is about; the sidebar cannot, since Home Assistant's own sidebar
-#: takes an icon's name rather than a picture.
-ICON_URL = f"/{DOMAIN}/icon.png"
-ICON_FILE = Path(__file__).parent / "brand" / "icon.png"
+#: takes an icon's name rather than a picture. It sits beside the card rather
+#: than in brand/, which holds this integration's own icon - the one that
+#: identifies the integration itself.
+MARK_URL = f"/{DOMAIN}/nibe-mark.png"
+MARK_FILE = Path(__file__).parent / "www" / "nibe-mark.png"
 PANEL_URL_PATH = "nibe-easyconf"
 PANEL_ELEMENT = "nibe-easyconf-panel"
 
@@ -56,7 +58,7 @@ async def async_register_frontend(hass: HomeAssistant, version: str) -> None:
         await hass.http.async_register_static_paths(
             [
                 StaticPathConfig(CARD_URL, str(CARD_FILE), False),
-                StaticPathConfig(ICON_URL, str(ICON_FILE), True),
+                StaticPathConfig(MARK_URL, str(MARK_FILE), True),
             ]
         )
     except (RuntimeError, ValueError) as err:

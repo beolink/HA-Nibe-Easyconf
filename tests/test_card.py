@@ -539,7 +539,7 @@ def test_the_page_wears_nibes_own_mark():
     mark is served by the integration from its brand folder, and a missing file
     leaves the heading standing on its own rather than a broken image."""
     source = CARD.read_text(encoding="utf-8")
-    assert 'mark.src = `/${DOMAIN}/icon.png`' in source
+    assert 'mark.src = `/${DOMAIN}/nibe-mark.png`' in source
     assert 'mark.addEventListener("error"' in source
     assert ".head .mark {" in source
 

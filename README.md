@@ -555,8 +555,9 @@ Register maps come from the [`nibe`](https://github.com/yozik04/nibe) library
 (LGPL-3.0), declared as a dependency in `manifest.json` and installed by Home
 Assistant. No LGPL code is copied into this repository.
 
-NIBE and NIBE's mark belong to NIBE Energy Systems. The files in
-`custom_components/nibe_local_easyconf/brand/` are the ones Home Assistant
-publishes for its own `nibe_heatpump` integration, and they are used here for
-the same purpose: to show which make of pump a page is about. This project is
-not made by, endorsed by or affiliated with NIBE.
+NIBE and NIBE's mark belong to NIBE Energy Systems. The mark beside the heat
+pump's name on the NIBE page (`www/nibe-mark.png`) is the one Home Assistant
+publishes for its own `nibe_heatpump` integration, and is used here for the
+same purpose: to show which make of pump the page is about. The integration's
+own icon, in `brand/`, is this project's. Neither the project nor its author is
+made by, endorsed by or affiliated with NIBE.

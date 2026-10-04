@@ -806,7 +806,7 @@ if (typeof customElements !== "undefined") {
       // the file is ever missing, the heading stands on its own.
       const mark = document.createElement("img");
       mark.className = "mark";
-      mark.src = `/${DOMAIN}/icon.png`;
+      mark.src = `/${DOMAIN}/nibe-mark.png`;
       mark.alt = "";
       mark.addEventListener("error", () => { mark.hidden = true; });
       this.heading = document.createElement("h1");
