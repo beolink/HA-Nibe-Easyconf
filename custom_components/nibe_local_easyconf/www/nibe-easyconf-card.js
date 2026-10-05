@@ -801,12 +801,13 @@ if (typeof customElements !== "undefined") {
 
       const head = document.createElement("div");
       head.className = "head";
-      // NIBE's own mark, served by the integration from its brand folder. A
-      // page about someone's heat pump should look like what it is about; if
-      // the file is ever missing, the heading stands on its own.
+      // NIBE's own mark, served by the integration from its brand folder - the
+      // same file Home Assistant shows for the integration itself. A page about
+      // someone's heat pump should look like what it is about; if the file is
+      // ever missing, the heading stands on its own.
       const mark = document.createElement("img");
       mark.className = "mark";
-      mark.src = `/${DOMAIN}/nibe-mark.png`;
+      mark.src = `/${DOMAIN}/icon.png`;
       mark.alt = "";
       mark.addEventListener("error", () => { mark.hidden = true; });
       this.heading = document.createElement("h1");

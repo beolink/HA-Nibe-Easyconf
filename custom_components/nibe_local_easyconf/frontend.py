@@ -33,14 +33,14 @@ _LOGGER = logging.getLogger(__name__)
 
 CARD_URL = f"/{DOMAIN}/nibe-easyconf-card.js"
 CARD_FILE = Path(__file__).parent / "www" / "nibe-easyconf-card.js"
-#: NIBE's own mark, as Home Assistant publishes it for the core nibe_heatpump
-#: integration. The page wears it beside the pump's name so the page looks like
-#: what it is about; the sidebar cannot, since Home Assistant's own sidebar
-#: takes an icon's name rather than a picture. It sits beside the card rather
-#: than in brand/, which holds this integration's own icon - the one that
-#: identifies the integration itself.
-MARK_URL = f"/{DOMAIN}/nibe-mark.png"
-MARK_FILE = Path(__file__).parent / "www" / "nibe-mark.png"
+#: The icon in brand/ is NIBE's own, as Home Assistant publishes it for the
+#: core nibe_heatpump integration. Home Assistant reads that folder itself for
+#: the integration's icon - since 2026.3 a custom integration carries its own
+#: brand images rather than submitting them to a catalogue - and the same file
+#: is served here, unauthenticated, for the page to wear beside the pump's
+#: name. The sidebar cannot have it: that takes an icon's name, not a picture.
+MARK_URL = f"/{DOMAIN}/icon.png"
+MARK_FILE = Path(__file__).parent / "brand" / "icon.png"
 PANEL_URL_PATH = "nibe-easyconf"
 PANEL_ELEMENT = "nibe-easyconf-panel"
 

@@ -100,23 +100,21 @@ def test_unique_names_stay_untouched():
     assert _assign(registers)[30002] == "Utetemperatur"
 
 
-def test_the_two_marks_are_kept_apart():
-    """Two different things wear two different pictures. brand/ is this
-    integration's own icon, in the sizes Home Assistant's brand catalogue asks
-    for; the NIBE mark beside the card is NIBE's own, and identifies the make
-    of pump a page is about rather than the integration."""
+def test_the_brand_folder_holds_nibes_own_mark():
+    """Home Assistant reads this folder itself for the integration's icon -
+    since 2026.3 a custom integration carries its own brand images rather than
+    submitting them to a catalogue - and the page wears the same file. The
+    sizes are the ones Home Assistant asks for."""
     import struct
 
-    def size(path):
-        data = path.read_bytes()
-        assert data[:8] == b"\x89PNG\r\n\x1a\n", path.name
+    def size(name):
+        data = (SOURCE / "brand" / name).read_bytes()
+        assert data[:8] == b"\x89PNG\r\n\x1a\n", name
         return struct.unpack(">II", data[16:24])
 
-    assert size(SOURCE / "brand" / "icon.png") == (256, 256)
-    assert size(SOURCE / "brand" / "icon@2x.png") == (512, 512)
-    assert size(SOURCE / "www" / "nibe-mark.png") == (256, 256)
-    assert size(SOURCE / "www" / "nibe-mark@2x.png") == (512, 512)
-    # And they are not the same picture.
-    assert (SOURCE / "brand" / "icon.png").read_bytes() != (
-        SOURCE / "www" / "nibe-mark.png"
-    ).read_bytes()
+    assert size("icon.png") == (256, 256)
+    assert size("icon@2x.png") == (512, 512)
+    # The wordmark beside it: wide, and twice the size again at 2x.
+    assert size("logo.png")[1] == 256
+    assert size("logo.png")[0] > size("logo.png")[1]
+    assert size("logo@2x.png")[1] == 512
