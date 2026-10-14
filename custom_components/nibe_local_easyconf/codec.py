@@ -38,6 +38,7 @@ def decode_raw(size: str, words: list[int]) -> int:
     """Decode register words into the raw integer, before any scaling.
 
     32-bit values are word-swapped on NIBE S-series: the low word comes first.
+    Writes take the opposite order; see encode_raw.
     """
     if word_count(size) == 2:
         if len(words) < 2:
@@ -49,11 +50,18 @@ def decode_raw(size: str, words: list[int]) -> int:
 
 
 def encode_raw(size: str, value: int) -> list[int]:
-    """Encode a raw integer back into register words."""
+    """Encode a raw integer into the register words a write sends.
+
+    Not the inverse of decode_raw for 32-bit values. An S-series pump reads them
+    out low word first, but keeps a write (function 16) only when it carries the
+    high word first. Sent in the read order, the write is acknowledged and the
+    old value stays: 20.5 reads back as [205, 0] and must be written as [0, 205].
+    Measured on an S1155, and on an S1256 by nibe 2.25.0 (yozik04/nibe#316).
+    """
     count = word_count(size)
-    raw_bytes = int(value).to_bytes(2 * count, "little", signed=size in SIGNED)
+    raw_bytes = int(value).to_bytes(2 * count, "big", signed=size in SIGNED)
     return [
-        int.from_bytes(raw_bytes[i : i + 2], "little", signed=False)
+        int.from_bytes(raw_bytes[i : i + 2], "big", signed=False)
         for i in range(0, 2 * count, 2)
     ]
 

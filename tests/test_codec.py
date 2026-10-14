@@ -60,10 +60,33 @@ def test_scaling():
 
 
 def test_encode_round_trip():
-    for size in ("s16", "u16", "s32", "u32"):
+    for size in ("s16", "u16"):
         for value in (0, 1, -1 if size.startswith("s") else 2, 4519):
             words = codec.encode_raw(size, value)
             assert codec.decode_raw(size, words) == value
+
+
+def test_32bit_reads_low_word_first_and_writes_high_word_first():
+    """Desired room temperature for zone 1 (42506, s32, factor 10) on the S1155.
+
+    Written as [205, 0], the order it reads in, the pump acknowledged and kept
+    20.0. Written as [0, 205] it read back as [205, 0], which is 20.5.
+    """
+    meta = {"size": "s32", "factor": 10}
+    assert codec.decode(meta, [205, 0]) == 20.5
+    assert codec.encode_raw("s32", codec.unscale(20.5, 10)) == [0, 205]
+
+
+@pytest.mark.parametrize(
+    ("size", "value"),
+    [
+        ("s32", 0), ("s32", 1), ("s32", -1), ("s32", -559), ("s32", 0x12345678),
+        ("u32", 0), ("u32", 4519), ("u32", 0x12345678), ("u32", 0xFFFFFFFE),
+    ],
+)
+def test_32bit_write_is_the_read_reversed(size, value):
+    """What a write sends comes back from a read with its two words swapped."""
+    assert codec.decode_raw(size, codec.encode_raw(size, value)[::-1]) == value
 
 
 def test_unscale_rounds_to_the_nearest_raw_count():

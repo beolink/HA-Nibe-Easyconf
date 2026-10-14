@@ -33,12 +33,13 @@ reading registers the pump does not implement.
 
 ## What the probing found
 
-Three behaviours of the S-series Modbus stack shape the whole design:
+Four behaviours of the S-series Modbus stack shape the whole design:
 
 | Behaviour | Consequence |
 |---|---|
 | Unimplemented registers answer exception **01 (illegal function)**, where the spec says 02 (illegal data address) | 01 has to be read as "no such register here", not "this device is broken" |
 | A block read succeeds **only if every register in the span exists** — one hole fails the whole request | Reads must be grouped into contiguous runs of known-live registers |
+| 32-bit values read **low word first**, but a write is kept only **high word first**; in the read order it is acknowledged and dropped | Writes put the words in the opposite order from reads: 20.5 °C reads as `[205, 0]` and is written as `[0, 205]` |
 | The firmware answers for hardware that is not fitted, returning a per-datatype sentinel (`0x8000`, `0xFFFF`, `-128`, `0xFF`) | "Does the register exist" and "is it reporting" are different questions, and both matter |
 
 That last one is why model detection by register fingerprint does not work.
