@@ -129,6 +129,12 @@ NON_DEFAULT: Final = tuple(
         r"\bexternal reading of\b",
         r"\bSPA\b|\bsmart price adaption\b",
         r"\b(start|end) (month|day)\b",
+        # S-series 40019, "Limit DM" until nibe 2.25 retitled it as the degree
+        # minutes in 16 bits, which 40012 already shows in 32. It stays off as
+        # it was, or every existing installation would have it switched on.
+        # The F-series spells it with a capital M and settles its defaults in
+        # fseries.is_default, so this is the S-series alone.
+        r"^degree minutes \(16 bit\)$",
     )
 )
 

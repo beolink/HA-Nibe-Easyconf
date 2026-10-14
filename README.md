@@ -100,13 +100,14 @@ After a firmware update or fitting an accessory, call the
 
 ## F-series through a NibeGW gateway
 
-The F-series - F1145/F1245, F1155/F1255, F1345, F1355, F370/F470, F730, F750,
-SMO 20/40 and VVM - has no Modbus TCP. It is reached through a NibeGW gateway on
-the pump's RS-485 accessory bus instead: a small ESP32 that stands in for NIBE's
-MODBUS 40 accessory, acknowledges the pump's telegrams on its own, and relays
-reads and writes over UDP. This path was built and measured on an F1255-16
-through a Waveshare ESP32-S3-RS485-CAN running
-[esphome-nibe](https://github.com/elupus/esphome-nibe).
+The F-series - F1145/F1245, F1155/F1255, F1345, F1355, F370/F372/F470, F730,
+F750, SMO 20/40 and VVM - has no Modbus TCP. It is reached through a NibeGW
+gateway on the pump's RS-485 accessory bus instead: a small ESP32 that stands in
+for NIBE's MODBUS 40 accessory, acknowledges the pump's telegrams on its own, and
+relays reads and writes over UDP. This path was built and measured on an
+F1255-16 through a Waveshare ESP32-S3-RS485-CAN running
+[esphome-nibe](https://github.com/elupus/esphome-nibe). The F372 needs the nibe
+library 2.25, which Home Assistant 2026.10 brings; an older nibe does not know it.
 
 An **SMO** or a **VVM** houses no compressor of its own: the heat pump stands
 outside, and NIBE puts the whole of it under the designation `EB101`. Its

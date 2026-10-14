@@ -4,14 +4,17 @@ from __future__ import annotations
 
 import importlib
 
+import pytest
+
 from .conftest import PACKAGE, SOURCE
 
 names = importlib.import_module(f"{PACKAGE}.names")
 descriptions = importlib.import_module(f"{PACKAGE}.descriptions")
+registry = importlib.import_module(f"{PACKAGE}.registry")
 
 
 def test_every_curated_name_fits_a_column():
-    for title, pair in names.SHORT_NAMES.items():
+    for title, pair in [*names.SHORT_NAMES.items(), *names.REGISTER_NAMES.items()]:
         for name in pair:
             assert len(name) <= names.MAX_LENGTH, f"{title!r} -> {name!r}"
 
@@ -118,3 +121,36 @@ def test_the_brand_folder_holds_nibes_own_mark():
     assert size("logo.png")[1] == 256
     assert size("logo.png")[0] > size("logo.png")[1]
     assert size("logo@2x.png")[1] == 512
+
+
+#: S-series registers whose title nibe 2.25 changed, as 2.24 and 2.25 have
+#: them. Home Assistant 2026.9 pins the one and 2026.10 the other, and a name
+#: is assigned at every start, so the name must not follow the library.
+RETITLED = {
+    40012: ("Degree minutes", "Degree minutes (32 bit)"),
+    40019: ("Limit DM", "Degree minutes (16 bit)"),
+    45220: (
+        "External sensors, External Return Temperature BT71",
+        "External sensor, Return temperature (BT71)",
+    ),
+}
+
+
+@pytest.mark.parametrize("library", ["2.24", "2.25"])
+def test_the_degree_minutes_keep_their_name_whatever_the_library_calls_them(library):
+    titles = {register: pair[library == "2.25"] for register, pair in RETITLED.items()}
+    registers = {register: _meta(title, write=True) for register, title in titles.items()}
+    assigned = _assign(registers)
+    assert assigned[40012] == "Gradminuter"
+    assert assigned[45220] == "Ext. givare, retur"
+    assert _assign(registers, "en")[40012] == "Degree minutes"
+    # 2.24's title had no short name; 2.25's says what the register holds.
+    assert assigned[40019] == ("Limit DM" if library == "2.24" else "Gradminuter, 16 bitar")
+
+
+def test_the_installed_library_names_the_s_series_the_same():
+    union = registry.union_map()
+    assigned = _assign(union)
+    assert assigned[40012] == "Gradminuter"
+    assert assigned[45220] == "Ext. givare, retur"
+    assert "40012" not in assigned[40012] and "40019" not in assigned[40019]

@@ -5,6 +5,7 @@ import importlib
 from .conftest import PACKAGE
 
 const = importlib.import_module(f"{PACKAGE}.const")
+registry = importlib.import_module(f"{PACKAGE}.registry")
 
 
 def test_writable_registers_become_controls():
@@ -59,3 +60,17 @@ def test_the_tariff_configuration_is_not_a_default_dashboard():
         "Prim. factor, smart energy source",
     ):
         assert not const.is_core_register(title, {}), title
+
+
+def test_the_s_series_shows_one_degree_minutes_whatever_the_library_calls_them():
+    """nibe 2.25 retitled 40012 "Degree minutes (32 bit)" and 40019, "Limit DM"
+    until then, "Degree minutes (16 bit)". 40012 stays on and 40019 off, under
+    the titles of both releases and of the library installed here: a register
+    that joins the default set is switched on in every existing installation."""
+    for title in ("Degree minutes", "Degree minutes (32 bit)"):
+        assert const.is_core_register(title, {}), title
+    for title in ("Limit DM", "Degree minutes (16 bit)"):
+        assert not const.is_core_register(title, {}), title
+    union = registry.union_map()
+    assert const.is_core_register(union[40012]["title"], union[40012])
+    assert not const.is_core_register(union[40019]["title"], union[40019])

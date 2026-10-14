@@ -29,6 +29,13 @@ from __future__ import annotations
 REGISTER_NAMES: dict[tuple[int, str], tuple[str, str]] = {
     (31029, "Priority"): ("Status", "Status"),
     (43086, "Prio"): ("Status", "Status"),
+    # The S-series degree minutes as nibe 2.25 titles them; 2.24 had "Degree
+    # minutes" and "Limit DM". The 32-bit register is the one the S-series has
+    # always shown as its degree minutes, so it keeps the plain name. The
+    # F-series through MODBUS 40 is the other way round; its titles differ in
+    # case and are named below.
+    (40012, "Degree minutes (32 bit)"): ("Gradminuter", "Degree minutes"),
+    (40019, "Degree minutes (16 bit)"): ("Gradminuter, 16 bitar", "Degree minutes, 16-bit"),
 }
 
 #: NIBE title -> (svenska, English). Every entry is at most 24 characters.
@@ -168,6 +175,8 @@ SHORT_NAMES: dict[str, tuple[str, str]] = {
         "Ext. givare, framledning", "Ext. sensor, supply"),
     "External sensors, External Return Temperature BT71": (
         "Ext. givare, retur", "Ext. sensor, return"),
+    # 45220 as nibe 2.25 titles it.
+    "External sensor, Return temperature (BT71)": ("Ext. givare, retur", "Ext. sensor, return"),
     # --- alarms ---------------------------------------------------------
     "Alarm number": ("Larmkod", "Alarm code"),
     "Alarm number (EB100-EP14)": ("Larmkod, krets 1", "Alarm code, circuit 1"),

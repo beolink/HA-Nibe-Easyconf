@@ -105,8 +105,9 @@ def is_gateway_hostname(hostname: str | None) -> bool:
 
 #: Ground source (brine-to-water) pumps.
 GROUND_SOURCE = frozenset({"F1145", "F1245", "F1155", "F1255", "F1345", "F1355"})
-#: Exhaust air pumps.
-EXHAUST_AIR = frozenset({"F370", "F470", "F730", "F750"})
+#: Exhaust air pumps. The F372 shares the F370/F470 map and firmware; the
+#: library knows it from nibe 2.25, which renamed that map f370_f372_f470.
+EXHAUST_AIR = frozenset({"F370", "F372", "F470", "F730", "F750"})
 
 #: Registers whose reading reveals hardware the model name does not: a hot
 #: water tank on a pump without one built in, and a cooling circuit. Read by

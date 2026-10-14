@@ -10,6 +10,7 @@ import pytest
 
 from .conftest import PACKAGE
 
+fseries = importlib.import_module(f"{PACKAGE}.fseries")
 hot_water_boost = importlib.import_module(f"{PACKAGE}.hot_water_boost")
 BOOST = hot_water_boost.Boost(48132, 4, 0)
 registry = importlib.import_module(f"{PACKAGE}.registry")
@@ -28,11 +29,17 @@ def test_the_f1255_boosts_with_a_one_time_increase():
     assert hot_water_boost.boost_register(F1255_MAP, F1255_MAP) == BOOST
 
 
-@pytest.mark.parametrize(
-    "data_file",
-    ["f1145_f1245", "f1345", "f1355", "f370_f470", "f730", "f750", "smo20", "smo40",
-     "vvm225_vvm320_vvm325", "vvm310_vvm500"],
-)
+#: Every F-series map the installed library ships, by the name it gives it:
+#: nibe 2.25 renamed f370_f470 to f370_f372_f470 when it added the F372.
+F_SERIES_MAPS = sorted({model.data_file for model in fseries.F_SERIES_MODELS.values()})
+
+
+def test_the_f_series_maps_are_all_there():
+    assert len(F_SERIES_MAPS) >= 11
+    assert "f1155_f1255" in F_SERIES_MAPS
+
+
+@pytest.mark.parametrize("data_file", F_SERIES_MAPS)
 def test_every_f_series_map_has_the_same_boost(data_file):
     registers = _map(data_file)
     assert hot_water_boost.boost_register(registers, registers) == BOOST

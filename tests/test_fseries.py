@@ -64,6 +64,27 @@ def test_every_f_series_model_has_a_label_and_a_report_slug():
         assert stats_extra.model_slug(key) == key
 
 
+def test_every_f_series_pump_is_ground_source_or_exhaust_air():
+    """A model the library adds is not left without its trait, as the F372
+    would have been. SMO and VVM house no compressor and are neither."""
+    for name in fseries.F_SERIES_MODELS:
+        if name.startswith(("SMO", "VVM")):
+            continue
+        assert name in fseries.GROUND_SOURCE | fseries.EXHAUST_AIR, name
+
+
+def test_the_f372_is_an_f370_with_another_name():
+    """nibe 2.25 added the F372 on the F370/F470 map, renamed f370_f372_f470."""
+    if "F372" not in fseries.F_SERIES_MODELS:
+        pytest.skip("the installed nibe predates 2.25 and does not know the F372")
+    product = fseries.identify_product("F372 CU")
+    assert product.model is Model.F372
+    assert product.model.data_file == Model.F370.data_file == Model.F470.data_file
+    assert product.label == "NIBE F372 CU"
+    assert fseries.traits_for(product, set()) == {"exhaust_air"}
+    assert stats_extra.model_slug(product.key) == "f372"
+
+
 # ------------------------------------------------------------ the gateway's name
 
 

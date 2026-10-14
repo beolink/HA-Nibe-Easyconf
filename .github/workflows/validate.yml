@@ -27,14 +27,28 @@ jobs:
           category: integration
 
   tests:
-    name: tests
+    name: tests (nibe ${{ matrix.nibe }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The Home Assistant container comes with the nibe its own
+        # nibe_heatpump pins (2.24.0 in 2026.9, 2.25.0 in 2026.10), and the
+        # manifest's nibe>=2.24.0 takes it as it is, so both are in use at
+        # once. 2.24.0 is also the manifest's floor. "latest" is what Home
+        # Assistant installs where it has none, and meets a new release here
+        # before a user does: 2.25.0 renamed the F370/F470 map.
+        nibe: ["2.24.0", "latest"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-      - run: pip install pytest nibe
+      - if: ${{ matrix.nibe != 'latest' }}
+        run: pip install pytest "nibe==${{ matrix.nibe }}"
+      - if: ${{ matrix.nibe == 'latest' }}
+        run: pip install pytest nibe
+      - run: python -c "import nibe; print(nibe.__version__)"
       - run: pytest
 
   ruff:
