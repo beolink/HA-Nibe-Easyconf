@@ -129,7 +129,13 @@ class NibeClimate(CoordinatorEntity, ClimateEntity):
 
     def _registers(self) -> list[int]:
         system, unit = self._system, self._unit
-        wanted = [system.setpoint, system.use_room_sensor, unit.priority, self._mixing_valve]
+        wanted = [
+            system.setpoint,
+            system.zone_setpoint,
+            system.use_room_sensor,
+            unit.priority,
+            self._mixing_valve,
+        ]
         if self._sensor_fitted():
             wanted.append(system.current)
         if self._can_cool:
@@ -262,13 +268,24 @@ class NibeClimate(CoordinatorEntity, ClimateEntity):
                     "Set the mode to heat to have it use the room sensor, or move the "
                     "heating mode or the heat offset instead."
                 )
-            await self.coordinator.async_write(self._system.setpoint, float(temperature))
+            await self._async_write_setpoint(float(temperature))
         if (low := kwargs.get(ATTR_TARGET_TEMP_LOW)) is not None:
-            await self.coordinator.async_write(self._system.setpoint, float(low))
+            await self._async_write_setpoint(float(low))
         if (high := kwargs.get(ATTR_TARGET_TEMP_HIGH)) is not None:
             if not self._can_cool:
                 raise ServiceValidationError("This climate system has no cooling setpoint")
             await self.coordinator.async_write(self._system.cool_setpoint, float(high))
+
+    async def _async_write_setpoint(self, temperature: float) -> None:
+        """The room setpoint, and the zone's where the pump keeps one too.
+
+        The two are independent registers on the S-series (see
+        climate_systems.ClimateSystem.zone_setpoint); writing both means the
+        pump regulates on the number the thermostat shows whichever it reads.
+        """
+        await self.coordinator.async_write(self._system.setpoint, temperature)
+        if self._system.zone_setpoint is not None:
+            await self.coordinator.async_write(self._system.zone_setpoint, temperature)
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         system, unit = self._system, self._unit

@@ -48,6 +48,12 @@ class ClimateSystem:
     use_room_sensor: int
     #: The shunt or mixing valve, closed when the system is not being served.
     mixing_valve: int | None
+    #: The S-series' newer setpoint per zone, where the map has it. Measured
+    #: independent of `setpoint` on the S1155 (2026-10-15): writing either
+    #: leaves the other where it was, and which one the pump regulates on
+    #: when the room sensor is in use is not settled, so the thermostat
+    #: writes both.
+    zone_setpoint: int | None = None
 
 
 @dataclass(frozen=True)
@@ -99,6 +105,7 @@ _CLIMATE_TITLES = (
         "cool_setpoint": ("Room sensor cool setpoint S{n}",),
         "use_room_sensor": ("Use room sensor S{n}",),
         "mixing_valve": ("Mixing Valve State S{n}",),
+        "zone_setpoint": (),
     },
     # S-series: the average the pump regulates on first, then the first sensor.
     {
@@ -107,6 +114,7 @@ _CLIMATE_TITLES = (
         "cool_setpoint": ("Room sensor set point value climate system {n}, cooling",),
         "use_room_sensor": ("Use room sensor climate system {n}",),
         "mixing_valve": ("Oper. mode shunt climate system {n}",),
+        "zone_setpoint": ("Desired room temperature for zone {n}",),
     },
 )
 
@@ -216,6 +224,7 @@ def climate_systems(registers: Mapping[int, dict], present: Iterable[int]) -> li
                     cool_setpoint=_find(index, titles["cool_setpoint"], **fields),
                     use_room_sensor=use_room_sensor,
                     mixing_valve=_find(index, titles["mixing_valve"], **fields),
+                    zone_setpoint=_find(index, titles["zone_setpoint"], **fields),
                 )
             )
             break

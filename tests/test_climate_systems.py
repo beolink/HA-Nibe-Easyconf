@@ -43,6 +43,16 @@ def test_the_s_series_regulates_on_the_room_average():
     assert (first.use_room_sensor, first.mixing_valve) == (40203, 31034)
 
 
+def test_the_s_series_keeps_a_setpoint_per_zone_beside_the_climate_systems():
+    """Independent registers on the S1155: writing one leaves the other. The
+    thermostat writes both, so either reading is what it shows."""
+    systems = climate_systems.climate_systems(S_SERIES, S_SERIES)
+    assert systems[0].zone_setpoint == 42506
+    assert systems[1].zone_setpoint == 42508
+    f_series = climate_systems.climate_systems(F1255, F1255)
+    assert all(system.zone_setpoint is None for system in f_series)
+
+
 def test_a_pump_that_never_answered_the_average_falls_back_to_the_first_sensor():
     present = set(S_SERIES) - {30117}
     first = climate_systems.climate_systems(S_SERIES, present)[0]
@@ -79,10 +89,10 @@ def test_the_f_series_hot_water_is_the_comfort_mode_between_bt6_and_its_temperat
         ("luxury", 2, 47043, 47047),
         ("smart", 4, None, None),
     ]
-    assert water.boost == climate_systems.Boost(48132, 4, 0)
+    assert water.boost == climate_systems.Boost(48132, 4, 0, "one_time")
 
 
-def test_the_s_series_hot_water_is_the_demand_mode_and_has_no_boost_yet():
+def test_the_s_series_hot_water_is_the_demand_mode_with_three_hours_as_its_boost():
     water = climate_systems.hot_water(S_SERIES, S_SERIES)
     assert (water.current, water.top, water.mode) == (30010, 30009, 40057)
     assert water.words == "hot_water_demand"
@@ -92,8 +102,8 @@ def test_the_s_series_hot_water_is_the_demand_mode_and_has_no_boost_yet():
         ("large", 2, 40059, 40063),
         ("smart", 4, None, None),
     ]
-    # "More hot water" has no documented values; see hot_water_boost.py.
-    assert water.boost is None
+    # "More hot water" is hours; see hot_water_boost.py for the measurement.
+    assert water.boost == climate_systems.Boost(40698, 3, 0, "hours")
 
 
 def test_a_pump_without_a_cylinder_sensor_heats_no_water():

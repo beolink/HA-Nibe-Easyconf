@@ -12,7 +12,7 @@ from .conftest import PACKAGE
 
 fseries = importlib.import_module(f"{PACKAGE}.fseries")
 hot_water_boost = importlib.import_module(f"{PACKAGE}.hot_water_boost")
-BOOST = hot_water_boost.Boost(48132, 4, 0)
+BOOST = hot_water_boost.Boost(48132, 4, 0, "one_time")
 registry = importlib.import_module(f"{PACKAGE}.registry")
 
 
@@ -45,9 +45,17 @@ def test_every_f_series_map_has_the_same_boost(data_file):
     assert hot_water_boost.boost_register(registers, registers) == BOOST
 
 
-def test_the_s_series_gets_no_boost_switch():
+def test_the_s_series_boosts_with_three_hours_of_more_hot_water():
+    """Measured on the S1155: 40698 is a number of hours (4 set the minutes
+    register to 240, 1 to 60), and 0 ends it at once."""
     union = registry.union_map()
-    assert hot_water_boost.boost_register(union, union) is None
+    assert hot_water_boost.boost_register(union, union) == hot_water_boost.Boost(
+        40698, 3, 0, "hours"
+    )
+
+
+def test_the_f_series_boost_is_a_one_time_increase_by_kind():
+    assert BOOST.kind == "one_time"
 
 
 def test_a_pump_without_the_register_gets_no_boost_switch():

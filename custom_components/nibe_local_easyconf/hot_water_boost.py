@@ -14,8 +14,17 @@ The 3, 6 and 12 hour settings stay with the register's own select. The switch
 reads any of them as on, so a boost started at the pump does not look like an
 idle tank.
 
-The S-series calls its boost "More hot water" (40698), and neither the maps
-nor NIBE's register documentation give its values, so it gets no switch yet.
+The S-series calls its boost "More hot water" (40698, eS8XhwSel in NIBE's
+register list), and no map gives its values. Measured on the S1155 at the
+first site on 2026-10-15: the value is a number of hours. Writing 4 set "More
+hot water (Number of minutes)" (40226, eTimeManualXhw) to 240 and the pump
+switched to hot water within ten seconds; 1 gave 60 minutes; 0 ended it at
+once. The status register 31079 (eU8TmpLuxActive) says whether the charge the
+boost started is still running. So on the S-series the switch writes three
+hours - the smallest span NIBE's own menu offers - and off writes 0, and any
+value above 0 reads as on. An energy manager that re-asserts on every quarter
+keeps it going for as long as it wants; one that stops leaves at most three
+hours behind it.
 """
 
 from __future__ import annotations
@@ -26,6 +35,9 @@ from dataclasses import dataclass
 TITLE = "temporary lux"
 ON_LABEL = "one time increase"
 OFF_LABEL = "off"
+#: The S-series register, and the hours its on writes.
+HOURS_TITLE = "more hot water"
+HOURS_ON = 3
 
 
 @dataclass(frozen=True)
@@ -34,13 +46,25 @@ class Boost:
     #: The raw value written to switch the boost on, and to switch it off.
     on: int
     off: int
+    #: "one_time" for the F-series' one time increase, "hours" for the
+    #: S-series' more hot water, which is a span rather than a charge.
+    kind: str = "one_time"
 
 
 def boost_register(registers: Mapping[int, dict], present: Iterable[int]) -> Boost | None:
-    """The temporary lux register with its on and off values, if this pump has one."""
+    """The boost register with its on and off values, if this pump has one.
+
+    Temporary lux with a value table on the F-series; more hot water, in
+    hours, on the S-series.
+    """
     for register in sorted(present):
         meta = registers.get(register)
-        if not meta or not meta.get("write") or meta.get("title", "").lower() != TITLE:
+        if not meta or not meta.get("write"):
+            continue
+        title = meta.get("title", "").lower()
+        if title == HOURS_TITLE and not meta.get("mappings"):
+            return Boost(register, HOURS_ON, 0, "hours")
+        if title != TITLE:
             continue
         values = {
             str(label).lower(): int(value) for value, label in (meta.get("mappings") or {}).items()

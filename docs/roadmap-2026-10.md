@@ -2,7 +2,7 @@
 
 Nibe Local Easyconf står på 1.15.0, släppt 2026-10-15 och utrullad samma morgon på båda husen: HA FB med en S1155-16 över Modbus TCP (1 203 entiteter, 158 påslagna) och HA VV med en F1255-16 CU genom NibeGW-gatewayen (990 entiteter, 112 påslagna). 368 tester går gröna, 327 utan Home Assistant och 41 under en riktig kärna. Starkt i dag: pumpen probas i stället för att gissas ur en registerkarta, och svarar därför bara med det den har; varje register förklaras på svenska och engelska för någon som äger en värmepump, inte för en servicetekniker; F-serien får en värmefaktor ur en räknad elsiffra där pumpen saknar elmätare; sidan bär översikt, styrning, grafer och hela listan på en flik var; skanningen läser om sig själv efter en uppdatering; och sedan 1.15.0 finns termostat, varmvattenberedare och knappar, byggda av register som redan fanns, så att Home Assistants eget termostatkort, schemaläggare och röstassistenter talar med pumpen.
 
-Granskningen lämnade 45 poster: 38 förslag (R1 till R38), fyra luckor som kritikerpasset fann (L1 till L4) och tre iakttagelser från husen samma dag (V1 till V3). Den svarar på fyra saker: att det som är fel eller bara lovat blir rätt och bevisat - givare som inte finns ska inte vara påslagna entiteter, en tryckning på sidan ska inte registrera ett tillbehör i pumpen, och CI ska köra de tester som faktiskt gäller Home Assistant; att integrationen förklarar sina egna tystnader i stället för att överlåta det till den som frågar; att sidan säger vad pumpen gör, varför och vad det kostar, även på en telefon; och att en främling med en S1255 eller en F750 kan installera, felanmäla och ta bort den utan hjälp från Täby. Sist står det som kräver en mätning i husen eller ett beslut av ägaren.
+Granskningen lämnade 45 poster: 38 förslag (R1 till R38), fyra luckor som kritikerpasset fann (L1 till L4) och tre iakttagelser från husen samma dag (V1 till V3). Två av luckorna, L3 och L4, besvarades samma dag med två mätningar på FB:s pump och byggdes in i 1.15.1; de står kvar nedan med sitt svar, så att resonemanget kan följas. Den svarar på fyra saker: att det som är fel eller bara lovat blir rätt och bevisat - givare som inte finns ska inte vara påslagna entiteter, en tryckning på sidan ska inte registrera ett tillbehör i pumpen, och CI ska köra de tester som faktiskt gäller Home Assistant; att integrationen förklarar sina egna tystnader i stället för att överlåta det till den som frågar; att sidan säger vad pumpen gör, varför och vad det kostar, även på en telefon; och att en främling med en S1255 eller en F750 kan installera, felanmäla och ta bort den utan hjälp från Täby. Sist står det som kräver en mätning i husen eller ett beslut av ägaren.
 
 Så togs roadmapen fram, och det skiljer sig från CTC-roadmapen: en läsare, inte fem. Varje modul lästes i sin helhet - 35 Python-filer, kortet, testerna, CI och README - och åtta perspektiv gicks igenom i tur och ordning (driftsäkerhet, HA-idiomatik, data och insikt, dashboardens utseende, dashboardens styrning, underhållbarhet, säkerhet och integritet, spridning). Varje förslag prövades mot koden för genomförbarhet och mot ägarens faktiska behov för värde, ur minnesanteckningarna om husen och ur de två installationernas levande tillstånd, läst genom Supervisor-API:t 2026-10-15 (entiteter, otillgängliga rader, larm, en veckas loggrader). Ett kritikerpass letade luckor i det som just byggts och i det som en mogen HA-integration brukar ha. Sidan har däremot inte gåtts igenom i en webbläsare: den kräver inloggning, och det står bland de öppna frågorna. Varje post bär sina belägg som fil och rad; radnumren gäller commit fe65b66 (1.15.0).
 
@@ -13,7 +13,7 @@ Så togs roadmapen fram, och det skiljer sig från CTC-roadmapen: en läsare, in
 | Fas 3: enkelt för nybörjaren och externa användare | 5 | README säger hur man tar bort, kopplar till energipanelen och felanmäler; adressen kan bytas utan ny installation; flödets texter och F-seriens ord finns på svenska. |
 | Fas 4: kraft för den avancerade | 3 | Priset per kWh värme, kortet i korteditorn, och tangentbord och skärmläsare som fungerar. |
 | Fas 5: hållbart att underhålla och sprida | 5 | Släpp ur taggen med kontroller, kvalitetsskalan som checklista, S-serien och kortets DOM under test, och statistikens egna nycklar hållna mot backenden. |
-| Fas 6: väntar på mätning eller beslut | 7 | Sju poster som väntar på ett prov på FB eller VV, hårdvara ingen här har, eller ett ja från ägaren. |
+| Fas 6: väntar på mätning eller beslut | 7 | Fem poster som väntar på hårdvara ingen här har eller ett ja från ägaren, och två (L3, L4) som fick sitt svar 2026-10-15. |
 
 ## Gör nu
 
@@ -295,17 +295,17 @@ Ansträngning: M. Risk: medel. Beroenden: hårdvara. Belägg: fseries.py:394 til
 
 Ansträngning: L. Risk: medel. Beroenden: hårdvara. Belägg: README Roadmap före 1.15.0, work/references/modbus40-manual.txt.
 
-#### L3: Zonens börvärde (42506) mot klimatsystemets (40207) på S-serien
+#### L3: Zonens börvärde (42506) mot klimatsystemets (40207) på S-serien - besvarad
 
-**Problem.** Termostaten skriver "Room sensor set point value climate system 1" (40207), som core nibe_heatpump. S-seriens nyare firmware har zoner med "Desired room temperature for zone 1" (42506). På FB står båda på 20,0 - men om pumpen reglerar på zonens värde skriver termostaten i tomma luften när rumsgivaren används. **Vad som väntar.** Ett prov på FB: skriv 40207 till 20,5, läs 42506, återställ. En skrivning till ägarens pump, så ägarens ja först.
+**Problem.** Termostaten skrev "Room sensor set point value climate system 1" (40207), som core nibe_heatpump. S-seriens nyare firmware har zoner med "Desired room temperature for zone 1" (42506). På FB stod båda på 20,0. **Mätning 2026-10-15, med ägarens ja.** 40207 skrevs till 20,5: 42506 stod kvar på 20,0. Återställt. 42506 skrevs till 20,5 (hög ord först, [0, 205]): 40207 stod kvar på 20,0. Återställt. Registren är oberoende; 42506 finns inte i NIBE:s registerlista 202601 (40207 är `eS16RoomsensorTemp_0`), så vilket pumpen reglerar på när rumsgivaren används går inte att läsa ut utan att slå på rumsgivaren. **Svar, i 1.15.1.** Termostaten skriver båda där kartan har båda och visar klimatsystemets. Det som återstår står under öppna frågor: vilket register displayen ändrar.
 
-Ansträngning: S. Risk: låg. Beroenden: ägarens ja. Belägg: climate_systems.py:100 till 109, work/scripts/read_s_registers.py 2026-10-15: 40207 = 20,0, 42506 = 20,0.
+Ansträngning: S. Risk: låg. Belägg: climate_systems.py `zone_setpoint`, climate.py `_async_write_setpoint`, work/scripts/write_s_register.py 2026-10-15.
 
-#### L4: S-seriens engångshöjning
+#### L4: S-seriens engångshöjning - besvarad
 
-**Problem.** "More hot water" (40698) bär inga värden i någon karta eller i NIBE:s registerlista, så S-serien har varken boost-brytare eller boost i varmvattenberedaren. FB svarar 0 och "More hot water status" (31079) 0. F-serien använder 4 för engångshöjningen. **Vad som väntar.** Ett prov på FB: skriv 4, läs 31079 och displayen, låt beredaren ladda en gång. En skrivning till ägarens pump, så ägarens ja först.
+**Problem.** "More hot water" (40698) bar inga värden i någon karta, så S-serien hade varken boost-brytare eller boost i varmvattenberedaren. FB svarade 0, "More hot water status" (31079) 0. **Mätning 2026-10-15, med ägarens ja.** 40698 skrevs till 4: "More hot water (Number of minutes)" (40226) blev 240 och räknade ned, 31079 blev 1, prioriteten gick från värme (30) till varmvatten (20) inom tio sekunder och "Current hot water mode" (31039) till 2. Skrivet 0: minuterna 0 direkt; skrivet 1: 60 minuter; 0 igen. Värdet är timmar - registret heter `eS8XhwSel` i NIBE:s lista, minuterna `eTimeManualXhw`, statusen `eU8TmpLuxActive`. Laddningen pumpen hade börjat gick klart till sin stopptemperatur efteråt. **Svar, i 1.15.1.** Brytaren och varmvattenberedarens boost skriver 3 timmar på S-serien och 0 för av; allt över 0 läses som på; registret visas i timmar. Största tillåtna värde är inte mätt.
 
-Ansträngning: S. Risk: låg - beredaren laddas en gång. Beroenden: ägarens ja. Belägg: hot_water_boost.py:17 till 19, read_s_registers.py 2026-10-15: 40698 = 0, 31079 = 0, 40226 = 0.
+Ansträngning: S. Risk: låg. Belägg: hot_water_boost.py, registry.py `S_REGISTER_PATCHES`, work/scripts/l4_more_hot_water.py 2026-10-15.
 
 #### R38: Kyla med rumsgivare på S-serien
 
@@ -328,7 +328,8 @@ Förslag som prövades mot koden eller mot husens behov och ströks, med skälet
 ## Öppna frågor
 
 - **Tillbehörsflaggorna (R2):** ska de alls kunna skrivas från Home Assistant, eller räcker displayen? Svaret avgör om "installatörsläget" behövs.
-- **Zonens börvärde (L3) och engångshöjningen (L4):** båda kräver en skrivning till FB:s pump. Ett ja från ägaren, så görs provet och roadmapen uppdateras.
+- **Vilket börvärde ändrar displayen?** L3 visade att 40207 och 42506 är oberoende. Vrid rumstemperaturen en halv grad på FB:s display och läs båda med `read_s_registers.py`: det som rör sig är det pumpen menar, och termostaten kan då visa det i stället för att gissa.
+- **Mer varmvattens största värde (L4):** 1 och 4 timmar godtogs; om 12 eller 24 godtas, och om displayens engångshöjning finns på S-serien alls, är inte mätt.
 - **VV:s larm 181 (V1):** tryck på *Reset alarm* och se om det kommer tillbaka; i så fall är frågan om EMS:s blockering av tillsatsen hindrar den periodiska höjningen från att nå sin stopptemperatur (40062-motsvarigheten på F-serien).
 - **R15 före eller efter HACS-listningen (R34):** varje ny användare gör migreringen större; R2:s domänbyte likaså.
 - **Priskällan (R26):** Nordpool-integrationen, Tibber eller energipanelens prisentitet - och vilket avtal som gäller efter 2026-10-31.

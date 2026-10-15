@@ -43,6 +43,13 @@ S_SERIES_MAPS = (
     "s735", "smos40", "vvms320", "vvms320_vvms325", "vvms325", "vvms500",
 )
 
+#: S-series registers the maps define thinner than the pump behaves. 40698
+#: "More hot water" is a number of hours: written 4 it set the minutes
+#: register to 240, written 1 to 60 (measured on an S1155, 2026-10-15).
+S_REGISTER_PATCHES: dict[int, dict] = {
+    40698: {"unit": "h", "min": 0},
+}
+
 #: Labels offered in the config flow. Purely cosmetic: it names the device.
 MODEL_LABELS: dict[str, str] = {
     "s1155": "NIBE S1155",
@@ -141,6 +148,12 @@ def union_map() -> dict[int, dict]:
                     entry["mappings"] = variant["mappings"]
                     break
         merged[register] = entry
+
+    # What the pump was measured to mean where the maps say nothing; see
+    # hot_water_boost.py for the measurement.
+    for register, patch in S_REGISTER_PATCHES.items():
+        if register in merged:
+            merged[register] = {**merged[register], **patch}
 
     # NIBE's own value tables win over the library's. They exist for registers
     # the library leaves as bare numbers (so those become dropdowns), and where

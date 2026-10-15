@@ -417,9 +417,17 @@ register 48132, off writes *Off*. Those are the values myUplink's own
 cloud switch behaves the same through the gateway. A 3, 6 or 12 hour lux
 started at the pump reads as on.
 
-The S-series calls its boost *More hot water* (40698), and neither the maps nor
-NIBE's register documentation give its values, so it has no switch yet, and
-its water heater below offers no boost either.
+The S-series calls its boost *More hot water* (40698, `eS8XhwSel` in NIBE's
+register list), and no map gives its values, so they were measured on the
+S1155 on 2026-10-15: the value is a **number of hours**. Written 4, the pump set
+*More hot water (number of minutes)* (40226) to 240 and switched to hot water
+within ten seconds; written 1 it set 60; written 0 it ended at once, with the
+charge it had begun running to its stop temperature. So on the S-series the
+switch writes **3 hours** - the smallest span NIBE's own menu offers - and off
+writes 0; anything above 0 reads as on. An energy manager that re-asserts
+every quarter keeps it going for as long as it wants, and one that stops
+leaves at most three hours behind it. The register itself shows as a number
+in hours.
 
 ### Thermostat and water heater
 
@@ -437,7 +445,11 @@ the pump does:
 | `heat` | regulates on the room sensor (BT50) | the room setpoint (47398 / 40207) |
 | `heat_cool` | the same, and cools with the room sensor too (F-series) | heating and cooling setpoints |
 
-Choosing `heat` tells the pump to use its room sensor. A pump without one -
+Choosing `heat` tells the pump to use its room sensor. The S-series keeps two
+room setpoints - the climate system's (40207) and the zone's (42506) - and
+they were measured independent on the S1155: writing either leaves the other
+where it was. Which one the pump regulates on is not settled, so the
+thermostat writes both and shows the climate system's. A pump without one -
 the F1255 this was built against has the register and no sensor behind it -
 is not offered the mode, and a service call asking for it is refused with the
 reason, rather than telling the pump to regulate on nothing. What the pump is
@@ -452,8 +464,9 @@ F-series, *small*, *medium*, *large* and *smart* demand on the S-series - and
 whose temperature range is that mode's start and stop temperatures. The
 current temperature is the charging sensor (BT6), since that is what the pump
 compares with those limits; the top of the cylinder (BT7) is an attribute
-where fitted, and the S1155 has none. On the F-series *boost* is the one-time
-increase, the same register as the switch above, so the two agree.
+where fitted, and the S1155 has none. *Boost* is the one-time increase on the
+F-series and three hours of more hot water on the S-series, the same register
+as the switch above, so the two agree.
 
 ### Buttons
 

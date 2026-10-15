@@ -8,10 +8,10 @@ That is what a water heater entity shows: the mode as the operation, the pair
 as the range, and BT6 as the current temperature, since it is the figure the
 pair is about. The top of the cylinder (BT7), where fitted, is an attribute.
 
-The one-time increase is an operation mode too, on the F-series where the map
-gives temporary lux's values; see hot_water_boost.py for why the S-series
-waits. Choosing it heats the cylinder once; the pump then returns to the mode
-it was in, and so does this entity.
+The boost is an operation mode too: the one-time increase on the F-series,
+three hours of more hot water on the S-series (hot_water_boost.py has the
+measurement). Choosing it heats the cylinder; the pump then returns to the
+mode it was in, and so does this entity.
 """
 
 from __future__ import annotations

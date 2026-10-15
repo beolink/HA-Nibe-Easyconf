@@ -88,7 +88,10 @@ class NibeHotWaterBoostSwitch(CoordinatorEntity, SwitchEntity):
         # does for a register entity: a control without one gets no "i".
         return {
             "modbus_register": self._boost.register,
-            "description": explain_own("hot_water_boost", self._language),
+            "description": explain_own(
+                "hot_water_boost_hours" if self._boost.kind == "hours" else "hot_water_boost",
+                self._language,
+            ),
         }
 
     async def async_turn_on(self, **kwargs) -> None:

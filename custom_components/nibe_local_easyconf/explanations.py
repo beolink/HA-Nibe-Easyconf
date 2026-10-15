@@ -1838,12 +1838,34 @@ EXPLANATIONS: list[tuple[re.Pattern[str], tuple[str, str]]] = [
         ),
     ),
     (
-        re.compile(r"more hot water.*minutes|^more hot water", re.I),
+        re.compile(r"more hot water.*minutes", re.I),
         (
-            "Hur länge en engångshöjning av varmvattnet ska hålla i sig innan "
-            "pumpen går tillbaka till sitt vanliga läge.",
-            "How long a one-time increase of the hot water lasts before the pump "
-            "goes back to its ordinary mode.",
+            "Hur många minuter som återstår av mer varmvatten. Pumpen räknar ned "
+            "från det antal timmar som ställts in, och 0 betyder att inget pågår.",
+            "How many minutes of more hot water remain. The pump counts down from "
+            "the hours that were set, and 0 means nothing is running.",
+        ),
+    ),
+    (
+        re.compile(r"^more hot water status", re.I),
+        (
+            "Om en höjning av varmvattnet pågår just nu, satt i gång av Mer "
+            "varmvatten eller av pumpens periodiska höjning.",
+            "Whether a raise of the hot water is running right now, started by "
+            "More hot water or by the pump's periodic increase.",
+        ),
+    ),
+    (
+        re.compile(r"^more hot water$", re.I),
+        (
+            "Mer varmvatten i så här många timmar, samma sak som Mer varmvatten i "
+            "pumpens meny: beredaren laddas till sin högre temperatur under den "
+            "tiden och pumpen går sedan tillbaka av sig själv. 0 stänger av. "
+            "Uppmätt på en S1155: 4 gav 240 minuter, 1 gav 60.",
+            "More hot water for this many hours, the same thing as More hot water "
+            "in the pump's menu: the cylinder is charged to its higher temperature "
+            "for that long and the pump then returns to normal on its own. 0 "
+            "switches it off. Measured on an S1155: 4 gave 240 minutes, 1 gave 60.",
         ),
     ),
     (
@@ -2147,6 +2169,18 @@ OWN_EXPLANATIONS: dict[str, tuple[str, str]] = {
         "Switches on a one-time increase of the hot water, the same thing as "
         "temporary lux in the pump's menu. The pump charges the cylinder extra hot "
         "once and then returns to normal on its own.",
+    ),
+    "hot_water_boost_hours": (
+        "Slår på mer varmvatten i tre timmar, samma sak som Mer varmvatten i "
+        "pumpens meny: pumpen laddar beredaren till sin högre temperatur under "
+        "den tiden och går sedan tillbaka av sig själv. Av stänger av direkt. En "
+        "energistyrning som skriver på varje kvart håller det igång så länge den "
+        "vill.",
+        "Switches on more hot water for three hours, the same thing as More hot "
+        "water in the pump's menu: the pump charges the cylinder to its higher "
+        "temperature for that long and then returns to normal on its own. Off "
+        "ends it at once. An energy manager that writes every quarter of an hour "
+        "keeps it going for as long as it wants.",
     ),
     "cop_day": (
         "Värmefaktorn det senaste dygnet: hur många kilowattimmar värme pumpen "
