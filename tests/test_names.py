@@ -19,6 +19,31 @@ def test_every_curated_name_fits_a_column():
             assert len(name) <= names.MAX_LENGTH, f"{title!r} -> {name!r}"
 
 
+def test_the_numbered_families_fit_the_column_at_their_largest_number():
+    """Zones run to 40 and climate systems to 8; the longest instance of every
+    pattern has to fit, in both languages."""
+    for pattern, swedish, english, widest in names.NUMBERED_NAMES:
+        for text in (swedish, english):
+            longest = text.format(**widest)
+            assert len(longest) <= names.MAX_LENGTH, f"{pattern.pattern} -> {longest!r}"
+
+
+def test_the_room_sensor_family_is_named_from_its_titles():
+    """229 S-series registers are about the room sensors, and the two the
+    thermostat writes were showing NIBE's English in a Swedish installation."""
+    setpoint = "Room sensor set point value climate system 1"
+    assert names.short_name(setpoint) == "Rumsbörvärde, system 1"
+    assert names.short_name("Desired room temperature for zone 1") == "Önskad rumstemp., zon 1"
+    assert names.short_name("Desired room temperature for zone 1", "en") == "Desired temp., zone 1"
+    assert names.short_name("Roomsensor 1-1") == "Rumsgivare 1-1"
+    assert names.short_name("Use room sensor climate system 2", "en") == "Room sensor on, system 2"
+    assert names.short_name("Zone 40 affected by ECS3") == "Zon 40 påverkas av ECS3"
+    # System 1's average keeps the name it had; the rest of the family follows the pattern.
+    assert names.short_name("Room average temp. clim. system 1 (BT50)") == "Rumstemperatur, medel"
+    average = "Room average temp. clim. system 2 (BT50)"
+    assert names.short_name(average) == "Rumstemp. medel, syst. 2"
+
+
 def test_the_worst_title_gets_a_short_name():
     title = "Energy log - Used energy by additional heater for hot water over the past hour"
     assert len(title) == 78

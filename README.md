@@ -255,6 +255,13 @@ content width you get two columns: narrow the window, keep Home Assistant's
 sidebar expanded (it takes its width from the content area), or zoom the
 browser in.
 
+Families NIBE numbers - climate systems 1 to 8, zones 1 to 40, the room
+sensors - are named from one pattern each rather than one row per register:
+*Rumsbörvärde, system 1* (*Room setpoint, system 1*) for 40207, *Önskad
+rumstemp., zon 1* (*Desired temp., zone 1*) for 42506, *Rumsgivare 1-1* for
+30027. 229 S-series registers are about the room sensors alone, and every one
+of them otherwise showed NIBE's English title in a Swedish installation.
+
 ### Explanations
 
 Every entity carries an explanation, shown on the NIBE page and in its

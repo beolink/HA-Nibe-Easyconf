@@ -19,6 +19,8 @@ people who meet them went looking and are better served by NIBE's full wording.
 
 from __future__ import annotations
 
+import re
+
 #: (register, NIBE title) -> (svenska, English), for the few registers whose
 #: title alone is not enough. NIBE gives two registers on the S-series the same
 #: title "Priority": one answers in words - off, hot water, heat, pool, cooling
@@ -269,6 +271,101 @@ SHORT_NAMES: dict[str, tuple[str, str]] = {
 
 MAX_LENGTH = 24
 
+#: Families NIBE numbers - climate systems 1 to 8, zones 1 to 40, the room
+#: sensors - named from one pattern each rather than one row per register: 229
+#: registers on the S-series are about the room sensors alone, and every one of
+#: them otherwise shows NIBE's English title in a Swedish installation. The
+#: number stays where NIBE put it, so "system 2" and "zone 2" are told apart
+#: by the word before them, as in the title. Each is (pattern, svenska,
+#: English, widest), with {n} for the number and {a}/{b} for a pair, and
+#: widest the largest numbers the family runs to - eight climate systems,
+#: forty zones - so the test can hold the longest instance to the column.
+NUMBERED_NAMES: tuple[tuple[re.Pattern[str], str, str, dict[str, str]], ...] = (
+    (
+        re.compile(r"^Room sensor set point value climate system (?P<n>\d+)$"),
+        "Rumsbörvärde, system {n}",
+        "Room setpoint, system {n}",
+        {"n": "8"},
+    ),
+    (
+        re.compile(r"^Room sensor set point value climate system (?P<n>\d+), cooling$"),
+        "Börvärde kyla, system {n}",
+        "Cool setpoint, system {n}",
+        {"n": "8"},
+    ),
+    (
+        re.compile(r"^Desired room temperature for zone (?P<n>\d+)$"),
+        "Önskad rumstemp., zon {n}",
+        "Desired temp., zone {n}",
+        {"n": "40"},
+    ),
+    (
+        re.compile(r"^Roomsensor (?P<a>\d+)-(?P<b>\d+)$"),
+        "Rumsgivare {a}-{b}",
+        "Room sensor {a}-{b}",
+        {"a": "3", "b": "1"},
+    ),
+    (
+        re.compile(r"^Room average temp\. clim\. system (?P<n>\d+) \(BT50\)$"),
+        "Rumstemp. medel, syst. {n}",
+        "Room average, system {n}",
+        {"n": "8"},
+    ),
+    (
+        re.compile(r"^Use room sensor climate system (?P<n>\d+)$"),
+        "Rumsgivare på, system {n}",
+        "Room sensor on, system {n}",
+        {"n": "8"},
+    ),
+    (
+        re.compile(r"^Room sensor factor climate system (?P<n>\d+)$"),
+        "Rumsgivarfaktor, syst. {n}",
+        "Room factor, system {n}",
+        {"n": "8"},
+    ),
+    (
+        re.compile(r"^Room sensor factor climate system (?P<n>\d+), cooling$"),
+        "Faktor kyla, system {n}",
+        "Cool factor, system {n}",
+        {"n": "8"},
+    ),
+    (
+        re.compile(r"^External adjustment with room sensor climate system (?P<n>\d+)$"),
+        "Ext. justering, system {n}",
+        "Ext. adjust, system {n}",
+        {"n": "8"},
+    ),
+    (
+        re.compile(r"^External adjustment with room sensor, cooling climate system (?P<n>\d+)$"),
+        "Ext. just. kyla, syst. {n}",
+        "Ext. adj. cool, system {n}",
+        {"n": "8"},
+    ),
+    (
+        re.compile(r"^Zone (?P<n>\d+) affected by (?P<a>ECS\d+)$"),
+        "Zon {n} påverkas av {a}",
+        "Zone {n} affected by {a}",
+        {"n": "40", "a": "ECS3"},
+    ),
+)
+
+#: The two the family has only one of.
+SHORT_NAMES.update(
+    {
+        "Cooling with room sensors": ("Kyla med rumsgivare", "Cool with room sensors"),
+        "Temperature: Room Temp Sensor": ("Rumsgivare, temperatur", "Room sensor temperature"),
+    }
+)
+
+
+def numbered_name(title: str, language: str = "sv") -> str | None:
+    """The name a numbered family gives a title, or None if it is not in one."""
+    for pattern, swedish, english, _widest in NUMBERED_NAMES:
+        found = pattern.match(title)
+        if found:
+            return (swedish if language.startswith("sv") else english).format(**found.groupdict())
+    return None
+
 
 def short_name(title: str, language: str = "sv", register: int | None = None) -> str | None:
     """The curated short name for a title, or None if there is none.
@@ -280,7 +377,7 @@ def short_name(title: str, language: str = "sv", register: int | None = None) ->
     if names is None:
         names = SHORT_NAMES.get(title)
     if names is None:
-        return None
+        return numbered_name(title, language)
     return names[0] if language.startswith("sv") else names[1]
 
 
@@ -304,7 +401,6 @@ def assign_names(
     3. the register number, which is always true when nothing else is known.
     """
     from collections import defaultdict
-    import re
 
     code_re = re.compile(r"\b([A-Z]{2}\d{1,3})\b")
     # Short on purpose: ", inställning" pushed pairs past the column width.
