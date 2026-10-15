@@ -137,6 +137,48 @@
       "hot_water_boost": {
         "name": "Hot water boost"
       }
+    },
+    "climate": {
+      "climate_system": {
+        "name": "Climate system",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "blocked": "Blocked",
+              "eco": "Eco",
+              "normal": "Normal",
+              "boost": "Boost"
+            }
+          }
+        }
+      }
+    },
+    "water_heater": {
+      "hot_water": {
+        "name": "Hot water",
+        "state": {
+          "economy": "Economy",
+          "normal": "Normal",
+          "luxury": "Luxury",
+          "smart": "Smart control",
+          "boost": "One-time increase"
+        }
+      },
+      "hot_water_demand": {
+        "name": "Hot water",
+        "state": {
+          "small": "Small demand",
+          "medium": "Medium demand",
+          "large": "Large demand",
+          "smart": "Smart control",
+          "boost": "One-time increase"
+        }
+      }
+    },
+    "button": {
+      "rescan": {
+        "name": "Rescan registers"
+      }
     }
   },
   "services": {

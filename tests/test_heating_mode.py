@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import importlib
 from importlib.resources import files
 import json
@@ -88,3 +89,123 @@ def test_choosing_normal_takes_what_the_pump_stored_as_normal():
     state = heating_mode.ModeState("eco", 0, -1)
     assert heating_mode.chosen(state, "normal", 0) == heating_mode.ModeState("normal", 0, 0)
     assert heating_mode.chosen(state, "boost", 1) == heating_mode.ModeState("boost", 0, 1)
+
+
+# ------------------------------------------------------- the shared controller
+
+
+class FakeStore:
+    def __init__(self, data=None):
+        self.data = data
+        self.saved = 0
+
+    async def async_load(self):
+        return self.data
+
+    async def async_save(self, data):
+        self.data = data
+        self.saved += 1
+
+    def async_delay_save(self, data_func, delay):
+        self.data = data_func()
+        self.saved += 1
+
+
+class FakeCoordinator:
+    """What the controller asks of a coordinator, and nothing more."""
+
+    def __init__(self, offset):
+        self.registers = {47011: {"title": "Heat Offset S1", "write": True, "min": -10, "max": 10}}
+        self.data = {47011: offset}
+        self.subscribed = []
+        self.listeners = []
+        self.writes = []
+        self.redraws = 0
+
+    def subscribe(self, register):
+        self.subscribed.append(register)
+
+    def unsubscribe(self, register):
+        self.subscribed.remove(register)
+
+    def async_add_listener(self, callback):
+        self.listeners.append(callback)
+        return lambda: self.listeners.remove(callback)
+
+    def async_update_listeners(self):
+        self.redraws += 1
+        for callback in list(self.listeners):
+            callback()
+
+    async def async_write(self, register, value):
+        self.writes.append((register, value))
+        self.data = {**self.data, register: value}
+
+
+def _controller(offset=0, stored=None):
+    coordinator = FakeCoordinator(offset)
+    controller = heating_mode.Controller(coordinator, 47011, DEFAULTS, FakeStore(stored))
+    return coordinator, controller
+
+
+def test_the_controller_learns_normal_when_it_starts_following():
+    coordinator, controller = _controller(offset=2)
+    assert controller.state is None and not controller.available
+    stop = controller.start()
+    assert coordinator.subscribed == [47011] and len(coordinator.listeners) == 1
+    assert controller.state == heating_mode.ModeState("normal", 2, 2)
+    assert controller.available
+    assert controller.offsets() == {"blocked": -1, "eco": 1, "normal": 2, "boost": 3}
+    stop()
+    assert coordinator.subscribed == [] and coordinator.listeners == []
+
+
+def test_choosing_a_mode_writes_its_offset_and_redraws_everyone():
+    coordinator, controller = _controller(offset=0)
+    controller.start()
+    asyncio.run(controller.async_choose("eco"))
+    assert coordinator.writes == [(47011, -1)]
+    assert controller.state == heating_mode.ModeState("eco", 0, -1)
+    # The select and the thermostat both show the mode; one call reaches both.
+    assert coordinator.redraws == 1
+    # And the store holds it for the next start.
+    assert controller._store.data == {"mode": "eco", "normal": 0, "offset": -1}
+
+
+def test_the_read_back_of_its_own_write_is_not_a_change_by_hand():
+    coordinator, controller = _controller(offset=0)
+    controller.start()
+    asyncio.run(controller.async_choose("blocked"))
+    # The coordinator's next update carries the offset just written.
+    coordinator.async_update_listeners()
+    assert controller.state == heating_mode.ModeState("blocked", 0, -3)
+
+
+def test_a_change_by_hand_reaches_the_controller_through_the_listener():
+    coordinator, controller = _controller(offset=0)
+    controller.start()
+    coordinator.data = {47011: 1}  # turned up on the display, in normal
+    coordinator.async_update_listeners()
+    assert controller.state == heating_mode.ModeState("normal", 1, 1)
+    asyncio.run(controller.async_choose("eco"))
+    assert coordinator.writes[-1] == (47011, 0)
+
+
+def test_the_stored_mode_is_taken_up_before_the_pump_is_followed():
+    """A restart in eco must not learn eco's offset as normal."""
+    _coordinator, controller = _controller(
+        offset=-1, stored={"mode": "eco", "normal": 0, "offset": -1}
+    )
+    asyncio.run(controller.async_load())
+    controller.start()
+    assert controller.state == heating_mode.ModeState("eco", 0, -1)
+
+
+def test_a_mode_cannot_be_chosen_before_the_offset_is_read():
+    _coordinator, controller = _controller(offset=None)
+    controller.start()
+    assert not controller.available
+    with pytest.raises(RuntimeError):
+        asyncio.run(controller.async_choose("eco"))
+    with pytest.raises(ValueError):
+        asyncio.run(controller.async_choose("warm"))

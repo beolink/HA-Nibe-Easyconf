@@ -22,7 +22,8 @@ from homeassistant.loader import async_get_integration
 from nibe.exceptions import NibeException
 import voluptuous as vol
 
-from . import fseries
+from . import fseries, heating_mode
+from .actions import async_rescan
 from .codec import decode, word_count
 from .const import (
     CONF_CONNECTION,
@@ -45,6 +46,7 @@ from .const import (
     FIRMWARE_REGISTER,
     GATEWAY_PROBE_REGISTER,
     PLATFORMS,
+    REGISTER_PLATFORMS,
     SERVICE_IMPORT_HISTORY,
     SERVICE_RESCAN,
     platform_for,
@@ -75,7 +77,13 @@ from .registry import async_model_map, async_union_map
 from .serial import parse_serial, serial_from_hostname
 from .stats import async_setup_stats, async_stop_stats
 from .stats_extra import ErrorCounter, build_extra
-from .storage import async_load, async_remove, async_save, async_saved_version
+from .storage import (
+    async_load,
+    async_remove,
+    async_save,
+    async_saved_version,
+    heating_mode_store,
+)
 from .translations_extra import entity_language
 
 _LOGGER = logging.getLogger(__name__)
@@ -259,6 +267,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: NibeConfigEntry) -> bool
     # counters. Set up before the platforms so the COP sensors have it.
     if {ENERGY_OUT_REGISTER, ENERGY_IN_REGISTER} <= discovery.present:
         await _async_set_up_cop(hass, entry, coordinator, import_history=True)
+    await _async_set_up_heating_mode(hass, entry, coordinator)
 
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -390,6 +399,7 @@ async def _async_setup_gateway_entry(hass: HomeAssistant, entry: NibeConfigEntry
                 _async_remove_cop_entities(hass, entry)
             else:
                 await _async_set_up_cop(hass, entry, coordinator, import_history=False)
+        await _async_set_up_heating_mode(hass, entry, coordinator)
     except BaseException:
         await client.stop()
         raise
@@ -471,6 +481,29 @@ async def _async_set_up_cop(
         entry.async_on_unload(async_at_started(hass, _import))
 
 
+async def _async_set_up_heating_mode(
+    hass: HomeAssistant, entry: NibeConfigEntry, coordinator
+) -> None:
+    """The heating mode, for a pump with the heat offset it steers.
+
+    Built here rather than by the select, since the thermostat's presets are
+    the same mode: one state, two views. See heating_mode.Controller.
+    """
+    register = heating_mode.offset_register(coordinator.registers, coordinator.discovery.present)
+    if register is None:
+        return
+    controller = heating_mode.Controller(
+        coordinator,
+        register,
+        heating_mode.steps_from(entry.options),
+        heating_mode_store(hass, entry.entry_id),
+    )
+    await controller.async_load()
+    entry.async_on_unload(controller.start())
+    coordinator.heating_mode = controller
+    await coordinator.async_request_refresh()
+
+
 async def _async_follow_software_version(
     hass: HomeAssistant, entry: ConfigEntry, coordinator: NibeGatewayCoordinator
 ) -> None:
@@ -520,7 +553,7 @@ def _async_remove_moved_entities(
             continue
         unique_id = f"{entry.entry_id}-{register}"
         current = platform_for(meta)
-        for platform in PLATFORMS:
+        for platform in REGISTER_PLATFORMS:
             if platform == current:
                 continue
             if entity_id := registry.async_get_entity_id(platform, DOMAIN, unique_id):
@@ -626,13 +659,7 @@ def _register_services(hass: HomeAssistant) -> None:
         if entry_ids:
             entries = [entry for entry in entries if entry.entry_id in entry_ids]
         for entry in entries:
-            coordinator: NibeCoordinator = entry.runtime_data
-            result = await coordinator.async_rescan()
-            version = str((await async_get_integration(hass, DOMAIN)).version)
-            await async_save(hass, entry.entry_id, result, version)
-            # Newly discovered registers need entities, which are created at
-            # platform setup, so reload the entry to pick them up.
-            hass.async_create_task(hass.config_entries.async_reload(entry.entry_id))
+            await async_rescan(hass, entry)
 
     hass.services.async_register(
         DOMAIN,

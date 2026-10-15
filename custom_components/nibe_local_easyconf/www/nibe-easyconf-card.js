@@ -57,6 +57,7 @@ const TEXT = {
     empty: "Inga entiteter från Nibe Local Easyconf ännu.",
     none: "Inget matchar filtret.",
     details: "Mer info",
+    press: "Kör",
     unavailable: "ej tillgänglig",
     on: "på",
     off: "av",
@@ -90,6 +91,7 @@ const TEXT = {
     empty: "Noch keine Entitäten von Nibe Local Easyconf.",
     none: "Nichts entspricht dem Filter.",
     details: "Mehr Info",
+    press: "Ausführen",
     unavailable: "nicht verfügbar",
     on: "an",
     off: "aus",
@@ -123,6 +125,7 @@ const TEXT = {
     empty: "Aucune entité de Nibe Local Easyconf pour l'instant.",
     none: "Rien ne correspond au filtre.",
     details: "Plus d'infos",
+    press: "Exécuter",
     unavailable: "indisponible",
     on: "activé",
     off: "désactivé",
@@ -156,6 +159,7 @@ const TEXT = {
     empty: "No entities from Nibe Local Easyconf yet.",
     none: "Nothing matches the filter.",
     details: "More info",
+    press: "Run",
     unavailable: "unavailable",
     on: "on",
     off: "off",
@@ -191,6 +195,10 @@ const ACCESSORY_PATTERN =
   /\baccessory\b|\btillbehör\b|^rmu system|^opt$|modbus ?40|sms ?40|^ers [1-4]$|^hts [1-4]$/i;
 const TAB_ORDER = ["overview", "controls", "performance", "values"];
 const CONTROL_DOMAINS = ["select", "number", "switch", "button"];
+//: Entities made of other entities on this page: the thermostat is the room
+//: sensor, the setpoint and the heating mode, the water heater the hot water
+//: mode and its temperatures. Shown through their parts, not twice.
+const COMPOSITE_DOMAINS = ["climate", "water_heater"];
 const CONTROL_GROUP_ORDER = ["heating", "hotwater", "operation", "air", "other"];
 
 /** Which part of the house a writable value belongs to. The first rule that
@@ -405,6 +413,7 @@ function collectRows(hass, deviceId) {
     const stateObj = hass.states[entry.entity_id];
     if (!stateObj) continue;
     const domain = entry.entity_id.split(".")[0];
+    if (COMPOSITE_DOMAINS.includes(domain)) continue;
     const attributes = stateObj.attributes || {};
     const device = entry.device_id && hass.devices ? hass.devices[entry.device_id] : null;
     const deviceName = device ? device.name_by_user || device.name : null;
@@ -1231,7 +1240,7 @@ if (typeof customElements !== "undefined") {
       if (kind === "button") {
         const button = document.createElement("button");
         button.type = "button";
-        button.textContent = text.details;
+        button.textContent = text.press;
         button.addEventListener("click", () => send(null));
         container.appendChild(button);
         return { update: () => {} };

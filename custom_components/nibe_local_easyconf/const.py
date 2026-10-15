@@ -185,14 +185,28 @@ PLATFORM_BINARY_SENSOR: Final = "binary_sensor"
 PLATFORM_NUMBER: Final = "number"
 PLATFORM_SELECT: Final = "select"
 PLATFORM_SWITCH: Final = "switch"
+PLATFORM_BUTTON: Final = "button"
+PLATFORM_CLIMATE: Final = "climate"
+PLATFORM_WATER_HEATER: Final = "water_heater"
 
-PLATFORMS: Final = (
+#: The platforms a register lands on, one entity each.
+REGISTER_PLATFORMS: Final = (
     PLATFORM_SENSOR,
     PLATFORM_BINARY_SENSOR,
+    PLATFORM_BUTTON,
     PLATFORM_NUMBER,
     PLATFORM_SELECT,
     PLATFORM_SWITCH,
 )
+
+#: Everything that is set up: the register platforms, and the two entities
+#: made of several registers each - the thermostat and the water heater.
+PLATFORMS: Final = (*REGISTER_PLATFORMS, PLATFORM_CLIMATE, PLATFORM_WATER_HEATER)
+
+#: Writable registers that do one thing when written and say nothing when
+#: read: "Reset alarm by setting value 1", as the F-series map puts its 45171.
+#: As numbers they showed 0 for ever; a button is what they are.
+MOMENTARY_TITLES: Final = frozenset({"Alarm Reset", "Reset alarm"})
 
 
 def _is_boolean(meta: dict) -> bool:
@@ -210,9 +224,12 @@ def platform_for(meta: dict) -> str:
 
     Writable registers become controls, read-only ones become sensors. A value
     mapping turns a control into a dropdown and a reading into an enum sensor;
-    a plain 0/1 range becomes a switch or a binary sensor.
+    a plain 0/1 range becomes a switch or a binary sensor. A register that is
+    only ever written becomes a button.
     """
     writable = bool(meta.get("write"))
+    if writable and meta.get("title") in MOMENTARY_TITLES:
+        return PLATFORM_BUTTON
     if meta.get("mappings"):
         return PLATFORM_SELECT if writable else PLATFORM_SENSOR
     if _is_boolean(meta):

@@ -137,6 +137,48 @@
       "hot_water_boost": {
         "name": "Varmvattenboost"
       }
+    },
+    "climate": {
+      "climate_system": {
+        "name": "Klimatsystem",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "blocked": "Blockerad",
+              "eco": "Ekonomi",
+              "normal": "Normal",
+              "boost": "Boost"
+            }
+          }
+        }
+      }
+    },
+    "water_heater": {
+      "hot_water": {
+        "name": "Varmvatten",
+        "state": {
+          "economy": "Ekonomi",
+          "normal": "Normal",
+          "luxury": "Lyx",
+          "smart": "Smart styrning",
+          "boost": "Engångshöjning"
+        }
+      },
+      "hot_water_demand": {
+        "name": "Varmvatten",
+        "state": {
+          "small": "Litet behov",
+          "medium": "Medelbehov",
+          "large": "Stort behov",
+          "smart": "Smart styrning",
+          "boost": "Engångshöjning"
+        }
+      }
+    },
+    "button": {
+      "rescan": {
+        "name": "Sök om register"
+      }
     }
   },
   "services": {

@@ -2194,6 +2194,53 @@ OWN_EXPLANATIONS: dict[str, tuple[str, str]] = {
         "days and hot water included. Until a year has been measured, the lifetime "
         "figure from the pump's own counters is shown instead.",
     ),
+    "climate_system": (
+        "Termostaten för klimatsystemet, byggd av register som redan finns. I "
+        "läget auto reglerar pumpen på sin värmekurva, som de flesta anläggningar "
+        "gör; då finns inget börvärde att ställa, utan värmeläget (blockerad, "
+        "ekonomi, normal, boost) flyttar kurvan i stället. I läget värme reglerar "
+        "pumpen på rumsgivaren (BT50) mot det börvärde du ställer här; att välja "
+        "läget säger åt pumpen att använda givaren. En pump utan rumsgivare "
+        "erbjuds inte det läget. Vad pumpen gör just nu - värmer, kyler, vilar - "
+        "läses ur dess prioritering.",
+        "The thermostat for the climate system, made of registers that already "
+        "exist. In auto the pump regulates on its heat curve, as most installations "
+        "do; there is no setpoint to give it then, and the heating mode (blocked, "
+        "eco, normal, boost) moves the curve instead. In heat the pump regulates on "
+        "its room sensor (BT50) towards the setpoint you set here; choosing the mode "
+        "tells the pump to use the sensor. A pump without a room sensor is not "
+        "offered that mode. What the pump is doing right now - heating, cooling, "
+        "idle - is read from its priority.",
+    ),
+    "water_heater": (
+        "Varmvattnet som en varmvattenberedare: läget är pumpens eget "
+        "varmvattenläge, och temperaturerna är start- och stopptemperaturen för det "
+        "läget. Pumpen laddar beredaren när laddningsgivaren (BT6) sjunker under "
+        "starttemperaturen och slutar när den når stopptemperaturen, så det är BT6 "
+        "som visas som aktuell temperatur - det är den siffran gränserna handlar "
+        "om; toppgivaren (BT7) ligger bland attributen där den finns. "
+        "Engångshöjning laddar beredaren extra varm en gång, samma sak som "
+        "tillfällig lyx i pumpens meny.",
+        "The hot water as a water heater: the mode is the pump's own hot water "
+        "mode, and the temperatures are that mode's start and stop temperatures. "
+        "The pump charges the cylinder when the charging sensor (BT6) falls below "
+        "the start temperature and stops when it reaches the stop temperature, so "
+        "BT6 is what is shown as the current temperature - it is the figure the "
+        "limits are about; the top sensor (BT7) is among the attributes where "
+        "fitted. The one-time increase charges the cylinder extra hot once, the "
+        "same thing as temporary lux in the pump's menu.",
+    ),
+    "rescan": (
+        "Läser av pumpen igen och uppdaterar vilka register som finns och vilka "
+        "som rapporterar värden. Kör den efter en firmwareuppdatering eller när "
+        "ett tillbehör monterats; en givare som sattes dit efter den senaste "
+        "avläsningen visas inte förrän dess. Tar ungefär en minut, och sedan "
+        "laddas pumpens entiteter om.",
+        "Reads the pump again and updates which registers exist and which report "
+        "a value. Run it after a firmware update or when an accessory has been "
+        "fitted; a sensor added since the last scan is not shown until then. "
+        "Takes about a minute, and then the pump's entities are reloaded.",
+    ),
     "manufactured": (
         "När pumpen tillverkades, uttytt ur serienumret: siffrorna efter "
         "artikelnumret är år och dagnummer.",

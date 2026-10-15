@@ -54,6 +54,8 @@ const hass = {
       platform: "intellipool", device_id: "d2"},
     "sensor.nibe_s1155_disabled": {entity_id: "sensor.nibe_s1155_disabled",
       platform: "nibe_local_easyconf", device_id: "d1"},
+    "climate.nibe_s1155_klimatsystem_1": {entity_id: "climate.nibe_s1155_klimatsystem_1",
+      platform: "nibe_local_easyconf", device_id: "d1", entity_category: null},
   },
   states: {
     "sensor.nibe_s1155_ute": {state: "13.6", attributes: {
@@ -66,6 +68,8 @@ const hass = {
     "switch.nibe_s1155_elpatron": {state: "off", attributes: {
       friendly_name: "NIBE S1155 Tillåt elpatron"}},
     "sensor.pool_temp": {state: "24", attributes: {friendly_name: "Pool temp"}},
+    "climate.nibe_s1155_klimatsystem_1": {state: "auto", attributes: {
+      friendly_name: "NIBE S1155 Klimatsystem 1", description: "Termostaten"}},
   },
 };
 """
@@ -75,6 +79,9 @@ def test_only_this_integrations_enabled_entities_appear():
     ids = _run(HASS + "console.log(JSON.stringify(c.collectRows(hass, null).map(r => r.entityId)))")
     assert "sensor.pool_temp" not in ids  # another integration
     assert "sensor.nibe_s1155_disabled" not in ids  # disabled: no state
+    # The thermostat is its room sensor, setpoint and heating mode, all of
+    # which are rows of their own.
+    assert "climate.nibe_s1155_klimatsystem_1" not in ids
     assert len(ids) == 4
 
 

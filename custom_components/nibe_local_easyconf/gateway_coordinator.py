@@ -118,6 +118,9 @@ class NibeGatewayCoordinator(DataUpdateCoordinator[dict[int, Value]]):
         #: Cumulative failed poll cycles, for the daily report.
         self.read_failures = 0
         self.cop = None
+        #: heating_mode.Controller, set by the setup path for a pump with the
+        #: heat offset it steers; the select and the thermostat both show it.
+        self.heating_mode = None
         self._heat_meters: list[int] = []
         self._consumed_meters: list[int] = []
         #: The meter the pump does not have, built from the power it reports.

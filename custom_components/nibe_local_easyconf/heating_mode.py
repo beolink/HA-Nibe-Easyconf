@@ -26,12 +26,19 @@ offset's own entity - is taken as meant:
 
 The select shows the mode last chosen either way, so an energy manager does
 not undo a change made by hand.
+
+The state lives in one Controller per pump, which the select and the climate
+entity's presets both read and write: two entities each learning their own
+normal from the same register would drift apart.
 """
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
-from dataclasses import dataclass, replace
+from collections.abc import Callable, Iterable, Mapping
+from dataclasses import asdict, dataclass, replace
+import logging
+
+_LOGGER = logging.getLogger(__name__)
 
 BLOCKED = "blocked"
 ECO = "eco"
@@ -106,3 +113,103 @@ def chosen(state: ModeState, mode: str, offset: int) -> ModeState:
     if mode == NORMAL:
         return ModeState(NORMAL, offset, offset)
     return ModeState(mode, state.normal, offset)
+
+
+class Controller:
+    """The heating mode of one pump: its state, where it is kept, and the writes.
+
+    Built once at set-up and handed to every entity that shows the mode. It
+    follows the coordinator like an entity does, so an offset changed by hand
+    is taken in before the entities read the state, and it tells the
+    coordinator's listeners when a mode has been chosen, so each of them shows
+    it. Nothing here is Home Assistant's: the store is anything with
+    async_load, async_save and async_delay_save, the coordinator anything with
+    data, registers, subscribe, async_write, async_add_listener and
+    async_update_listeners, which is what the tests hand it.
+    """
+
+    def __init__(self, coordinator, register: int, steps: Mapping[str, int], store) -> None:
+        self.coordinator = coordinator
+        self.register = register
+        meta = coordinator.registers[register]
+        self.low = int(meta.get("min", -10))
+        self.high = int(meta.get("max", 10))
+        self.steps = steps
+        self._store = store
+        self.state: ModeState | None = None
+        #: True while a mode is written, so its read-back is not taken for a
+        #: change made by hand.
+        self._writing = False
+        self._unsubscribe: Callable[[], None] | None = None
+
+    async def async_load(self) -> None:
+        stored = await self._store.async_load()
+        if stored and stored.get("mode") in MODES:
+            self.state = ModeState(stored["mode"], int(stored["normal"]), int(stored["offset"]))
+
+    def start(self) -> Callable[[], None]:
+        """Read the offset from now on, and follow what the pump has."""
+        self.coordinator.subscribe(self.register)
+        remove = self.coordinator.async_add_listener(self.follow)
+        self.follow()
+
+        def stop() -> None:
+            remove()
+            self.coordinator.unsubscribe(self.register)
+
+        return stop
+
+    def offset(self) -> int | None:
+        data = self.coordinator.data
+        value = None if data is None else data.get(self.register)
+        return None if value is None else int(value)
+
+    @property
+    def available(self) -> bool:
+        return self.state is not None and self.offset() is not None
+
+    def follow(self) -> None:
+        """Take in an offset the pump has now, if it is not the one last seen."""
+        offset = self.offset()
+        if offset is None or self._writing:
+            return
+        state = learn(offset) if self.state is None else follow(self.state, offset)
+        if state == self.state:
+            return
+        if self.state is not None:
+            _LOGGER.info(
+                "Heat offset changed to %s outside the heating mode; mode %s, normal offset %s",
+                offset,
+                state.mode,
+                state.normal,
+            )
+        self.state = state
+        self._store.async_delay_save(self._data_to_store, 1)
+
+    def _data_to_store(self) -> dict:
+        return asdict(self.state)
+
+    def offsets(self) -> dict[str, int]:
+        """What each mode writes, from the normal offset learned."""
+        return {
+            mode: offset_for(mode, self.state.normal, self.steps, self.low, self.high)
+            for mode in MODES
+        }
+
+    async def async_choose(self, mode: str) -> None:
+        """Write the offset `mode` stands for, and remember the mode."""
+        if mode not in MODES:
+            raise ValueError(f"{mode} is not a heating mode")
+        if self.state is None:
+            raise RuntimeError("The heat offset has not been read from the pump yet")
+        target = offset_for(mode, self.state.normal, self.steps, self.low, self.high)
+        self._writing = True
+        try:
+            await self.coordinator.async_write(self.register, target)
+        finally:
+            self._writing = False
+        stored = self.offset()
+        self.state = chosen(self.state, mode, target if stored is None else stored)
+        await self._store.async_save(asdict(self.state))
+        # Every entity showing the mode - the select, the thermostat - redraws.
+        self.coordinator.async_update_listeners()

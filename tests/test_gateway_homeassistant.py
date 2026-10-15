@@ -27,6 +27,7 @@ from homeassistant.config_entries import (
     ConfigEntryState,
 )
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
 from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
@@ -740,3 +741,207 @@ async def test_a_pump_that_does_not_measure_heat_gets_no_cop_sensors(hass, freez
     assert counted is not None
     assert counted.attributes["pump_counts_heat"] is False
     assert "flödesmätare" in counted.attributes["description"]
+
+
+# ------------------------------------------------------------ the thermostat
+
+
+def _climate(hass, entry, number=1) -> str | None:
+    return er.async_get(hass).async_get_entity_id(
+        "climate", DOMAIN, f"{entry.entry_id}-climate-{number}"
+    )
+
+
+async def test_without_a_room_sensor_the_thermostat_steers_the_heat_curve(hass, freezer):
+    """The development unit has the room sensor's register and nothing behind
+    it: the thermostat is there, in auto, with the heating mode as its presets,
+    and is not offered a mode that would have the pump regulate on nothing."""
+    entry = await _set_up(hass, freezer)
+    fake = FakeNibeGW.instances[-1]
+    entity_id = _climate(hass, entry)
+    state = hass.states.get(entity_id)
+    assert state.attributes["friendly_name"].endswith("Klimatsystem 1")
+    # 47394 "Use room sensor S1" is not among the readings: nothing to show yet.
+    assert state.state == "unavailable"
+
+    fake.values[47394] = "OFF"
+    fake.values[47398] = 20.0
+    await _advance(hass, freezer, 601)  # settings are read every ten minutes
+    state = hass.states.get(entity_id)
+    assert state.state == "auto"
+    assert state.attributes["hvac_modes"] == ["auto"]
+    assert "current_temperature" not in state.attributes or (
+        state.attributes["current_temperature"] is None
+    )
+    assert state.attributes["temperature"] is None
+    assert state.attributes["hvac_action"] == "idle"  # Prio reads hot water
+    assert state.attributes["room_sensor_fitted"] is False
+    assert state.attributes["preset_modes"] == ["blocked", "eco", "normal", "boost"]
+    assert state.attributes["preset_mode"] == "normal"
+    assert "kurvan" in state.attributes["description"]
+
+    # The other three climate systems exist for the day they are fitted.
+    registry = er.async_get(hass)
+    for number in (2, 3, 4):
+        other = registry.async_get(_climate(hass, entry, number))
+        assert other.disabled_by is er.RegistryEntryDisabler.INTEGRATION
+
+    with pytest.raises(ServiceValidationError):
+        await hass.services.async_call(
+            "climate", "set_hvac_mode", {"entity_id": entity_id, "hvac_mode": "heat"},
+            blocking=True,
+        )
+    with pytest.raises(ServiceValidationError):
+        await hass.services.async_call(
+            "climate", "set_temperature", {"entity_id": entity_id, "temperature": 21},
+            blocking=True,
+        )
+    assert all(register not in (47394, 47398) for register, _value in fake.writes)
+
+
+async def test_the_thermostats_presets_are_the_heating_mode(hass, freezer):
+    entry = await _set_up(hass, freezer)
+    fake = FakeNibeGW.instances[-1]
+    fake.values[47394] = "OFF"
+    await _advance(hass, freezer, 601)
+    entity_id = _climate(hass, entry)
+    await hass.services.async_call(
+        "climate", "set_preset_mode", {"entity_id": entity_id, "preset_mode": "eco"},
+        blocking=True,
+    )
+    assert fake.writes[-1] == (47011, -1)
+    assert hass.states.get(entity_id).attributes["preset_mode"] == "eco"
+    # One state, two views: the select shows the same mode.
+    assert hass.states.get(_heating_mode(hass, entry)).state == "eco"
+    await _choose(hass, _heating_mode(hass, entry), "boost")
+    assert hass.states.get(entity_id).attributes["preset_mode"] == "boost"
+
+
+async def test_a_room_sensor_makes_the_thermostat_regulate_on_the_room(hass, freezer, monkeypatch):
+    monkeypatch.setitem(READINGS, 40033, 21.3)
+    entry = await _set_up(hass, freezer)
+    fake = FakeNibeGW.instances[-1]
+    fake.values.update({47394: "ON", 47398: 20.5, 48785: 25.0, 47340: "OFF", 43086: "HEAT"})
+    await _advance(hass, freezer, 601)
+    entity_id = _climate(hass, entry)
+    state = hass.states.get(entity_id)
+    assert state.state == "heat"
+    assert state.attributes["current_temperature"] == 21.3
+    assert state.attributes["temperature"] == 20.5
+    assert state.attributes["hvac_modes"] == ["auto", "heat", "heat_cool"]
+    assert state.attributes["hvac_action"] == "heating"
+    assert state.attributes["room_sensor_fitted"] is True
+
+    await hass.services.async_call(
+        "climate", "set_temperature", {"entity_id": entity_id, "temperature": 21.5},
+        blocking=True,
+    )
+    assert fake.writes[-1] == (47398, 215)
+    assert hass.states.get(entity_id).attributes["temperature"] == 21.5
+
+    await hass.services.async_call(
+        "climate", "set_hvac_mode", {"entity_id": entity_id, "hvac_mode": "heat_cool"},
+        blocking=True,
+    )
+    assert fake.writes[-2:] == [(47340, 1), (47394, 1)]
+    state = hass.states.get(entity_id)
+    assert state.state == "heat_cool"
+    # The heating setpoint just written, and the cooling setpoint above it.
+    assert (state.attributes["target_temp_low"], state.attributes["target_temp_high"]) == (
+        21.5, 25.0,
+    )
+
+    await hass.services.async_call(
+        "climate", "set_hvac_mode", {"entity_id": entity_id, "hvac_mode": "auto"},
+        blocking=True,
+    )
+    assert fake.writes[-2:] == [(47340, 0), (47394, 0)]
+    assert hass.states.get(entity_id).state == "auto"
+
+
+# ------------------------------------------------------------ the water heater
+
+
+def _water_heater(hass, entry) -> str | None:
+    return er.async_get(hass).async_get_entity_id(
+        "water_heater", DOMAIN, f"{entry.entry_id}-water-heater"
+    )
+
+
+async def test_the_water_heater_is_the_hot_water_mode_between_its_temperatures(hass, freezer):
+    entry = await _set_up(hass, freezer)
+    fake = FakeNibeGW.instances[-1]
+    fake.values.update({47045: 44.0, 47049: 48.0, 47043: 48.0, 47047: 55.0})
+    await _advance(hass, freezer, 601)
+    entity_id = _water_heater(hass, entry)
+    state = hass.states.get(entity_id)
+    assert state.attributes["friendly_name"].endswith("Varmvatten")
+    assert state.state == "economy"  # 47041 reads Economy on the development unit
+    assert state.attributes["current_temperature"] == 51.4  # BT6, the charging sensor
+    assert state.attributes["top_temperature"] == 56.6  # BT7
+    assert state.attributes["operation_list"] == ["economy", "normal", "luxury", "smart", "boost"]
+    assert (state.attributes["target_temp_low"], state.attributes["target_temp_high"]) == (
+        44.0, 48.0,
+    )
+    assert (state.attributes["min_temp"], state.attributes["max_temp"]) == (5.0, 70.0)
+    assert "BT6" in state.attributes["description"]
+
+    await hass.services.async_call(
+        "water_heater", "set_operation_mode",
+        {"entity_id": entity_id, "operation_mode": "luxury"}, blocking=True,
+    )
+    assert fake.writes[-1] == (47041, 2)
+    state = hass.states.get(entity_id)
+    assert state.state == "luxury"
+    assert (state.attributes["target_temp_low"], state.attributes["target_temp_high"]) == (
+        48.0, 55.0,
+    )
+
+    await hass.services.async_call(
+        "water_heater", "set_operation_mode",
+        {"entity_id": entity_id, "operation_mode": "boost"}, blocking=True,
+    )
+    assert fake.writes[-1] == (48132, 4)
+    assert hass.states.get(entity_id).state == "boost"
+    # And the boost switch agrees, since both read the same register.
+    assert hass.states.get(_hot_water_boost(hass, entry)).state == "on"
+
+    # A mode chosen while boosting is meant instead of the boost.
+    await hass.services.async_call(
+        "water_heater", "set_operation_mode",
+        {"entity_id": entity_id, "operation_mode": "normal"}, blocking=True,
+    )
+    assert fake.writes[-2:] == [(48132, 0), (47041, 1)]
+    assert hass.states.get(entity_id).state == "normal"
+
+
+# ------------------------------------------------------------ the buttons
+
+
+async def test_the_alarm_reset_is_a_button_that_writes_one(hass, freezer):
+    entry = await _set_up(hass, freezer)
+    fake = FakeNibeGW.instances[-1]
+    registry = er.async_get(hass)
+    entity_id = registry.async_get_entity_id("button", DOMAIN, f"{entry.entry_id}-45171")
+    assert entity_id is not None
+    assert registry.async_get_entity_id("number", DOMAIN, f"{entry.entry_id}-45171") is None
+    # Nothing to read: the register is never polled.
+    assert 45171 not in entry.runtime_data._subscribed
+    await hass.services.async_call("button", "press", {"entity_id": entity_id}, blocking=True)
+    assert fake.writes[-1] == (45171, 1)
+
+
+async def test_the_rescan_button_reads_the_pump_again_and_reloads(hass, freezer):
+    entry = await _set_up(hass, freezer)
+    gateways = len(FakeNibeGW.instances)
+    entity_id = er.async_get(hass).async_get_entity_id(
+        "button", DOMAIN, f"{entry.entry_id}-rescan"
+    )
+    state = hass.states.get(entity_id)
+    assert state.attributes["friendly_name"].endswith("Sök om register")
+    assert "firmwareuppdatering" in state.attributes["description"]
+    await hass.services.async_call("button", "press", {"entity_id": entity_id}, blocking=True)
+    await hass.async_block_till_done()
+    # The reload set the pump up afresh, on a new connection.
+    assert len(FakeNibeGW.instances) == gateways + 1
+    assert entry.state is ConfigEntryState.LOADED

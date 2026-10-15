@@ -85,6 +85,9 @@ class NibeCoordinator(DataUpdateCoordinator[dict[int, float | int | None]]):
         self._write_lock = asyncio.Lock()
         #: cop.CopTracker, set by the setup path when the counters exist.
         self.cop = None
+        #: heating_mode.Controller, set by the setup path for a pump with the
+        #: heat offset it steers; the select and the thermostat both show it.
+        self.heating_mode = None
         #: Decoded serial (serial.NibeSerial) when the network name gave it away.
         self.serial = None
         #: Control board software version, read once at setup.
@@ -249,9 +252,26 @@ class NibeCoordinator(DataUpdateCoordinator[dict[int, float | int | None]]):
             except (ModbusError, ModbusTransportError) as err:
                 raise HomeAssistantError(f"Could not write register {register}: {err}") from err
 
-        # Reflect the new value immediately rather than waiting for the next poll.
+        # The pump acknowledges more than it keeps: a value outside its own
+        # limits is clamped, and a 32-bit value in the wrong word order was
+        # acknowledged and dropped (see codec.encode_raw). Read the register
+        # back and show what it holds, as the gateway path does, rather than
+        # what was sent until the next poll corrects it.
+        stored = value
+        try:
+            words = await self.client.probe(FC_READ_HOLDING, address, len(payload))
+        except (ModbusError, ModbusTransportError):
+            words = None
+        if words is not None:
+            read_back = decode(meta, words)
+            if read_back is not None:
+                stored = read_back
+                if abs(float(stored) - float(value)) > 1e-9:
+                    _LOGGER.info(
+                        "Register %s was written %s and holds %s", register, value, stored
+                    )
         if self.data is not None:
-            self.async_set_updated_data({**self.data, register: value})
+            self.async_set_updated_data({**self.data, register: stored})
 
     # -- rediscovery -------------------------------------------------------
 

@@ -418,7 +418,60 @@ cloud switch behaves the same through the gateway. A 3, 6 or 12 hour lux
 started at the pump reads as on.
 
 The S-series calls its boost *More hot water* (40698), and neither the maps nor
-NIBE's register documentation give its values, so it has no switch yet.
+NIBE's register documentation give its values, so it has no switch yet, and
+its water heater below offers no boost either.
+
+### Thermostat and water heater
+
+Home Assistant's thermostat card, its scheduler helpers and the voice
+assistants all speak to `climate` and `water_heater` entities, so the pump
+has both, made of registers that already exist rather than of anything new.
+
+**Climate system 1** (*Klimatsystem 1*) is a thermostat, and systems 2-4 are
+created switched off for the installations that have them. Its modes are what
+the pump does:
+
+| Mode | What the pump does | Target |
+|---|---|---|
+| `auto` | regulates on its heat curve, as most installations run | none; the heating mode above is the lever, and it is the thermostat's *preset* |
+| `heat` | regulates on the room sensor (BT50) | the room setpoint (47398 / 40207) |
+| `heat_cool` | the same, and cools with the room sensor too (F-series) | heating and cooling setpoints |
+
+Choosing `heat` tells the pump to use its room sensor. A pump without one -
+the F1255 this was built against has the register and no sensor behind it -
+is not offered the mode, and a service call asking for it is refused with the
+reason, rather than telling the pump to regulate on nothing. What the pump is
+doing (heating, cooling, idle) comes from its priority, the same register as
+the status chip. The room temperature on the S-series is the average the pump
+regulates on (30117), which the S1155 answers with the same figure as its
+first sensor (30027).
+
+**Hot water** (*Varmvatten*) is a water heater whose operation modes are the
+pump's own hot water modes - *economy*, *normal*, *luxury* and *smart* on the
+F-series, *small*, *medium*, *large* and *smart* demand on the S-series - and
+whose temperature range is that mode's start and stop temperatures. The
+current temperature is the charging sensor (BT6), since that is what the pump
+compares with those limits; the top of the cylinder (BT7) is an attribute
+where fitted, and the S1155 has none. On the F-series *boost* is the one-time
+increase, the same register as the switch above, so the two agree.
+
+### Buttons
+
+*Reset alarm* (45171 on the F-series, 40023 on the S-series) is written 1 and
+never read, so it is a button rather than the number it used to be, and is
+not polled. *Rescan registers* (*Sök om register*) is the
+`rescan_registers` service as a button on the device, for a firmware update or
+an accessory fitted since the last scan.
+
+### Writes are read back
+
+Every write, on both series, is followed by a read of the same register, and
+the entity shows what the pump holds rather than what was sent. An S-series
+pump acknowledges more than it keeps: a value outside its own limits is
+clamped, and a 32-bit value sent in the order it is read was acknowledged and
+dropped (measured on register 42506, the zone's room temperature; see
+[what the probing found](#what-the-probing-found)). A difference is logged at
+info level.
 
 ## The NIBE page
 
@@ -538,16 +591,13 @@ What is collected and why: <https://stats.rnet.se/integritet>
 
 ## Roadmap
 
-- **NIBE's MODBUS 40 accessory as an alternative to the gateway.** The same pump
-  protocol behind a real MODBUS 40, reached as Modbus RTU through a TCP-to-RTU
-  converter: holding registers only, addressed by their full number (40004 is
-  0x9C44) before MODBUS 40 version 10, writes as Write Multiple Registers only,
-  and 2.1 s per register outside LOG.SET.
-- **Hold stats.py's own keys to the backend as well.** The contract test checks
-  what `stats_extra` builds, but not the keys `stats.py` adds itself (`ha_id`,
-  `log_errors` and `log_warnings` since 1.7.2). The backend rejects a whole
-  report over one unknown top-level key, so a key it does not know yet would
-  silence every report without an error on this side.
+What comes next, in the order it pays off, is in [docs/roadmap.md](docs/roadmap.md):
+the integration explaining its own silences through repairs, sub-devices per
+accessory, a circuit schematic and a strip of the day on the page, energy by
+part and the price of heat, and the longer-term items - delivered heat on an
+F-series without an EMK, NIBE's MODBUS 40 accessory as an alternative to the
+gateway, a card editor, a reconfigure step, and holding stats.py's own keys to
+the backend.
 
 ## Licence
 

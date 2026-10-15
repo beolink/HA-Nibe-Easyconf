@@ -12,6 +12,10 @@ def test_writable_registers_become_controls():
     assert const.platform_for({"write": True, "unit": "°C", "min": 0, "max": 100}) == "number"
     assert const.platform_for({"write": True, "min": 0, "max": 1}) == "switch"
     assert const.platform_for({"write": True, "mappings": {"0": "Off"}}) == "select"
+    # Written 1 to reset the alarm, never read: a button on both series.
+    assert const.platform_for({"write": True, "title": "Alarm Reset", "size": "u8"}) == "button"
+    assert const.platform_for({"write": True, "title": "Reset alarm", "size": "u8"}) == "button"
+    assert const.platform_for({"title": "Alarm Reset", "size": "u8"}) == "sensor"
 
 
 def test_read_only_registers_become_sensors():
