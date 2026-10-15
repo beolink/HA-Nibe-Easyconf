@@ -591,13 +591,11 @@ What is collected and why: <https://stats.rnet.se/integritet>
 
 ## Roadmap
 
-What comes next, in the order it pays off, is in [docs/roadmap.md](docs/roadmap.md):
-the integration explaining its own silences through repairs, sub-devices per
-accessory, a circuit schematic and a strip of the day on the page, energy by
-part and the price of heat, and the longer-term items - delivered heat on an
-F-series without an EMK, NIBE's MODBUS 40 accessory as an alternative to the
-gateway, a card editor, a reconfigure step, and holding stats.py's own keys to
-the backend.
+What comes next is in [docs/roadmap-2026-10.md](docs/roadmap-2026-10.md), in
+Swedish: a review of the whole integration from eight perspectives, 45 items
+in six phases with their evidence as file and line, what was tried and set
+aside, and the questions that need a measurement in one of the houses or a
+decision by the owner.
 
 ## Licence
 
