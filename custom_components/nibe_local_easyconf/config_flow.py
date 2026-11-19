@@ -588,7 +588,7 @@ class NibeConfigFlow(ConfigFlow, domain=DOMAIN):
             # The flags in that first pass say which accessories the pump has;
             # their own registers are worth reading only then. Without this an
             # exhaust air module's fan settings stay invisible, which is how
-            # register 47260 went missing on the development unit.
+            # the module's fan selector (49280) went missing on the first unit.
             extra = fseries.accessory_registers(registers, result.values)
             if extra:
                 more = await probe(client, extra)

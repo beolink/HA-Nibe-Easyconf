@@ -225,15 +225,19 @@ def test_an_undecodable_register_is_an_error_but_not_a_timeout(client):
     assert not isinstance(caught.value, gateway.GatewayTimeout)
 
 
-def test_the_fan_mode_the_library_leaves_off_the_f1255_can_be_read_and_written(client):
-    """47260 "Fan Mode" is in fseries.EXTRA_REGISTERS, not in the library's
-    F1155/F1255 map. On the F1255 in Vaxholm, which has an FLM 1 registered,
-    it read unavailable for ever because the lookup failed on every cycle."""
+def test_a_register_the_integration_adds_itself_is_read_through_its_own_coil(client, monkeypatch):
+    """A register in fseries.EXTRA_REGISTERS is unknown to the library's
+    HeatPump; the client builds its coil once from the definition. (47260 "Fan
+    Mode" stood there until 1.15.4 and turned out not to answer on the F1255.)"""
+    monkeypatch.setattr(gateway.fseries, "EXTRA_REGISTERS", {
+        47260: {"title": "Fan Mode", "size": "u8", "factor": 1, "min": 0, "max": 4,
+                "write": True, "mappings": {"0": "Normal", "1": "Fan mode 1", "2": "Fan mode 2"}},
+    })
     fake = _fake(client)
     fake.values[47260] = "FAN MODE 2"
     assert _run(client.read(47260)) == 2
-    _run(client.write(47260, 3))
-    assert fake.writes[-1] == (47260, 3)
+    _run(client.write(47260, 1))
+    assert fake.writes[-1] == (47260, 1)
     coil = client.coil(47260)
     assert coil.title == "Fan Mode" and coil.is_writable
     assert client.coil(47260) is coil  # built once

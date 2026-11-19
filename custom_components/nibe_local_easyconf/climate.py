@@ -74,6 +74,12 @@ class NibeClimate(CoordinatorEntity, ClimateEntity):
 
     _attr_has_entity_name = True
     _attr_translation_key = "climate_system"
+    # Home Assistant 2026.11 renamed the temperature members native_* and
+    # converts to the user's unit itself; the old names stop working in
+    # 2027.11. Both are provided: a class that provides both is served the
+    # native ones there, without the warning, and the old ones on every
+    # release before, down to the floor in hacs.json.
+    _attr_native_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_target_temperature_step = 0.5
 
@@ -176,8 +182,10 @@ class NibeClimate(CoordinatorEntity, ClimateEntity):
         return super().available and self._value(self._system.use_room_sensor) is not None
 
     @property
-    def current_temperature(self) -> float | None:
+    def native_current_temperature(self) -> float | None:
         return self._value(self._system.current) if self._sensor_fitted() else None
+
+    current_temperature = native_current_temperature
 
     @property
     def hvac_modes(self) -> list[HVACMode]:
@@ -218,22 +226,28 @@ class NibeClimate(CoordinatorEntity, ClimateEntity):
         return HVACAction.IDLE
 
     @property
-    def target_temperature(self) -> float | None:
+    def native_target_temperature(self) -> float | None:
         if self.hvac_mode != HVACMode.HEAT:
             return None
         return self._value(self._system.setpoint)
 
+    target_temperature = native_target_temperature
+
     @property
-    def target_temperature_low(self) -> float | None:
+    def native_target_temperature_low(self) -> float | None:
         if self.hvac_mode != HVACMode.HEAT_COOL:
             return None
         return self._value(self._system.setpoint)
 
+    target_temperature_low = native_target_temperature_low
+
     @property
-    def target_temperature_high(self) -> float | None:
+    def native_target_temperature_high(self) -> float | None:
         if self.hvac_mode != HVACMode.HEAT_COOL:
             return None
         return self._value(self._system.cool_setpoint)
+
+    target_temperature_high = native_target_temperature_high
 
     @property
     def preset_mode(self) -> str | None:

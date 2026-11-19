@@ -242,13 +242,11 @@ class GatewayClient:
     def coil(self, register: int) -> Coil:
         """The library's coil for a register, or one built from fseries.EXTRA_REGISTERS.
 
-        The library knows 47260 "Fan Mode" on the F730 and the VVMs, where the
-        fan is built in, and not on the F1155/F1255, where it arrives with the
-        FLM accessory. The integration adds it to its own map, but a read goes
-        through the library's coil, and until 1.15.3 the lookup failed here on
-        every cycle: the fan mode on a pump with a registered exhaust air
-        module read unavailable for ever. The coil is built once, from the same
-        definition, and the connection reads and writes it like any other.
+        A register the integration adds to its map on its own is unknown to
+        the library's HeatPump, and until 1.15.3 the lookup failed here on
+        every cycle, so such a register read unavailable for ever. The coil
+        is built once from the same definition, and the connection reads and
+        writes it like any other. A register in neither place is an error.
         """
         if self._heatpump is None:
             raise GatewayError("The gateway connection is not started")

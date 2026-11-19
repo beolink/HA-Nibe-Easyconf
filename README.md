@@ -501,6 +501,12 @@ the title - *CL11-BT51 Pool 1 Temp*, *AZ1-BT26 Temp Collector in FLM 1*,
 *BT20 Exhaust air temp. 1* - not only where it leads, which is where a
 registered pool's temperature hid from the scan before 1.15.3.
 
+An exhaust air module's fan is set through *FLM 1 fan* (49280), the register
+NIBE's list gives the ground source pumps; *Fan Mode* (47260) belongs to the
+pumps with a fan of their own and is not added to the F1x55 maps any more -
+the F1255 this was built against never answered it. An entity left behind by
+a register that left the map is removed at the next start.
+
 ### Writes are read back
 
 Every write, on both series, is followed by a read of the same register, and

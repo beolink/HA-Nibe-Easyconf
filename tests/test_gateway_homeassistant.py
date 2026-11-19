@@ -945,3 +945,51 @@ async def test_the_rescan_button_reads_the_pump_again_and_reloads(hass, freezer)
     # The reload set the pump up afresh, on a new connection.
     assert len(FakeNibeGW.instances) == gateways + 1
     assert entry.state is ConfigEntryState.LOADED
+
+
+# ------------------------------------------------------------ housekeeping
+
+
+async def test_an_entity_of_a_register_that_left_the_map_is_removed(hass, freezer):
+    """1.15.3 and earlier gave the F1255 an entity for 47260 "Fan Mode", which
+    the pump never answered; 1.15.4 took the register out of the map. The entity
+    it left behind is removed at set-up, and the integration's own entities,
+    whose unique ids end in a number too, are left alone."""
+    hass.config.language = "sv"
+    entry = MockConfigEntry(
+        domain=DOMAIN, unique_id=f"nibe-{SERIAL}", title="NIBE F1255-16 CU", data=_entry_data()
+    )
+    entry.add_to_hass(hass)
+    registry = er.async_get(hass)
+    stale = registry.async_get_or_create(
+        "select", DOMAIN, f"{entry.entry_id}-47260", config_entry=entry
+    )
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert registry.async_get(stale.entity_id) is None
+    assert registry.async_get_entity_id("climate", DOMAIN, f"{entry.entry_id}-climate-1")
+    assert registry.async_get_entity_id("select", DOMAIN, f"{entry.entry_id}-49280")
+
+
+def test_the_thermostat_and_the_water_heater_speak_both_temperature_apis():
+    """Home Assistant 2026.11 reads native_* and warns about a class that
+    provides only the old names; releases before it read the old names. A
+    class that provides both is served the right one on either, in silence."""
+    from custom_components.nibe_local_easyconf.climate import NibeClimate
+    from custom_components.nibe_local_easyconf.water_heater import NibeWaterHeater
+
+    for cls, names in (
+        (NibeClimate, ("current_temperature", "target_temperature",
+                       "target_temperature_low", "target_temperature_high")),
+        (NibeWaterHeater, ("current_temperature", "target_temperature_low",
+                           "target_temperature_high")),
+    ):
+        own = vars(cls)
+        # The class provides both unit attributes - which is what Home Assistant
+        # looks for - and each says Celsius. The metaclass of the release at
+        # hand moves the one it knows to __attr_* storage behind a property.
+        for name in ("_attr_native_temperature_unit", "_attr_temperature_unit"):
+            assert name in own, f"{cls.__name__}.{name}"
+            assert own.get(f"__{name[1:]}", own.get(name)) == "°C", f"{cls.__name__}.{name}"
+        for name in names:
+            assert own[f"native_{name}"] is own[name], f"{cls.__name__}.{name}"

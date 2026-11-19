@@ -275,9 +275,12 @@ def test_an_exhaust_air_module_brings_its_own_registers():
               if F1255_MAP[r]["title"] == "FLM 1 accessory"}
     wanted = fseries.accessory_registers(F1255_MAP, fitted)
     titles = {F1255_MAP[r]["title"] for r in wanted}
-    # The speed selector myUplink uses, which NIBE leaves out of its list.
-    assert 47260 in wanted
-    assert "Fan Mode" in titles
+    # The module's own fan selector, as NIBE's list gives the ground source
+    # pumps. 47260 "Fan Mode" belongs to the pumps with a built-in fan and is
+    # not in this map: the F1255 in Vaxholm never answered it.
+    assert 49280 in wanted
+    assert "FLM 1 fan" in titles
+    assert 47260 not in F1255_MAP
     assert "Exhaust Fan speed normal" in titles
     # The module's sensors, which NIBE titles without its name.
     assert 40025 in wanted and 40028 in wanted
@@ -319,7 +322,7 @@ def test_nothing_extra_is_read_when_the_pump_has_no_accessories():
 
 def test_an_accessorys_register_is_switched_on_when_it_answered():
     """It is only read at all when its flag said the accessory is there."""
-    fan = F1255_MAP[47260]
+    fan = F1255_MAP[49280]
     assert fseries.is_default(fan, reporting=True)
     assert not fseries.is_default(fan, reporting=False)
 

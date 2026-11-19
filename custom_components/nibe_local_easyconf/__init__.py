@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 import logging
+import re
 import socket
 
 from homeassistant.config_entries import ConfigEntry
@@ -547,6 +548,21 @@ def _async_remove_moved_entities(
     behind as a permanently unavailable duplicate the user has to delete.
     """
     registry = er.async_get(hass)
+    # A register that left the map - 47260 "Fan Mode" on the F1155/F1255 in
+    # 1.15.4, which the pump never answered - leaves an entity behind that
+    # nothing will ever update. The entries whose unique id is this entry's
+    # id and a register number, and nothing else, are the register
+    # entities; one the map does not know is removed.
+    register_id = re.compile(rf"^{re.escape(entry.entry_id)}-(\d+)$")
+    for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
+        found = register_id.match(entity.unique_id or "")
+        if found and int(found.group(1)) not in registers:
+            _LOGGER.info(
+                "Register %s is no longer in the map; removing %s",
+                found.group(1),
+                entity.entity_id,
+            )
+            registry.async_remove(entity.entity_id)
     for register in present:
         meta = registers.get(register)
         if meta is None:

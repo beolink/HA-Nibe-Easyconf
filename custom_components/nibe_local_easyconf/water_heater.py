@@ -50,6 +50,9 @@ class NibeWaterHeater(CoordinatorEntity, WaterHeaterEntity):
     """The hot water as Home Assistant's water heater."""
 
     _attr_has_entity_name = True
+    # The native_* names of Home Assistant 2026.11 and the old ones beside
+    # them; see climate.py.
+    _attr_native_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_supported_features = WaterHeaterEntityFeature.OPERATION_MODE
     _attr_icon = "mdi:water-boiler"
@@ -132,8 +135,10 @@ class NibeWaterHeater(CoordinatorEntity, WaterHeaterEntity):
         return super().available and self._value(self._water.current) is not None
 
     @property
-    def current_temperature(self) -> float | None:
+    def native_current_temperature(self) -> float | None:
         return self._value(self._water.current)
+
+    current_temperature = native_current_temperature
 
     @property
     def current_operation(self) -> str | None:
@@ -143,14 +148,18 @@ class NibeWaterHeater(CoordinatorEntity, WaterHeaterEntity):
         return None if mode is None else mode.key
 
     @property
-    def target_temperature_low(self) -> float | None:
+    def native_target_temperature_low(self) -> float | None:
         mode = self._mode()
         return None if mode is None else self._value(mode.start)
 
+    target_temperature_low = native_target_temperature_low
+
     @property
-    def target_temperature_high(self) -> float | None:
+    def native_target_temperature_high(self) -> float | None:
         mode = self._mode()
         return None if mode is None else self._value(mode.stop)
+
+    target_temperature_high = native_target_temperature_high
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

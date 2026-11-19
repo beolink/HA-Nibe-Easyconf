@@ -137,31 +137,16 @@ def traits_for(product: Product, reporting_titles: set[str]) -> set[str]:
 
 # -- what is on by default ---------------------------------------------------
 
-#: Registers the pump answers but the library's F1155/F1255 map does not carry.
-#:
-#: 47260 is the fan speed selector of an exhaust air module: normal, or one of
-#: the four speeds set in 47261-47265. NIBE leaves it out of its published
-#: Modbus list - the library has it for the F370, F730, F750 and the VVM
-#: models, where the fan is built in, but not for the F1155/F1255, where it
-#: arrives with the FLM accessory. Owners found it anyway, and myUplink has
-#: always shown it. The definition is the library's own, copied verbatim.
-EXTRA_REGISTERS: dict[int, dict] = {
-    47260: {
-        "title": "Fan Mode",
-        "size": "u8",
-        "factor": 1,
-        "min": 0,
-        "max": 4,
-        "write": True,
-        "mappings": {
-            "0": "Normal",
-            "1": "Fan mode 1",
-            "2": "Fan mode 2",
-            "3": "Fan mode 3",
-            "4": "Fan mode 4",
-        },
-    },
-}
+#: Registers the pump answers but the library's map does not carry, by number,
+#: with the definition a map would give them. Empty since 1.15.4: 47260 "Fan
+#: Mode" stood here for the F1155/F1255 on the belief that an exhaust air
+#: module brought it, but the F1255 in Vaxholm, with FLM 1 registered, never
+#: answered it. The module's selector is 49280 "FLM 1 fan", which every ground
+#: source map carries (patched below with its values), and 47260 belongs to the
+#: pumps with a fan of their own - F370/F470, F730, F750 and the VVMs - whose
+#: maps have it. The table stays, and gateway.GatewayClient.coil builds a coil
+#: for whatever is put in it, for the next register NIBE leaves out of its list.
+EXTRA_REGISTERS: dict[int, dict] = {}
 
 #: The accessories a pump can have, and the registers that come with each.
 #:
@@ -208,7 +193,6 @@ class Accessory:
 
 
 FAN_TITLES: frozenset[str] = frozenset({
-    "Fan Mode",
     "Fan speed current",
     "Exhaust Fan speed normal",
     "Exhaust Fan speed 1",
