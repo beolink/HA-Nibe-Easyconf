@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.const import (
     PERCENTAGE,
@@ -19,6 +21,11 @@ from homeassistant.const import (
 
 MEASUREMENT = SensorStateClass.MEASUREMENT
 TOTAL_INCREASING = SensorStateClass.TOTAL_INCREASING
+
+#: Titles of start counters: "Compressor starts EB100-EP14", "Compressor, number
+#: of starts (EB101-EP14)", "AZ10 Number of Starts", "No. of starts (S135)".
+#: "Compr. time to start" and "DM start heating" are not counters.
+STARTS = re.compile(r"\bstarts\b", re.IGNORECASE)
 
 #: NIBE unit string -> (HA unit, device class, state class)
 UNITS: dict[str, tuple[str | None, SensorDeviceClass | None, SensorStateClass | None]] = {
@@ -40,6 +47,17 @@ UNITS: dict[str, tuple[str | None, SensorDeviceClass | None, SensorStateClass | 
     "l/m": (UnitOfVolumeFlowRate.LITERS_PER_MINUTE, None, MEASUREMENT),
     "l/min": (UnitOfVolumeFlowRate.LITERS_PER_MINUTE, None, MEASUREMENT),
     "m³/h": (UnitOfVolumeFlowRate.CUBIC_METERS_PER_HOUR, None, MEASUREMENT),
+    # Spellings the maps use for a handful of registers: the humidity sensors
+    # of the room units, the pressure sensor BM1 and the airflow pressure
+    # sensors BP15/BP16, the compressor current in milliamperes, and two
+    # timers. Without an entry here they had a unit and no state class, so
+    # Home Assistant kept no long-term statistics for them.
+    "%RH": (PERCENTAGE, SensorDeviceClass.HUMIDITY, MEASUREMENT),
+    "kPa": (UnitOfPressure.KPA, SensorDeviceClass.PRESSURE, MEASUREMENT),
+    "Pa": (UnitOfPressure.PA, SensorDeviceClass.PRESSURE, MEASUREMENT),
+    "mA": (UnitOfElectricCurrent.MILLIAMPERE, SensorDeviceClass.CURRENT, MEASUREMENT),
+    "hrs": (UnitOfTime.HOURS, SensorDeviceClass.DURATION, MEASUREMENT),
+    "sec": (UnitOfTime.SECONDS, SensorDeviceClass.DURATION, MEASUREMENT),
     # Degree minutes are a NIBE-specific control quantity with no HA equivalent.
     "DM": (None, None, MEASUREMENT),
 }
@@ -48,8 +66,17 @@ UNITS: dict[str, tuple[str | None, SensorDeviceClass | None, SensorStateClass | 
 def resolve(meta: dict) -> tuple[str | None, SensorDeviceClass | None, SensorStateClass | None]:
     """Units, device class and state class for a register."""
     unit = (meta.get("unit") or "").strip()
+    # "+Adjust AUX Port" carries the unit "1", which is no unit at all.
+    if unit == "1":
+        unit = ""
     entry = UNITS.get(unit)
     if entry is None:
+        # A start count has no unit in NIBE's maps, but it only ever climbs, like
+        # a run time, and its long-term statistics are a running total. Without
+        # the state class Home Assistant keeps no statistics for it, and history
+        # brought in from myUplink or an older integration has nowhere to land.
+        if not unit and not meta.get("write") and STARTS.search(meta.get("title", "")):
+            return (None, None, TOTAL_INCREASING)
         return (unit or None, None, None)
 
     ha_unit, device_class, state_class = entry

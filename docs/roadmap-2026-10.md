@@ -25,7 +25,6 @@ Små poster utan beroenden som ger tydlig nytta direkt.
 - **R7: Husens adresser bort ur de publika testerna** (teknik, Fas 1). Gatewayens riktiga adress står i två testfiler.
 - **R9: Tjänsterna finns innan någon post laddats** (teknik, Fas 1). Kvalitetsskalans action-setup; en tjänst som inte finns ger ett obegripligt fel i en automation.
 - **R12: Värmefaktor över 7 och 30 dygn** (teknik, Fas 2). Proven sparas redan i 400 dagar; bara divisionen saknas.
-- **R14: Kompressorstarter som räknare** (teknik, Fas 2). Utan enhet får registret ingen state_class och ingen långtidsstatistik.
 - **R10: Sidan får inte svämma över på en smal telefon** (dashboard, Fas 1). Två rutnät kräver 340 px på en skärm som har 288.
 - **L2: Kortets ordtabeller har samma nycklar på alla fyra språk** (dashboard, Fas 1). Ett ord som saknas på ett språk visas som `undefined`.
 
@@ -133,11 +132,9 @@ Ansträngning: S. Risk: låg. Beroenden: inga. Belägg: cop.py:30 till 50, 267 t
 
 Ansträngning: M. Risk: låg. Beroenden: inga. Belägg: power.py:58 till 72, names.py:106 till 122 (energiloggens titlar), sensor.py:119 till 178.
 
-#### R14: Räknare utan enhet blir räknare
+#### R14: Räknare utan enhet blir räknare - gjord i 1.15.3
 
-**Problem.** `units.resolve` sätter state_class ur enheten. "Compressor starts EB100-EP14" (43416) och S-seriens "Compressor, number of starts" (31535, 31490, 31445) har ingen enhet, får ingen state_class och därmed ingen långtidsstatistik - så starter per dygn, det tydligaste måttet på kortcykling, går inte att rita. **Lösning.** `resolve` ger `total_increasing` åt titlar med "starts" och "number of starts", och kortets energigraf tar med starter per dygn som staplar. **Nytta.** Alla: starter per dygn på fliken Prestanda, och Home Assistants egna statistikkort kan rita dem.
-
-Ansträngning: S. Risk: låg - en state_class som tillkommer skapar statistik från nu, ingen gammal går sönder. Beroenden: inga. Belägg: units.py:48 till 73; kartorna: 43416 utan enhet, 31535/31490/31445 utan enhet.
+Kompressorstarterna (43416, 31535, 31490, 31445) får `total_increasing`, och kartornas egna stavningar av enheter (`%RH`, `kPa`, `Pa`, `mA`, `hrs`, `sec`) ger mätklass, så Home Assistant för långtidsstatistik för dem. Staplar per dygn på fliken Prestanda återstår under R20.
 
 #### R15: Underenheter per tillbehör
 

@@ -483,6 +483,24 @@ not polled. *Rescan registers* (*Sök om register*) is the
 `rescan_registers` service as a button on the device, for a firmware update or
 an accessory fitted since the last scan.
 
+### Long-term statistics
+
+Every measured register that carries a unit gets Home Assistant's
+`state_class: measurement` and the matching device class, so the recorder
+keeps long-term statistics for it: temperatures, powers, frequencies, flows,
+pressures, currents and the room units' humidity, in the unit spellings the
+maps use (`°C`, `Hz`, `kW`, `%RH`, `kPa`, `Pa`, `mA`, `hrs`, `sec`). Energy and
+run-time counters are `total_increasing`, and so are the compressor's start
+counters, which have no unit in NIBE's maps but only ever climb. Setpoints,
+settings and enumerated states get none, as Home Assistant wants it.
+
+On the F-series an accessory's registers are read at setup once the pump's
+own flag says the accessory is registered, and are then on by default where
+they report a value. They are recognised by the accessory's name anywhere in
+the title - *CL11-BT51 Pool 1 Temp*, *AZ1-BT26 Temp Collector in FLM 1*,
+*BT20 Exhaust air temp. 1* - not only where it leads, which is where a
+registered pool's temperature hid from the scan before 1.15.3.
+
 ### Writes are read back
 
 Every write, on both series, is followed by a read of the same register, and

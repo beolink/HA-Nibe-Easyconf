@@ -279,10 +279,37 @@ def test_an_exhaust_air_module_brings_its_own_registers():
     assert 47260 in wanted
     assert "Fan Mode" in titles
     assert "Exhaust Fan speed normal" in titles
+    # The module's sensors, which NIBE titles without its name.
+    assert 40025 in wanted and 40028 in wanted
     # Another module's registers are not read for this one.
     assert not any(title.startswith("FLM 2") for title in titles)
+    assert 40107 not in wanted  # BT20 Exhaust air temp. 4
     # A pool the pump does not have stays unread.
     assert not any(title.startswith("Pool") for title in titles)
+
+
+def test_an_accessorys_registers_are_known_by_its_name_anywhere_in_the_title():
+    """NIBE writes the pool's sensor as "CL11-BT51 Pool 1 Temp" and the exhaust
+    air module's collector as "AZ1-BT26 Temp Collector in FLM 1": the name after
+    a designation. Matched only as a prefix, the pool temperature was never
+    read at setup and sat switched off on a pump whose pool flag said yes."""
+    assert fseries.accessory_for("CL11-BT51 Pool 1 Temp").flag == "Pool 1 accessory"
+    assert fseries.accessory_for("GP9 Pool 1 Valve").flag == "Pool 1 accessory"
+    assert fseries.accessory_for("AZ1-BT26 Temp Collector in FLM 1").flag == "FLM 1 accessory"
+    assert fseries.accessory_for("AZ30-BT23 Outdoor temp. ERS 1").flag == "ERS 1 accessory"
+    # The module's own air sensors carry no module name at all, only the number.
+    assert fseries.accessory_for("BT20 Exhaust air temp. 1").flag == "FLM 1 accessory"
+    assert fseries.accessory_for("BT21 Vented air temp. 4").flag == "FLM 4 accessory"
+    assert fseries.accessory_for("BT1 Outdoor Temperature") is None
+
+
+def test_a_registered_pool_brings_its_temperature():
+    fitted = {r: ("ON" if F1255_MAP[r]["title"] == "Pool 1 accessory" else "OFF")
+              for r in fseries.flag_registers(F1255_MAP)}
+    wanted = fseries.accessory_registers(F1255_MAP, fitted)
+    assert 40042 in wanted and 43564 in wanted
+    # Pool 2 stays unread, and so does every exhaust air module.
+    assert 40106 not in wanted and 40025 not in wanted
 
 
 def test_nothing_extra_is_read_when_the_pump_has_no_accessories():

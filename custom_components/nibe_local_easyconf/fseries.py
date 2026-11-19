@@ -196,7 +196,14 @@ REGISTER_PATCHES: dict[int, dict] = {
 @dataclass(frozen=True)
 class Accessory:
     flag: str
-    prefixes: tuple[str, ...]
+    #: The accessory's name as NIBE writes it into its registers' titles -
+    #: at the start ("FLM 1 Fan speed"), or after a designation ("CL11-BT51
+    #: Pool 1 Temp", "AZ1-BT26 Temp Collector in FLM 1"), which is where the
+    #: pool temperature hid from the scan until 1.15.3.
+    names: tuple[str, ...]
+    #: Designation prefixes that are the accessory's alone: AZ1- is the first
+    #: exhaust air module, CL11- the first pool.
+    designations: tuple[str, ...] = ()
     extra: frozenset[str] = frozenset()
 
 
@@ -210,17 +217,23 @@ FAN_TITLES: frozenset[str] = frozenset({
     "Exhaust Fan speed 4",
 })
 
+
+def _exhaust_air_titles(number: int) -> frozenset[str]:
+    """An exhaust air module's own sensors, titled without the module's name."""
+    return frozenset({f"BT20 Exhaust air temp. {number}", f"BT21 Vented air temp. {number}"})
+
+
 ACCESSORIES: tuple[Accessory, ...] = (
-    Accessory("FLM 1 accessory", ("FLM 1",), FAN_TITLES),
-    Accessory("FLM 2 accessory", ("FLM 2",)),
-    Accessory("FLM 3 accessory", ("FLM 3",)),
-    Accessory("FLM 4 accessory", ("FLM 4",)),
+    Accessory("FLM 1 accessory", ("FLM 1",), ("AZ1-",), FAN_TITLES | _exhaust_air_titles(1)),
+    Accessory("FLM 2 accessory", ("FLM 2",), ("AZ2-",), _exhaust_air_titles(2)),
+    Accessory("FLM 3 accessory", ("FLM 3",), ("AZ3-",), _exhaust_air_titles(3)),
+    Accessory("FLM 4 accessory", ("FLM 4",), ("AZ4-",), _exhaust_air_titles(4)),
     Accessory("ERS 1 accessory", ("ERS 1", "External ERS 1")),
     Accessory("ERS 2 accessory", ("ERS 2", "External ERS 2")),
     Accessory("ERS 3 accessory", ("ERS 3", "External ERS 3")),
     Accessory("ERS 4 accessory", ("ERS 4", "External ERS 4")),
-    Accessory("Pool 1 accessory", ("Pool 1",)),
-    Accessory("Pool 2 accessory", ("Pool 2",)),
+    Accessory("Pool 1 accessory", ("Pool 1",), ("CL11-",)),
+    Accessory("Pool 2 accessory", ("Pool 2",), ("CL12-",)),
 )
 
 #: Values NIBE answers with when an accessory is registered in the pump.
@@ -228,11 +241,18 @@ _FITTED = ("ON", "1", "1.0", "TRUE", "YES")
 
 
 def accessory_for(title: str) -> Accessory | None:
-    """The accessory a register belongs to, if any."""
+    """The accessory a register belongs to, if any.
+
+    By the accessory's name as a whole word anywhere in the title, by its own
+    designation prefix, or by a title listed as its. "Pool 1" also sits in
+    "GP9 Pool 1 Valve" and "Period Pool 1"; "FLM 1" never in "FLM 10".
+    """
     for accessory in ACCESSORIES:
         if title == accessory.flag or title in accessory.extra:
             return accessory
-        if any(title.startswith(f"{prefix} ") for prefix in accessory.prefixes):
+        if any(re.search(rf"\b{re.escape(name)}\b", title) for name in accessory.names):
+            return accessory
+        if any(title.startswith(designation) for designation in accessory.designations):
             return accessory
     return None
 
