@@ -43,6 +43,8 @@ from nibe.exceptions import (
 )
 from nibe.heatpump import HeatPump, Model, ProductInfo
 
+from . import fseries
+
 _LOGGER = logging.getLogger(__name__)
 
 DEFAULT_READ_PORT = 9999
@@ -182,6 +184,8 @@ class GatewayClient:
         self._heatpump: HeatPump | None = None
         self._connection: NibeGW | None = None
         self._listeners: list[Callable[[int, Value], None]] = []
+        #: Coils for the registers the library's map lacks; see coil().
+        self._extra_coils: dict[int, Coil] = {}
 
     @property
     def word_swap(self) -> bool | None:
@@ -236,12 +240,41 @@ class GatewayClient:
         return self._connection
 
     def coil(self, register: int) -> Coil:
+        """The library's coil for a register, or one built from fseries.EXTRA_REGISTERS.
+
+        The library knows 47260 "Fan Mode" on the F730 and the VVMs, where the
+        fan is built in, and not on the F1155/F1255, where it arrives with the
+        FLM accessory. The integration adds it to its own map, but a read goes
+        through the library's coil, and until 1.15.3 the lookup failed here on
+        every cycle: the fan mode on a pump with a registered exhaust air
+        module read unavailable for ever. The coil is built once, from the same
+        definition, and the connection reads and writes it like any other.
+        """
         if self._heatpump is None:
             raise GatewayError("The gateway connection is not started")
         try:
             return self._heatpump.get_coil_by_address(register)
         except NibeException as err:
-            raise GatewayError(f"Register {register} is not in the {self.model.name} map") from err
+            extra = self._extra_coils.get(register)
+            if extra is None:
+                meta = fseries.EXTRA_REGISTERS.get(register)
+                if meta is None:
+                    raise GatewayError(
+                        f"Register {register} is not in the {self.model.name} map"
+                    ) from err
+                extra = Coil(
+                    register,
+                    meta.get("name") or f"extra-{register}",
+                    meta["title"],
+                    meta.get("size", "u8"),
+                    factor=meta.get("factor", 1),
+                    write=bool(meta.get("write")),
+                    min=meta.get("min"),
+                    max=meta.get("max"),
+                    mappings=meta.get("mappings"),
+                )
+                self._extra_coils[register] = extra
+            return extra
 
     async def read(self, register: int, timeout: float = READ_TIMEOUT) -> Value:
         """Read one register: a number, or None when the pump has no reading."""

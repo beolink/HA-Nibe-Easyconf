@@ -225,6 +225,20 @@ def test_an_undecodable_register_is_an_error_but_not_a_timeout(client):
     assert not isinstance(caught.value, gateway.GatewayTimeout)
 
 
+def test_the_fan_mode_the_library_leaves_off_the_f1255_can_be_read_and_written(client):
+    """47260 "Fan Mode" is in fseries.EXTRA_REGISTERS, not in the library's
+    F1155/F1255 map. On the F1255 in Vaxholm, which has an FLM 1 registered,
+    it read unavailable for ever because the lookup failed on every cycle."""
+    fake = _fake(client)
+    fake.values[47260] = "FAN MODE 2"
+    assert _run(client.read(47260)) == 2
+    _run(client.write(47260, 3))
+    assert fake.writes[-1] == (47260, 3)
+    coil = client.coil(47260)
+    assert coil.title == "Fan Mode" and coil.is_writable
+    assert client.coil(47260) is coil  # built once
+
+
 def test_a_register_outside_the_map_is_an_error(client):
     with pytest.raises(gateway.GatewayError):
         _run(client.read(40001))
